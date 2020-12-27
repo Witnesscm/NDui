@@ -297,7 +297,7 @@ function module:CreateFreeSlots()
 	slot:GetHighlightTexture():SetVertexColor(1, 1, 1, .25)
 	slot:GetHighlightTexture():SetInside()
 	B.CreateBD(slot, .3)
-	slot:SetBackdropColor(.3, .3, .3, .3)
+	--slot:SetBackdropColor(.3, .3, .3, .3)
 	slot:SetScript("OnMouseUp", module.FreeSlotOnDrop)
 	slot:SetScript("OnReceiveDrag", module.FreeSlotOnDrop)
 	B.AddTooltip(slot, "ANCHOR_RIGHT", L["FreeSlots"])
@@ -705,7 +705,7 @@ function module:OnLogin()
 		self.IconOverlay2:SetInside()
 
 		B.CreateBD(self, .3)
-		self:SetBackdropColor(.3, .3, .3, .3)
+		--self:SetBackdropColor(.3, .3, .3, .3)
 
 		local parentFrame = CreateFrame("Frame", nil, self)
 		parentFrame:SetAllPoints()
@@ -843,7 +843,7 @@ function module:OnLogin()
 			local color = bagTypeColor[bagType] or bagTypeColor[0]
 			self:SetBackdropColor(unpack(color))
 		else
-			self:SetBackdropColor(.3, .3, .3, .3)
+			--self:SetBackdropColor(.3, .3, .3, .3)
 		end
 
 		-- Hide empty tooltip
@@ -881,9 +881,9 @@ function module:OnLogin()
 		self:SortButtons("bagSlot")
 
 		local columns = self.Settings.Columns
-		local offset = 38
+		local offset = 40
 		local spacing = 3
-		local xOffset = 5
+		local xOffset = 10
 		local yOffset = -offset + xOffset
 		local _, height = self:LayoutButtons("grid", columns, spacing, xOffset, yOffset)
 		local width = columns * (iconSize+spacing)-spacing

@@ -42,7 +42,7 @@ local ipTypes = {"IPv4", "IPv6"}
 info.onEnter = function(self)
 	entered = true
 
-	GameTooltip:SetOwner(self, "ANCHOR_BOTTOM", 0, -15)
+	GameTooltip:SetOwner(self, "ANCHOR_TOP", 0, 12)
 	GameTooltip:ClearLines()
 	GameTooltip:AddLine(L["Latency"], 0,.6,1)
 	GameTooltip:AddLine(" ")

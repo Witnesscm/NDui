@@ -166,7 +166,7 @@ function info:GuildPanel_Init()
 
 	infoFrame = CreateFrame("Frame", "NDuiGuildInfobar", info)
 	infoFrame:SetSize(335, 495)
-	infoFrame:SetPoint("TOPLEFT", UIParent, 15, -30)
+	infoFrame:SetPoint("BOTTOM", info, "TOP", 0, 12)
 	infoFrame:SetClampedToScreen(true)
 	infoFrame:SetFrameStrata("TOOLTIP")
 	local bg = B.SetBD(infoFrame)

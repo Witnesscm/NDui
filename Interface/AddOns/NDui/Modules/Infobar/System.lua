@@ -127,7 +127,7 @@ info.onEnter = function(self)
 	local isShiftKeyDown = IsShiftKeyDown()
 	local maxShown = isShiftKeyDown and #infoTable or min(maxAddOns, #infoTable)
 
-	GameTooltip:SetOwner(self, "ANCHOR_BOTTOM", 0, -15)
+	GameTooltip:SetOwner(self, "ANCHOR_TOP", 0, 12)
 	GameTooltip:ClearLines()
 
 	if self.showMemory or not scriptProfileStatus then

@@ -188,20 +188,21 @@ function UF:CreateHealthText(self)
 		name:SetWidth(self:GetWidth()*.55)
 	end
 
+	local colorStr = self.Health.colorClass and "" or "[color]"
 	if mystyle == "player" then
-		self:Tag(name, " [color][name]")
+		self:Tag(name, " "..colorStr.."[name]")
 	elseif mystyle == "target" then
-		self:Tag(name, "[fulllevel] [color][name][afkdnd]")
+		self:Tag(name, "[fulllevel] "..colorStr.."[name][afkdnd]")
 	elseif mystyle == "focus" then
-		self:Tag(name, "[color][name][afkdnd]")
+		self:Tag(name, colorStr.."[name][afkdnd]")
 	elseif mystyle == "nameplate" then
 		self:Tag(name, "[nplevel][name]")
 	elseif mystyle == "arena" then
-		self:Tag(name, "[arenaspec] [color][name]")
+		self:Tag(name, "[arenaspec] "..colorStr.."[name]")
 	elseif mystyle == "raid" and C.db["UFs"]["SimpleMode"] and C.db["UFs"]["ShowTeamIndex"] and not self.isPartyPet and not self.isPartyFrame then
-		self:Tag(name, "[group].[color][name]")
+		self:Tag(name, "[group]."..colorStr.."[name]")
 	else
-		self:Tag(name, "[color][name]")
+		self:Tag(name, colorStr.."[name]")
 	end
 
 	local hpval = B.CreateFS(textFrame, retVal(self, 14, 13, 13, 13, C.db["Nameplate"]["HealthTextSize"]), "", false, "RIGHT", -3, 0)
@@ -455,7 +456,7 @@ function UF:CreateIcons(self)
 
 	local ri = self:CreateTexture(nil, "OVERLAY")
 	if mystyle == "raid" then
-		ri:SetPoint("TOPRIGHT", self, 5, 5)
+		ri:SetPoint("TOPLEFT", self, 0, 1)
 	else
 		ri:SetPoint("TOPRIGHT", self, 0, 8)
 	end
@@ -465,7 +466,11 @@ function UF:CreateIcons(self)
 	self.GroupRoleIndicator = ri
 
 	local li = self:CreateTexture(nil, "OVERLAY")
-	li:SetPoint("TOPLEFT", self, 0, 8)
+	if mystyle == "raid" then
+		li:SetPoint("BOTTOM", self, 0, 0)
+	else
+		li:SetPoint("TOPLEFT", self, 0, 8)
+	end
 	li:SetSize(12, 12)
 	self.LeaderIndicator = li
 

@@ -80,6 +80,7 @@ function module:SkinChat()
 		self:SetMaxLines(maxLines)
 	end
 
+	B.StripTextures(self)
 	self.__background = BlackBackground(self)
 	self.__gradient = GradientBackground(self)
 

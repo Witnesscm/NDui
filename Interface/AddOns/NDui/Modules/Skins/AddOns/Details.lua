@@ -16,13 +16,13 @@ local function ReskinDetails()
 
 		instance:ChangeSkin("Minimalistic")
 		instance:InstanceWallpaper(false)
-		instance:DesaturateMenu(true)
-		instance:HideMainIcon(false)
+		instance:DesaturateMenu(false)
+		instance:HideMainIcon(true)
 		instance:SetBackdropTexture("None")
-		instance:MenuAnchor(16, 3)
+		instance:MenuAnchor(12, 3)
 		instance:ToolbarMenuButtonsSize(1)
-		instance:AttributeMenu(true, 0, 3, DB.Font[1], 13, {1, 1, 1}, 1, true)
-		instance:SetBarSettings(NDuiADB["ResetDetails"] and 18 or nil, NDuiADB["ResetDetails"] and "normTex" or nil)
+		instance:AttributeMenu(true, -18, 2, DB.Font[1], 14, {1, 1, 1}, 1, true)
+		instance:SetBarSettings(NDuiADB["ResetDetails"] and 20 or nil, NDuiADB["ResetDetails"] and "normTex" or nil)
 		instance:SetBarTextSettings(NDuiADB["ResetDetails"] and 14 or nil, DB.Font[1], nil, nil, nil, true, true, nil, nil, nil, nil, nil, nil, false, nil, false, nil)
 
 		local bg = B.SetBD(instance.baseframe)
@@ -69,9 +69,9 @@ local function ReskinDetails()
 		if instance1 then
 			if instance2 then
 				height = 96
-				EmbedWindow(instance2, -3, 140, 320, height)
+				EmbedWindow(instance2, -3, 140, 386, height)
 			end
-			EmbedWindow(instance1, -3, 24, 320, height)
+			EmbedWindow(instance1, -3, 24, 386, height)
 		end
 	end
 

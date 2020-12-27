@@ -437,7 +437,7 @@ function UF:OnLogin()
 				"showParty", not showPartyFrame,
 				"showRaid", true,
 				"xoffset", 5,
-				"yOffset", -5,
+				"yOffset", -6,
 				"groupFilter", tostring(i),
 				"groupingOrder", "1,2,3,4,5,6,7,8",
 				"groupBy", "GROUP",
@@ -465,7 +465,7 @@ function UF:OnLogin()
 							groups[i]:SetPoint("BOTTOMLEFT", raidMover)
 						end
 					else
-						raidMover = B.Mover(groups[i], L["RaidFrame"], "RaidFrame", {"TOPLEFT", UIParent, 35, -50}, (raidWidth+5)*numGroups-5, (raidFrameHeight+5)*5-5)
+						raidMover = B.Mover(groups[i], L["RaidFrame"], "RaidFrame", {"TOPLEFT", UIParent, 35, -50}, (raidWidth+3)*numGroups-3, (raidFrameHeight+5)*5-5)
 						if reverse then
 							groups[i]:ClearAllPoints()
 							groups[i]:SetPoint("TOPRIGHT", raidMover)
@@ -482,7 +482,7 @@ function UF:OnLogin()
 						if reverse then
 							groups[i]:SetPoint("TOPRIGHT", groups[i-1], "TOPLEFT", -5, 0)
 						else
-							groups[i]:SetPoint("TOPLEFT", groups[i-1], "TOPRIGHT", 5, 0)
+							groups[i]:SetPoint("TOPLEFT", groups[i-1], "TOPRIGHT", 3, 0)
 						end
 					end
 				end

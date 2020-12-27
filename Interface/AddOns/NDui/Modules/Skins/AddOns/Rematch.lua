@@ -754,7 +754,7 @@ function S:ReskinRematch()
 
 		local titleBar = self.TitleBar
 		B.StripTextures(titleBar)
-		B.ReskinClose(titleBar.CloseButton)
+		--B.ReskinClose(titleBar.CloseButton)
 
 		S:RematchLockButton(titleBar.MinimizeButton)
 		S:RematchLockButton(titleBar.LockButton)

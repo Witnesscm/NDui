@@ -65,7 +65,7 @@ end
 info.onEnter = function(self)
 	self:SetScript("OnUpdate", UpdateCoords)
 
-	GameTooltip:SetOwner(self, "ANCHOR_BOTTOM", 0, -15)
+	GameTooltip:SetOwner(self, "ANCHOR_TOP", 0, 12)
 	GameTooltip:ClearLines()
 	GameTooltip:AddLine(format("%s |cffffffff(%s)", zone, formatCoords()), 0,.6,1)
 

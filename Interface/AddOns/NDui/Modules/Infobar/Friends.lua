@@ -165,7 +165,7 @@ function info:FriendsPanel_Init()
 
 	infoFrame = CreateFrame("Frame", "NDuiFriendsFrame", info)
 	infoFrame:SetSize(400, 495)
-	infoFrame:SetPoint("TOPLEFT", UIParent, 15, -30)
+	infoFrame:SetPoint("BOTTOM", info, "TOP", 0, 12)
 	infoFrame:SetClampedToScreen(true)
 	infoFrame:SetFrameStrata("DIALOG")
 	local bg = B.SetBD(infoFrame)
