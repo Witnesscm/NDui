@@ -106,6 +106,7 @@ local list = {
 		{AuraID = 308495, UnitID = "player"},	-- 共鸣箭
 		{AuraID = 328908, UnitID = "player"},	-- 战斗冥想
 		{AuraID = 345499, UnitID = "player"},	-- 执政官的祝福
+		{AuraID = 339461, UnitID = "player"},	-- 猎手坚韧
 		-- 炼金石
 		{AuraID = 60233, UnitID = "player"},	-- 敏捷
 		{AuraID = 60229, UnitID = "player"},	-- 力量
@@ -177,15 +178,18 @@ local list = {
 		{AuraID = 209858, UnitID = "player"},	-- 死疽溃烂
 		{AuraID = 240559, UnitID = "player"},	-- 重伤
 		{AuraID = 340880, UnitID = "player"},	-- 傲慢
-		{AuraID = 226512, UnitID = "player"},	-- 血池
+		{AuraID = 226512, UnitID = "player", Flash = true},	-- 血池
 		{AuraID = 240447, UnitID = "player", Flash = true},	-- 践踏
 		{AuraID = 240443, UnitID = "player", Flash = true},	-- 爆裂
 		-- 5人本
 		{AuraID = 327107, UnitID = "player"},	-- 赤红，闪耀光辉
 		{AuraID = 324092, UnitID = "player", Flash = true},	-- 赤红，闪耀光辉
 		{AuraID = 328737, UnitID = "player", Flash = true},	-- 赤红，光辉残片
+		{AuraID = 326891, UnitID = "player", Flash = true},	-- 赎罪大厅，痛楚
+		{AuraID = 319603, UnitID = "player", Flash = true},	-- 赎罪大厅，羁石诅咒
 		{AuraID = 333299, UnitID = "player"},	-- 伤逝剧场，荒芜诅咒
 		{AuraID = 319637, UnitID = "player"},	-- 伤逝剧场，魂魄归体
+		{AuraID = 330725, UnitID = "player", Flash = true},	-- 伤逝剧场，暗影易伤
 		{AuraID = 336258, UnitID = "player", Flash = true},	-- 凋魂之殇，落单狩猎
 		{AuraID = 327401, UnitID = "player", Flash = true},	-- 通灵战潮，共受苦难
 		{AuraID = 323471, UnitID = "player", Flash = true},	-- 通灵战潮，切肉飞刀
@@ -212,8 +216,10 @@ local list = {
 		{AuraID = 346035, UnitID = "player"},	-- 眩目步法，猩红议会
 		{AuraID = 331636, UnitID = "player", Flash = true},	-- 黑暗伴舞，猩红议会
 		{AuraID = 335293, UnitID = "player"},	-- 锁链联结，泥拳
-		{AuraID = 327039, UnitID = "player"},	-- 喂食时间，德纳修斯
+		{AuraID = 333913, UnitID = "player"},	-- 锁链联结，泥拳
+		{AuraID = 327039, UnitID = "player"},	-- 邪恶撕裂，干将
 		{AuraID = 327089, UnitID = "player"},	-- 喂食时间，德纳修斯
+		{AuraID = 327796, UnitID = "player"},	-- 午夜猎手，德纳修斯
 	},
 	["Warning"] = { -- 目标重要光环组
 		-- 大幻象
@@ -241,7 +247,7 @@ local list = {
 		{AuraID = 345561, UnitID = "target", Value = true},	-- 晋升，生命连结
 		{AuraID = 317936, UnitID = "target"},	-- 晋升，弃誓信条
 		{AuraID = 327812, UnitID = "target"},	-- 晋升，振奋英气
-		{AuraID = 323149, UnitID = "target", Value = true},	-- 仙林，黑暗之拥
+		{AuraID = 323149, UnitID = "target"},	-- 仙林，黑暗之拥
 		{AuraID = 340191, UnitID = "target", Value = true},	-- 仙林，再生辐光
 		{AuraID = 323059, UnitID = "target", Flash = true},	-- 仙林，宗主之怒
 		{AuraID = 336499, UnitID = "target"},	-- 仙林，猜谜游戏

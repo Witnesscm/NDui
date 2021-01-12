@@ -319,7 +319,7 @@ G.DefaultSettings = {
 		FasterLoot = true,
 		AutoQuest = false,
 		HideTalking = true,
-		HideBanner = false,
+		HideBossBanner = false,
 		HideBossEmote = false,
 		PetFilter = true,
 		QuestNotification = false,
@@ -374,12 +374,12 @@ G.AccountSettings = {
 	KeystoneInfo = {},
 	AutoBubbles = false,
 	DisableInfobars = false,
-	PartyWatcherSpells = {},
 	ContactList = {},
 	CustomJunkList = {},
 	ProfileIndex = {},
 	ProfileNames = {},
 	Help = {},
+	PartySpells = {},
 }
 
 -- Initial settings
@@ -729,7 +729,7 @@ G.TabList = {
 	L["Actionbar"],
 	L["Bags"],
 	L["Unitframes"],
-	L["RaidFrame"],
+	NewFeatureTag..L["RaidFrame"],
 	NewFeatureTag..L["Nameplate"],
 	L["PlayerPlate"],
 	L["Auras"],
@@ -821,7 +821,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "UFs", "PartyPetFrame", HeaderTag..L["UFs PartyPetFrame"], true},
 		{1, "UFs", "HorizonParty", L["Horizon PartyFrame"]},
 		{1, "UFs", "PartyAltPower", L["UFs PartyAltPower"], true, nil, nil, L["PartyAltPowerTip"]},
-		{1, "UFs", "PartyWatcher", HeaderTag..L["UFs PartyWatcher"], nil, setupPartyWatcher, nil, L["PartyWatcherTip"]},
+		{1, "UFs", "PartyWatcher", NewFeatureTag..HeaderTag..L["UFs PartyWatcher"], nil, setupPartyWatcher, nil, L["PartyWatcherTip"]},
 		{1, "UFs", "PWOnRight", L["PartyWatcherOnRight"], true},
 		{1, "UFs", "PartyWatcherSync", L["PartyWatcherSync"], nil, nil, nil, L["PartyWatcherSyncTip"]},
 		{},--blank
@@ -835,7 +835,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "UFs", "AutoRes", L["UFs AutoRes"], true},
 		{},--blank
 		{1, "UFs", "ShowSolo", L["ShowSolo"], nil, nil, nil, L["ShowSoloTip"]},
-		{1, "UFs", "SpecRaidPos", L["Spec RaidPos"], true},
+		{1, "UFs", "SpecRaidPos", L["Spec RaidPos"], true, nil, nil, L["SpecRaidPosTip"]},
 		{1, "UFs", "ShowTeamIndex", L["RaidFrame TeamIndex"]},
 		{1, "UFs", "FrequentHealth", HeaderTag..L["FrequentHealth"].."*", true, nil, updateRaidHealthMethod, L["FrequentHealthTip"]},
 		{1, "UFs", "HorizonRaid", L["Horizon RaidFrame"]},
@@ -1046,7 +1046,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Misc", "HideTalking", L["No Talking"]},
 		{1, "ACCOUNT", "AutoBubbles", L["AutoBubbles"], true},
 		{1, "Misc", "HideBossEmote", L["HideBossEmote"].."*", nil, nil, toggleBossEmote},
-		{1, "Misc", "HideBanner", L["Hide Bossbanner"].."*", true, nil, toggleBossBanner},
+		{1, "Misc", "HideBossBanner", L["Hide Bossbanner"].."*", true, nil, toggleBossBanner},
 		{1, "Misc", "InstantDelete", L["InstantDelete"].."*"},
 		{1, "Misc", "FasterLoot", L["Faster Loot"].."*", true, nil, updateFasterLoot},
 		{},--blank
@@ -1296,7 +1296,7 @@ local function CreateContactBox(parent, text, url, index)
 end
 
 local donationList = {
-	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo, 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血, 我又不是妖怪，养乐多，无人知晓，以及部分未备注名字的用户。",
+	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo, 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血, 我又不是妖怪，养乐多，无人知晓，秋末旷夜，以及部分未备注名字的用户。",
 	["Patreon"] = "Quentin, Julian Neigefind, silenkin, imba Villain, Zeyu Zhu.",
 }
 local function CreateDonationIcon(parent, texture, name, xOffset)
@@ -1411,6 +1411,16 @@ local function OpenGUI()
 
 	local helpInfo = B.CreateHelpInfo(f, L["Option* Tips"])
 	helpInfo:SetPoint("TOPLEFT", 20, -5)
+	local guiHelpInfo = {
+		text = L["GUIPanelHelp"],
+		buttonStyle = HelpTip.ButtonStyle.GotIt,
+		targetPoint = HelpTip.Point.LeftEdgeCenter,
+		onAcknowledgeCallback = B.HelpInfoAcknowledge,
+		callbackArg = "GUIPanel",
+	}
+	if not NDuiADB["Help"]["GUIPanel"] then
+		HelpTip:Show(helpInfo, guiHelpInfo)
+	end
 
 	local credit = CreateFrame("Button", nil, f)
 	credit:SetPoint("TOPRIGHT", -20, -5)
