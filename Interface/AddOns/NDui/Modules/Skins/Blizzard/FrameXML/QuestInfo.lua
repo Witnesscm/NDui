@@ -176,7 +176,12 @@ tinsert(C.defaultThemes, function()
 			end
 			-- Follower Rewards
 			for reward in rewardsFrame.followerRewardPool:EnumerateActive() do
-				local portrait = reward.PortraitFrame
+				local portrait
+				if reward.AdventuresFollowerPortraitFrame and reward.AdventuresFollowerPortraitFrame:IsShown() then
+					portrait = reward.AdventuresFollowerPortraitFrame
+				else
+					portrait = reward.PortraitFrame
+				end
 				if not reward.textBg then
 					B.ReskinGarrisonPortrait(portrait)
 					reward.BG:Hide()
