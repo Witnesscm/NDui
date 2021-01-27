@@ -20,7 +20,7 @@ local INTERRUPTED = INTERRUPTED
 -- Init
 function UF:PlateInsideView()
 	if C.db["Nameplate"]["InsideView"] then
-		SetCVar("nameplateOtherTopInset", .08)
+		SetCVar("nameplateOtherTopInset", .05)
 		SetCVar("nameplateOtherBottomInset", .08)
 	else
 		SetCVar("nameplateOtherTopInset", -1)
@@ -144,10 +144,12 @@ function UF:UpdateGroupRoles()
 end
 
 function UF:CheckTankStatus(unit)
-	local index = unit.."target"
-	local unitRole = isInGroup and UnitExists(index) and not UnitIsUnit(index, "player") and groupRoles[UnitName(index)] or "NONE"
+	if not UnitExists(unit) then return end
+
+	local unitTarget = unit.."target"
+	local unitRole = isInGroup and UnitExists(unitTarget) and not UnitIsUnit(unitTarget, "player") and groupRoles[UnitName(unitTarget)] or "NONE"
 	if unitRole == "TANK" and DB.Role == "Tank" then
-		self.feedbackUnit = index
+		self.feedbackUnit = unitTarget
 		self.isOffTank = true
 	else
 		self.feedbackUnit = "player"
@@ -678,6 +680,13 @@ function UF:CreatePlates()
 	self:Tag(title, "[npctitle]")
 	self.npcTitle = title
 
+	local tarName = B.CreateFS(self, C.db["Nameplate"]["NameTextSize"]+4)
+	tarName:ClearAllPoints()
+	tarName:SetPoint("TOP", self, "BOTTOM", 0, -10)
+	tarName:Hide()
+	self:Tag(tarName, "[tarname]")
+	self.tarName = tarName
+
 	UF:CreateHealthText(self)
 	UF:CreateCastBar(self)
 	UF:CreateRaidMark(self)
@@ -758,6 +767,7 @@ function UF:RefreshNameplats()
 		nameplate:SetSize(C.db["Nameplate"]["PlateWidth"], plateHeight)
 		nameplate.nameText:SetFont(DB.Font[1], nameTextSize, DB.Font[3])
 		nameplate.npcTitle:SetFont(DB.Font[1], nameTextSize-1, DB.Font[3])
+		nameplate.tarName:SetFont(DB.Font[1], nameTextSize+4, DB.Font[3])
 		nameplate.Castbar.Icon:SetSize(iconSize, iconSize)
 		nameplate.Castbar:SetHeight(plateHeight)
 		nameplate.Castbar.Time:SetFont(DB.Font[1], nameTextSize, DB.Font[3])
@@ -903,6 +913,8 @@ function UF:PostUpdatePlates(event, unit)
 		UF.UpdateUnitClassify(self, unit)
 		UF.UpdateDungeonProgress(self, unit)
 		UF:UpdateClassPowerAnchor()
+
+		self.tarName:SetShown(self.npcID == 174773)
 	end
 	UF.UpdateExplosives(self, event, unit)
 end
