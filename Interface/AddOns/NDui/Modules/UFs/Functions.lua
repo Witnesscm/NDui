@@ -486,8 +486,7 @@ function UF:CreateRaidMark(self)
 	if mystyle == "raid" then
 		ri:SetPoint("TOP", self, 0, 10)
 	elseif mystyle == "nameplate" then
-		ri:SetPoint("RIGHT", self, "LEFT", -3, 0)
-		ri:SetParent(self.Health)
+		ri:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", 0, 3)
 	else
 		ri:SetPoint("CENTER", self, "TOP")
 	end
@@ -578,6 +577,9 @@ function UF:CreateCastBar(self)
 		cb.Icon:SetSize(iconSize, iconSize)
 		cb.Icon:SetPoint("BOTTOMRIGHT", cb, "BOTTOMLEFT", -5, 0)
 		cb.timeToHold = .5
+
+		cb.glowFrame = B.CreateGlowFrame(cb, iconSize)
+		cb.glowFrame:SetPoint("CENTER", cb.Icon)
 	end
 
 	if mystyle == "nameplate" or mystyle == "boss" or mystyle == "arena" then

@@ -233,6 +233,7 @@ local list = {
 		-- 5人本
 		{AuraID = 321754, UnitID = "target", Value = true},	-- 通灵战潮，冰缚之盾
 		{AuraID = 343470, UnitID = "target", Value = true},	-- 通灵战潮，碎骨之盾
+		{AuraID = 328351, UnitID = "target", Flash = true},	-- 通灵战潮，染血长枪
 		{AuraID = 322773, UnitID = "target", Value = true},	-- 彼界，鲜血屏障
 		{AuraID = 333227, UnitID = "target", Flash = true},	-- 彼界，不死之怒
 		{AuraID = 228626, UnitID = "target"},	-- 彼界，怨灵之瓮
@@ -248,6 +249,7 @@ local list = {
 		{AuraID = 327416, UnitID = "target", Value = true},	-- 晋升，心能回灌
 		{AuraID = 345561, UnitID = "target", Value = true},	-- 晋升，生命连结
 		{AuraID = 339917, UnitID = "target", Value = true},	-- 晋升，命运之矛
+		{AuraID = 323878, UnitID = "target", Flash = true},	-- 晋升，枯竭
 		{AuraID = 317936, UnitID = "target"},	-- 晋升，弃誓信条
 		{AuraID = 327812, UnitID = "target"},	-- 晋升，振奋英气
 		{AuraID = 323149, UnitID = "target"},	-- 仙林，黑暗之拥
