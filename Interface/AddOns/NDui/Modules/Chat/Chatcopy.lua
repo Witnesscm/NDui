@@ -20,10 +20,25 @@ end
 local function colorReplace(msg, r, g, b)
 	local hexRGB = B.HexRGB(r, g, b)
 	local hexReplace = format("|r%s", hexRGB)
-	msg = gsub(msg, "|r", hexReplace)
+	--msg = gsub(msg, "|r", hexReplace)
 	msg = format("%s%s|r", hexRGB, msg)
 
 	return msg
+end
+
+local removeIconFromLine
+do
+	local raidIconFunc = function(x) x = x~='' and _G['RAID_TARGET_'..x];return x and ('{'..strlower(x)..'}') or '' end
+	local stripTextureFunc = function(w, x, y) if x=='' then return (w~='' and w) or (y~='' and y) or '' end end
+	local fourString = function(v, w, x, y)
+		return format('%s%s%s', v, w, (v and v == '1' and x) or y)
+	end
+	removeIconFromLine = function(text)
+		text = gsub(text, [[|TInterface\TargetingFrame\UI%-RaidTargetingIcon_(%d+):0|t]], raidIconFunc) --converts raid icons into {star} etc, if possible.
+		text = gsub(text, '(%s?)(|?)|[TA].-|[ta](%s?)', stripTextureFunc) --strip any other texture out but keep a single space from the side(s).
+		text = gsub(text, '(%d+)(.-)|4(.-):(.-);', fourString) --stuff where it goes 'day' or 'days' like played; tech this is wrong but okayish
+		return text
+	end
 end
 
 function module:GetChatLines()
@@ -32,6 +47,7 @@ function module:GetChatLines()
 		local msg, r, g, b = self:GetMessageInfo(i)
 		if msg and not isMessageProtected(msg) then
 			r, g, b = r or 1, g or 1, b or 1
+			msg = removeIconFromLine(msg)
 			msg = colorReplace(msg, r, g, b)
 			lines[index] = tostring(msg)
 			index = index + 1
