@@ -113,6 +113,7 @@ local list = {
 		{AuraID = 345499, UnitID = "player"},	-- 执政官的祝福
 		{AuraID = 339461, UnitID = "player"},	-- 猎手坚韧
 		{AuraID = 325381, UnitID = "player", Flash = true},	-- 争先打击
+		{AuraID = 342774, UnitID = "player"},	-- 繁华原野
 		-- 炼金石
 		{AuraID = 60233, UnitID = "player"},	-- 敏捷
 		{AuraID = 60229, UnitID = "player"},	-- 力量
@@ -207,9 +208,10 @@ local list = {
 		{AuraID = 335161, UnitID = "player"},	-- 通灵战潮，残存心能
 		{AuraID = 345323, UnitID = "player", Flash = true},	-- 通灵战潮，勇士之赐
 		{AuraID = 322746, UnitID = "player"},	-- 彼界，堕落之血
-		{AuraID = 323687, UnitID = "player", Flash = true},	-- 彼界，奥术闪电
 		{AuraID = 323692, UnitID = "player"},	-- 彼界，奥术易伤
 		{AuraID = 331379, UnitID = "player"},	-- 彼界，润滑剂
+		{AuraID = 320786, UnitID = "player"},	-- 彼界，势不可挡
+		{AuraID = 323687, UnitID = "player", Flash = true},	-- 彼界，奥术闪电
 		{AuraID = 327893, UnitID = "player", Flash = true},	-- 彼界，邦桑迪的热情
 		{AuraID = 339978, UnitID = "player", Flash = true},	-- 彼界，安抚迷雾
 		{AuraID = 323569, UnitID = "player", Flash = true},	-- 彼界，溅洒精魂
