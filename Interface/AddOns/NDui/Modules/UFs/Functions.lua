@@ -889,6 +889,7 @@ function UF:CreateDebuffs(self)
 	bu.initialAnchor = "TOPRIGHT"
 	bu["growth-x"] = "LEFT"
 	bu["growth-y"] = "DOWN"
+	bu.tooltipAnchor = "ANCHOR_BOTTOMLEFT"
 	if mystyle == "player" then
 		bu:SetPoint("TOPRIGHT", self.Power, "BOTTOMRIGHT", 0, -10)
 		bu.num = 14
@@ -1117,27 +1118,30 @@ function UF:CreateExpRepBar(self)
 end
 
 function UF:CreatePrediction(self)
-	local mhpb = self:CreateTexture(nil, "BORDER", nil, 5)
+	local frame = CreateFrame("Frame", nil, self)
+	frame:SetAllPoints()
+
+	local mhpb = frame:CreateTexture(nil, "BORDER", nil, 5)
 	mhpb:SetWidth(1)
 	mhpb:SetTexture(DB.normTex)
 	mhpb:SetVertexColor(0, 1, .5, .5)
 
-	local ohpb = self:CreateTexture(nil, "BORDER", nil, 5)
+	local ohpb = frame:CreateTexture(nil, "BORDER", nil, 5)
 	ohpb:SetWidth(1)
 	ohpb:SetTexture(DB.normTex)
 	ohpb:SetVertexColor(0, 1, 0, .5)
 
-	local abb = self:CreateTexture(nil, "BORDER", nil, 5)
+	local abb = frame:CreateTexture(nil, "BORDER", nil, 5)
 	abb:SetWidth(1)
 	abb:SetTexture(DB.normTex)
 	abb:SetVertexColor(.66, 1, 1, .7)
 
-	local abbo = self:CreateTexture(nil, "ARTWORK", nil, 1)
+	local abbo = frame:CreateTexture(nil, "ARTWORK", nil, 1)
 	abbo:SetAllPoints(abb)
 	abbo:SetTexture("Interface\\RaidFrame\\Shield-Overlay", true, true)
 	abbo.tileSize = 32
 
-	local oag = self:CreateTexture(nil, "ARTWORK", nil, 1)
+	local oag = frame:CreateTexture(nil, "ARTWORK", nil, 1)
 	oag:SetWidth(15)
 	oag:SetTexture("Interface\\RaidFrame\\Shield-Overshield")
 	oag:SetBlendMode("ADD")
@@ -1145,14 +1149,14 @@ function UF:CreatePrediction(self)
 	oag:SetPoint("TOPLEFT", self.Health, "TOPRIGHT", -5, 2)
 	oag:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMRIGHT", -5, -2)
 
-	local hab = CreateFrame("StatusBar", nil, self)
+	local hab = CreateFrame("StatusBar", nil, frame)
 	hab:SetPoint("TOPLEFT", self.Health)
 	hab:SetPoint("BOTTOMRIGHT", self.Health:GetStatusBarTexture())
 	hab:SetReverseFill(true)
 	hab:SetStatusBarTexture(DB.normTex)
 	hab:SetStatusBarColor(0, .5, .8, .5)
 
-	local ohg = self:CreateTexture(nil, "ARTWORK", nil, 1)
+	local ohg = frame:CreateTexture(nil, "ARTWORK", nil, 1)
 	ohg:SetWidth(15)
 	ohg:SetTexture("Interface\\RaidFrame\\Absorb-Overabsorb")
 	ohg:SetBlendMode("ADD")
@@ -1170,6 +1174,7 @@ function UF:CreatePrediction(self)
 		overHealAbsorbGlow = ohg,
 		maxOverflow = 1,
 	}
+	self.predicFrame = frame
 end
 
 function UF.PostUpdateAddPower(element, cur, max)
@@ -1194,6 +1199,7 @@ function UF:CreateAddPower(self)
 	bar:SetStatusBarTexture(DB.normTex)
 	B.SetBD(bar, 0)
 	bar.colorPower = true
+	B:SmoothBar(bar)
 
 	local bg = bar:CreateTexture(nil, "BACKGROUND")
 	bg:SetAllPoints()
