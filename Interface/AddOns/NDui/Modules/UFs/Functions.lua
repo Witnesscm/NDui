@@ -455,7 +455,7 @@ function UF:CreateIcons(self)
 
 	local ri = self:CreateTexture(nil, "OVERLAY")
 	if mystyle == "raid" then
-		ri:SetPoint("TOPLEFT", self, 0, 1)
+		ri:SetPoint("TOPRIGHT", self, 5, 5)
 	else
 		ri:SetPoint("TOPRIGHT", self, 0, 8)
 	end
