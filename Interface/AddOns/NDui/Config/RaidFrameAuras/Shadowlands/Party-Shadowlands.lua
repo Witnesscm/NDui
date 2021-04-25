@@ -6,15 +6,20 @@ local TIER = 9
 local INSTANCE -- 5人本
 
 local SEASON_SPELLS = {
-    [209858] = 2, -- 死疽
-    [240443] = 2, -- 爆裂
-    [240559] = 2, -- 重伤
-    [342494] = 2, -- 狂妄吹嘘
+	[209858] = 2, -- 死疽
+	[240443] = 2, -- 爆裂
+	[240559] = 2, -- 重伤
+	[342494] = 2, -- 狂妄吹嘘
 }
 local function RegisterSeasonSpells(INSTANCE)
-    for spellID, priority in pairs(SEASON_SPELLS) do
-        module:RegisterDebuff(TIER, INSTANCE, 0, spellID, priority)
-    end
+	for spellID, priority in pairs(SEASON_SPELLS) do
+		module:RegisterDebuff(TIER, INSTANCE, 0, spellID, priority)
+	end
+end
+
+if DB.isNewPatch then
+	INSTANCE = 1194 -- 塔扎维什，帷纱集市
+	RegisterSeasonSpells(INSTANCE)
 end
 
 INSTANCE = 1187 -- 伤逝剧场
