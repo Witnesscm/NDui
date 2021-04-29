@@ -8,10 +8,13 @@ local M = B:GetModule("Misc")
 	2.双击搜索结果，快速申请
 	3.自动隐藏部分窗口
 ]]
-local wipe, sort = wipe, sort
+local select, wipe, sort = select, wipe, sort
+local UnitClass, UnitGroupRolesAssigned = UnitClass, UnitGroupRolesAssigned
+local StaticPopup_Hide, HideUIPanel = StaticPopup_Hide, HideUIPanel
 local C_Timer_After = C_Timer.After
 local C_LFGList_GetSearchResultMemberInfo = C_LFGList.GetSearchResultMemberInfo
-local LFG_LIST_GROUP_DATA_ATLASES = LFG_LIST_GROUP_DATA_ATLASES
+local ApplicationViewerFrame = _G.LFGListFrame.ApplicationViewer
+local LFG_LIST_GROUP_DATA_ATLASES = _G.LFG_LIST_GROUP_DATA_ATLASES
 
 function M:HookApplicationClick()
 	if LFGListFrame.SearchPanel.SignUpButton:IsEnabled() then
@@ -57,18 +60,35 @@ local function sortRoleOrder(a, b)
 	end
 end
 
+local function GetPartyMemberInfo(index)
+	local unit = "player"
+	if index > 1 then unit = "party"..(index-1) end
+
+	local class = select(2, UnitClass(unit))
+	if not class then return end
+	local role = UnitGroupRolesAssigned(unit)
+	if role == "NONE" then role = "DAMAGER" end
+	return role, class
+end
+
+local function GetCorrectRoleInfo(frame, i)
+	if frame.resultID then
+		return C_LFGList_GetSearchResultMemberInfo(frame.resultID, i)
+	elseif frame == ApplicationViewerFrame then
+		return GetPartyMemberInfo(i)
+	end
+end
+
 local function UpdateGroupRoles(self)
+	wipe(roleCache)
+
 	if not self.__owner then
 		self.__owner = self:GetParent():GetParent()
 	end
-	local resultID = self.__owner.resultID
-	if not resultID then return end
-
-	wipe(roleCache)
 
 	local count = 0
 	for i = 1, 5 do
-		local role, class = C_LFGList_GetSearchResultMemberInfo(resultID, i)
+		local role, class = GetCorrectRoleInfo(self.__owner, i)
 		local roleIndex = role and roleOrder[role]
 		if roleIndex then
 			count = count + 1

@@ -149,18 +149,22 @@ tinsert(C.defaultThemes, function()
 
 	hooksecurefunc(SCENARIO_CONTENT_TRACKER_MODULE, "Update", function()
 		local widgetContainer = ScenarioStageBlock.WidgetContainer
-		if not widgetContainer then return end
+		if widgetContainer.widgetFrames then
+			for _, widgetFrame in pairs(widgetContainer.widgetFrames) do
+				if widgetFrame.Frame then widgetFrame.Frame:SetAlpha(0) end
 
-		local widgetFrame = widgetContainer:GetChildren()
-		if widgetFrame and widgetFrame.Frame then
-			widgetFrame.Frame:SetAlpha(0)
+				local bar = widgetFrame.TimerBar
+				if bar and not bar.bg then
+					B:SmoothBar(bar)
+					hooksecurefunc(bar, "SetStatusBarAtlas", B.ReplaceWidgetBarTexture)
+					bar.bg = B.CreateBDFrame(bar, .25)
+				end
 
-			if widgetFrame.CurrencyContainer then -- this may be removed, needs review
-				for i = 1, widgetFrame.CurrencyContainer:GetNumChildren() do
-					local bu = select(i, widgetFrame.CurrencyContainer:GetChildren())
-					if bu and bu.Icon and not bu.styled then
-						B.ReskinIcon(bu.Icon)
-						bu.styled = true
+				if widgetFrame.CurrencyContainer then
+					for currencyFrame in widgetFrame.currencyPool:EnumerateActive() do
+						if not currencyFrame.bg then
+							currencyFrame.bg = B.ReskinIcon(currencyFrame.Icon)
+						end
 					end
 				end
 			end
