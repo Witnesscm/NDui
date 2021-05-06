@@ -35,7 +35,6 @@ C.themes["Blizzard_PlayerChoiceUI"] = function()
 			self.BorderFrame.Header:SetAlpha(0)
 			B.CreateBDFrame(self.Title, .25)
 			B.ReskinClose(self.CloseButton)
-			self.CloseButton.Border:SetAlpha(0)
 			self.bg = B.SetBD(self)
 		end
 
@@ -55,11 +54,11 @@ C.themes["Blizzard_PlayerChoiceUI"] = function()
 
 				if child.Spell then
 					if not child.Spell.bg then
-						child.Spell.Border:SetTexture("")
-						child.Spell.IconMask:Hide()
+						child.Spell.Border:SetAlpha(0)
 						child.Spell.bg = B.ReskinIcon(child.Spell.Icon)
 					end
 
+					child.Spell.IconMask:Hide()
 					child.Spell.Text:SetTextColor(1, 1, 1)
 				end
 
