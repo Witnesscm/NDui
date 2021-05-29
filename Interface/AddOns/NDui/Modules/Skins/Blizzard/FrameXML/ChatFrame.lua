@@ -137,7 +137,7 @@ tinsert(C.defaultThemes, function()
 
 	-- TextToSpeech
 	if DB.isNewPatch then
-		TextToSpeechButton:DisableDrawLayer("BACKGROUND")
+		B.StripTextures(TextToSpeechButton, 5)
 
 		B.StripTextures(TextToSpeechFrame)
 		B.SetBD(TextToSpeechFrame)
@@ -157,7 +157,6 @@ tinsert(C.defaultThemes, function()
 		B.ReskinSlider(TextToSpeechFrameAdjustVolumeSlider)
 
 		local checkboxes = {
-			"PlaySoundWhenEnteringChatWindowCheckButton",
 			"PlayActivitySoundWhenNotFocusedCheckButton",
 			"PlaySoundSeparatingChatLinesCheckButton",
 			"AddCharacterNameToSpeechCheckButton",
@@ -170,13 +169,39 @@ tinsert(C.defaultThemes, function()
 		hooksecurefunc("TextToSpeechFrame_Update", function()
 			local checkBoxNameString = "TextToSpeechFramePanelContainerChatTypeContainerCheckBox"
 			local checkBoxName, checkBox
-			local checkBoxTable = TextToSpeechFramePanelContainerChatTypeContainer.checkBoxTable or {}
-			for index, value in ipairs(checkBoxTable) do
-				checkBoxName = checkBoxNameString..index
-				checkBox = _G[checkBoxName]
-				if checkBox and not checkBox.styled then
-					B.ReskinCheck(checkBox)
-					checkBox.styled = true
+			local checkBoxTable = TextToSpeechFramePanelContainerChatTypeContainer.checkBoxTable
+			if checkBoxTable then
+				for index, value in ipairs(checkBoxTable) do
+					checkBoxName = checkBoxNameString..index
+					checkBox = _G[checkBoxName]
+					if checkBox and not checkBox.styled then
+						B.ReskinCheck(checkBox)
+						checkBox.styled = true
+					end
+				end
+			end
+		end)
+
+		-- voice picker
+		local voicePicker = TextToSpeechFramePanelContainer.VoicePicker
+		local customFrame = voicePicker:GetChildren()
+		B.StripTextures(customFrame)
+		B.SetBD(customFrame)
+
+		voicePicker:HookScript("OnShow", function(self)
+			for i = 1, self.ScrollBox.ScrollTarget:GetNumChildren() do
+				local child = select(i, self.ScrollBox.ScrollTarget:GetChildren())
+				if not child.styled then
+					child.UnCheck:SetTexture(nil)
+					child.Highlight:SetColorTexture(r, g, b, .25)
+
+					local check = child.Check
+					check:SetColorTexture(r, g, b, .6)
+					check:SetSize(10, 10)
+					check:SetPoint("LEFT", 2, 0)
+					B.CreateBDFrame(check, .25)
+
+					child.styled = true
 				end
 			end
 		end)

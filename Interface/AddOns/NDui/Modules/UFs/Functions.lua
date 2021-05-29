@@ -540,15 +540,15 @@ function UF:CreateCastBar(self)
 	end
 
 	if mystyle == "player" then
-		local safe = cb:CreateTexture(nil,"OVERLAY")
-		safe:SetTexture(DB.normTex)
-		safe:SetVertexColor(1, 0, 0, .6)
-		safe:SetPoint("TOPRIGHT")
-		safe:SetPoint("BOTTOMRIGHT")
-		cb:SetFrameLevel(10)
-		cb.SafeZone = safe
-
 		if C.db["UFs"]["LagString"] then
+			local safe = cb:CreateTexture(nil, "OVERLAY")
+			safe:SetTexture(DB.normTex)
+			safe:SetVertexColor(1, 0, 0, .6)
+			safe:SetPoint("TOPRIGHT")
+			safe:SetPoint("BOTTOMRIGHT")
+			cb:SetFrameLevel(10)
+			cb.SafeZone = safe
+
 			local lag = B.CreateFS(cb, 10)
 			lag:ClearAllPoints()
 			lag:SetPoint("BOTTOM", cb, "TOP", 0, 2)
@@ -957,7 +957,7 @@ function UF:UpdateRaidAuras()
 		if frame.mystyle == "raid" then
 			local debuffs = frame.Debuffs
 			if debuffs then
-				debuffs.num = ((C.db["UFs"]["SimpleMode"] and not self.isPartyFrame) or (not C.db["UFs"]["ShowRaidDebuff"])) and 0 or 3
+				debuffs.num = ((C.db["UFs"]["SimpleMode"] and not frame.isPartyFrame) or (not C.db["UFs"]["ShowRaidDebuff"])) and 0 or 3
 				debuffs.size = C.db["UFs"]["RaidDebuffSize"]
 				debuffs.fontSize = C.db["UFs"]["RaidDebuffSize"]-2
 				UF:UpdateAuraContainer(frame, debuffs, debuffs.num)
@@ -966,7 +966,7 @@ function UF:UpdateRaidAuras()
 
 			local buffs = frame.Buffs
 			if buffs then
-				buffs.num = ((C.db["UFs"]["SimpleMode"] and not self.isPartyFrame) or (not C.db["UFs"]["ShowRaidBuff"])) and 0 or 3
+				buffs.num = ((C.db["UFs"]["SimpleMode"] and not frame.isPartyFrame) or (not C.db["UFs"]["ShowRaidBuff"])) and 0 or 3
 				buffs.size = C.db["UFs"]["RaidBuffSize"]
 				buffs.fontSize = C.db["UFs"]["RaidBuffSize"]-2
 				UF:UpdateAuraContainer(frame, buffs, buffs.num)
