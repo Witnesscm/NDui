@@ -1,7 +1,10 @@
 local _, ns = ...
 local B, C, L, DB = unpack(ns)
 local module = B:RegisterModule("AurasTable")
-local pairs, next, format, wipe = pairs, next, string.format, wipe
+
+local pairs, next, format, wipe, unpack = pairs, next, format, wipe, unpack
+local GetSpellInfo = GetSpellInfo
+local EJ_GetInstanceInfo = EJ_GetInstanceInfo
 
 -- AuraWatch
 local AuraWatchList = {}
@@ -144,7 +147,7 @@ function module:CheckMajorSpells()
 				NDuiADB["MajorSpells"][spellID] = nil
 			end
 		else
-			if DB.isDeveloper then print("Invalid cornerspell ID: "..spellID) end
+			if DB.isDeveloper then print("Invalid majorspells ID: "..spellID) end
 		end
 	end
 

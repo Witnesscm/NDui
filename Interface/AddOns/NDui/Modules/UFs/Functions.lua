@@ -12,6 +12,7 @@ local SpellGetVisibilityInfo, UnitAffectingCombat, SpellIsSelfBuff, SpellIsPrior
 
 -- Custom colors
 oUF.colors.smooth = {1, 0, 0, .85, .8, .45, .1, .1, .1}
+oUF.colors.debuff.none = {0, 0, 0}
 
 local function ReplacePowerColor(name, index, color)
 	oUF.colors.power[name] = color
@@ -760,8 +761,10 @@ function UF.CustomFilter(element, unit, button, name, _, _, _, _, _, caster, isS
 			local auraFilter = C.db["Nameplate"]["AuraFilter"]
 			return (auraFilter == 3 and nameplateShowAll) or (auraFilter ~= 1 and (caster == "player" or caster == "pet" or caster == "vehicle"))
 		end
-	elseif (element.onlyShowPlayer and button.isPlayer) or (not element.onlyShowPlayer and name) then
-		return true
+	elseif style == "focus" then
+		return (not button.isDebuff and isStealable) or (button.isDebuff and name)
+	else
+		return (element.onlyShowPlayer and button.isPlayer) or (not element.onlyShowPlayer and name)
 	end
 end
 
@@ -845,9 +848,8 @@ function UF:CreateAuras(self)
 		bu.iconsPerRow = 5
 	elseif mystyle == "focus" then
 		bu:SetPoint("TOPLEFT", self.Power, "BOTTOMLEFT", 0, -10)
-		bu.numBuffs = 0
-		bu.numDebuffs = 14
-		bu.iconsPerRow = 7
+		bu.numTotal = 23
+		bu.iconsPerRow = 8
 	elseif mystyle == "raid" then
 		bu.initialAnchor = "LEFT"
 		bu:SetPoint("LEFT", self, 15, 0)
@@ -1259,7 +1261,7 @@ end
 function UF.PostUpdateAddPower(element, cur, max)
 	if element.Text and max > 0 then
 		local perc = cur/max * 100
-		if perc == 100 then
+		if perc > 95 then
 			perc = ""
 			element:SetAlpha(0)
 		else
