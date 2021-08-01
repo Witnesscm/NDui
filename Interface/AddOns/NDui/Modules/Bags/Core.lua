@@ -33,36 +33,83 @@ function module:ReverseSort()
 	module:UpdateAllBags()
 end
 
+local anchorCache = {}
 function module:UpdateAnchors(parent, bags)
 	if not parent:IsShown() then return end
 
-	local anchor = parent
+	wipe(anchorCache)
+
+	local index = 1
+	anchorCache[index] = parent
+
 	for _, bag in ipairs(bags) do
 		if bag:GetHeight() > 45 then
 			bag:Show()
+			index = index + 1
+
+			bag:ClearAllPoints()
+			if (index-1) % 4 == 0 and C.db["Bags"]["MultiRows"] then
+				bag:SetPoint("BOTTOMRIGHT", anchorCache[index-4], "BOTTOMLEFT", -5, 0)
+			else
+				bag:SetPoint("BOTTOMLEFT", anchorCache[index-1], "TOPLEFT", 0, 5)
+			end
+			anchorCache[index] = bag
 		else
 			bag:Hide()
-		end
-		if bag:IsShown() then
-			bag:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", 0, 5)
-			anchor = bag
 		end
 	end
 end
 
 local function highlightFunction(button, match)
-	button:SetAlpha(match and 1 or .3)
+	button.searchOverlay:SetShown(not match)
+end
+
+local function IsItemMatched(type, text)
+	if not type or type == "" then return end
+	return strmatch(type, text)
+end
+
+local BagSmartFilter = {
+	default = function(item, text)
+		text = strlower(text)
+		if text == "boe" then
+			return item.bindOn == "equip"
+		else
+			return IsItemMatched(item.subType, text) or IsItemMatched(item.equipLoc, text) or IsItemMatched(item.name, text)
+		end
+	end,
+	_default = "default",
+}
+
+local function ShowWidgetButtons(self)
+	for index, button in pairs(self.__owner.widgetButtons) do
+		if index ~= 1 then
+			button:Show()
+		end
+	end
+end
+
+local function HideWidgetButtons(self)
+	for index, button in pairs(self.__owner.widgetButtons) do
+		if index ~= 1 then
+			button:Hide()
+		end
+	end
 end
 
 function module:CreateInfoFrame()
 	local infoFrame = CreateFrame("Button", nil, self)
 	infoFrame:SetPoint("TOPLEFT", 10, 0)
-	infoFrame:SetSize(160, 32)
-	local icon = infoFrame:CreateTexture()
-	icon:SetSize(24, 24)
-	icon:SetPoint("LEFT")
-	icon:SetTexture("Interface\\Minimap\\Tracking\\None")
-	icon:SetTexCoord(1, 0, 0, 1)
+	infoFrame:SetSize(140, 32)
+	local icon = infoFrame:CreateTexture(nil, "ARTWORK")
+	icon:SetSize(20, 20)
+	icon:SetPoint("LEFT", 0, -1)
+	icon:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
+	icon:SetVertexColor(DB.r, DB.g, DB.b)
+	local hl = infoFrame:CreateTexture(nil, "HIGHLIGHT")
+	hl:SetSize(20, 20)
+	hl:SetPoint("LEFT", 0, -1)
+	hl:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
 
 	local search = self:SpawnPlugin("SearchBar", infoFrame)
 	search.highlightFunction = highlightFunction
@@ -72,16 +119,27 @@ function module:CreateInfoFrame()
 	local bg = B.CreateBDFrame(search, 0, true)
 	bg:SetPoint("TOPLEFT", -5, -5)
 	bg:SetPoint("BOTTOMRIGHT", 5, 5)
+	search.textFilters = BagSmartFilter
 
-	local tag = self:SpawnPlugin("TagDisplay", "[money]", infoFrame)
+	search.__owner = self
+	search:HookScript("OnShow", HideWidgetButtons)
+	search:HookScript("OnHide", ShowWidgetButtons)
+
+	local tag = self:SpawnPlugin("TagDisplay", "[money]", search)
 	tag:SetFont(unpack(DB.Font))
-	tag:SetPoint("LEFT", icon, "RIGHT", 5, 0)
+	tag:SetPoint("TOPRIGHT", self, -50, -8)
+
+	infoFrame.title = SEARCH
+	B.AddTooltip(infoFrame, "ANCHOR_TOPLEFT", DB.InfoColor..L["BagSearchTip"])
 end
 
 function module:CreateBagBar(settings, columns)
 	local bagBar = self:SpawnPlugin("BagBar", settings.Bags)
-	local width, height = bagBar:LayoutButtons("grid", columns, 5, 5, -5)
-	bagBar:SetSize(width + 10, height + 10)
+	local spacing = 3
+	local offset = 5
+	local _, height = bagBar:LayoutButtons("grid", columns, spacing, offset, -offset)
+	local width = columns * (self.iconSize + spacing)-spacing
+	bagBar:SetSize(width + offset*2, height + offset*2)
 	bagBar:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -5)
 	B.SetBD(bagBar)
 	bagBar.highlightFunction = highlightFunction
@@ -92,7 +150,7 @@ function module:CreateBagBar(settings, columns)
 end
 
 function module:CreateCloseButton()
-	local bu = B.CreateButton(self, 24, 24, true, "Interface\\RAIDFRAME\\ReadyCheck-NotReady")
+	local bu = B.CreateButton(self, 22, 22, true, "Interface\\RAIDFRAME\\ReadyCheck-NotReady")
 	bu:SetScript("OnClick", CloseAllBags)
 	bu.title = CLOSE
 	B.AddTooltip(bu, "ANCHOR_TOP")
@@ -101,7 +159,7 @@ function module:CreateCloseButton()
 end
 
 function module:CreateRestoreButton(f)
-	local bu = B.CreateButton(self, 24, 24, true, "Atlas:transmog-icon-revert")
+	local bu = B.CreateButton(self, 22, 22, true, "Atlas:transmog-icon-revert")
 	bu:SetScript("OnClick", function()
 		C.db["TempAnchor"][f.main:GetName()] = nil
 		C.db["TempAnchor"][f.bank:GetName()] = nil
@@ -121,7 +179,7 @@ function module:CreateRestoreButton(f)
 end
 
 function module:CreateReagentButton(f)
-	local bu = B.CreateButton(self, 24, 24, true, "Atlas:Reagents")
+	local bu = B.CreateButton(self, 22, 22, true, "Atlas:Reagents")
 	bu.Icon:SetPoint("BOTTOMRIGHT", -C.mult, -C.mult)
 	bu:RegisterForClicks("AnyUp")
 	bu:SetScript("OnClick", function(_, btn)
@@ -143,7 +201,7 @@ function module:CreateReagentButton(f)
 end
 
 function module:CreateBankButton(f)
-	local bu = B.CreateButton(self, 24, 24, true, "Atlas:Banker")
+	local bu = B.CreateButton(self, 22, 22, true, "Atlas:Banker")
 	bu:SetScript("OnClick", function()
 		PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
 		ReagentBankFrame:Hide()
@@ -172,7 +230,7 @@ function module:AutoDeposit()
 end
 
 function module:CreateDepositButton()
-	local bu = B.CreateButton(self, 24, 24, true, "Atlas:GreenCross")
+	local bu = B.CreateButton(self, 22, 22, true, "Atlas:GreenCross")
 	bu.Icon:SetOutside()
 	bu:RegisterForClicks("AnyUp")
 	bu:SetScript("OnClick", function(_, btn)
@@ -191,7 +249,7 @@ function module:CreateDepositButton()
 end
 
 function module:CreateBagToggle()
-	local bu = B.CreateButton(self, 24, 24, true, "Interface\\Buttons\\Button-Backpack-Up")
+	local bu = B.CreateButton(self, 22, 22, true, "Interface\\Buttons\\Button-Backpack-Up")
 	bu:SetScript("OnClick", function()
 		B:TogglePanel(self.BagBar)
 		if self.BagBar:IsShown() then
@@ -209,7 +267,7 @@ function module:CreateBagToggle()
 end
 
 function module:CreateSortButton(name)
-	local bu = B.CreateButton(self, 24, 24, true, "Interface\\Icons\\INV_Pet_Broom")
+	local bu = B.CreateButton(self, 22, 22, true, "Interface\\Icons\\INV_Pet_Broom")
 	bu:SetScript("OnClick", function()
 		if C.db["Bags"]["BagSortMode"] == 3 then
 			UIErrorsFrame:AddMessage(DB.InfoColor..L["BagSortDisabled"])
@@ -343,7 +401,7 @@ function module:CreateSplitButton()
 	editbox:SetJustifyH("CENTER")
 	editbox:SetScript("OnTextChanged", saveSplitCount)
 
-	local bu = B.CreateButton(self, 24, 24, true, "Interface\\HELPFRAME\\ReportLagIcon-AuctionHouse")
+	local bu = B.CreateButton(self, 22, 22, true, "Interface\\HELPFRAME\\ReportLagIcon-AuctionHouse")
 	bu.Icon:SetPoint("TOPLEFT", -1, 3)
 	bu.Icon:SetPoint("BOTTOMRIGHT", 1, -3)
 	bu.__turnOff = function()
@@ -394,7 +452,7 @@ local favouriteEnable
 function module:CreateFavouriteButton()
 	local enabledText = DB.InfoColor..L["FavouriteMode Enabled"]
 
-	local bu = B.CreateButton(self, 24, 24, true, "Interface\\Common\\friendship-heart")
+	local bu = B.CreateButton(self, 22, 22, true, "Interface\\Common\\friendship-heart")
 	bu.Icon:SetPoint("TOPLEFT", -5, 0)
 	bu.Icon:SetPoint("BOTTOMRIGHT", 5, -5)
 	bu.__turnOff = function()
@@ -450,7 +508,7 @@ local customJunkEnable
 function module:CreateJunkButton()
 	local enabledText = DB.InfoColor..L["JunkMode Enabled"]
 
-	local bu = B.CreateButton(self, 24, 24, true, "Interface\\BUTTONS\\UI-GroupLoot-Coin-Up")
+	local bu = B.CreateButton(self, 22, 22, true, "Interface\\BUTTONS\\UI-GroupLoot-Coin-Up")
 	bu.Icon:SetPoint("TOPLEFT", C.mult, -3)
 	bu.Icon:SetPoint("BOTTOMRIGHT", -C.mult, -3)
 	bu.__turnOff = function()
@@ -504,7 +562,7 @@ local deleteEnable
 function module:CreateDeleteButton()
 	local enabledText = DB.InfoColor..L["DeleteMode Enabled"]
 
-	local bu = B.CreateButton(self, 24, 24, true, "Interface\\Buttons\\UI-GroupLoot-Pass-Up")
+	local bu = B.CreateButton(self, 22, 22, true, "Interface\\Buttons\\UI-GroupLoot-Pass-Up")
 	bu.Icon:SetPoint("TOPLEFT", 3, -2)
 	bu.Icon:SetPoint("BOTTOMRIGHT", -1, 2)
 	bu.__turnOff = function()
@@ -605,16 +663,17 @@ function module:OnLogin()
 	end
 
 	function Backpack:OnInit()
-		AddNewContainer("Bag", 10, "Junk", filters.bagsJunk)
-		AddNewContainer("Bag", 9, "BagFavourite", filters.bagFavourite)
+		AddNewContainer("Bag", 11, "Junk", filters.bagsJunk)
+		AddNewContainer("Bag", 10, "BagFavourite", filters.bagFavourite)
 		AddNewContainer("Bag", 3, "EquipSet", filters.bagEquipSet)
 		AddNewContainer("Bag", 1, "AzeriteItem", filters.bagAzeriteItem)
 		AddNewContainer("Bag", 2, "Equipment", filters.bagEquipment)
 		AddNewContainer("Bag", 4, "BagCollection", filters.bagCollection)
-		AddNewContainer("Bag", 7, "Consumable", filters.bagConsumable)
+		AddNewContainer("Bag", 8, "Consumable", filters.bagConsumable)
 		AddNewContainer("Bag", 5, "BagGoods", filters.bagGoods)
-		AddNewContainer("Bag", 8, "BagQuest", filters.bagQuest)
+		AddNewContainer("Bag", 9, "BagQuest", filters.bagQuest)
 		AddNewContainer("Bag", 6, "BagAnima", filters.bagAnima)
+		AddNewContainer("Bag", 7, "BagRelic", filters.bagRelic)
 
 		f.main = MyContainer:New("Bag", {Columns = bagsWidth, Bags = "bags"})
 		f.main:SetPoint("BOTTOMRIGHT", -50, 50)
@@ -738,7 +797,7 @@ function module:OnLogin()
 	}
 
 	local function isItemNeedsLevel(item)
-		return item.link and item.level and item.rarity > 1 and (module:IsArtifactRelic(item) or item.classID == LE_ITEM_CLASS_WEAPON or item.classID == LE_ITEM_CLASS_ARMOR)
+		return item.link and item.quality > 1 and module:IsItemHasLevel(item)
 	end
 
 	local function GetIconOverlayAtlas(item)
@@ -776,7 +835,7 @@ function module:OnLogin()
 
 	function MyButton:OnUpdate(item)
 		if self.JunkIcon then
-			if (MerchantFrame:IsShown() or customJunkEnable) and (item.rarity == LE_ITEM_QUALITY_POOR or NDuiADB["CustomJunkList"][item.id]) and item.sellPrice > 0 then
+			if (MerchantFrame:IsShown() or customJunkEnable) and (item.quality == LE_ITEM_QUALITY_POOR or NDuiADB["CustomJunkList"][item.id]) and item.hasPrice then
 				self.JunkIcon:Show()
 			else
 				self.JunkIcon:Hide()
@@ -791,24 +850,30 @@ function module:OnLogin()
 			self.IconOverlay:SetAtlas(atlas)
 			self.IconOverlay:Show()
 			if secondAtlas then
-				local color = DB.QualityColors[item.rarity or 1]
+				local color = DB.QualityColors[item.quality or 1]
 				self.IconOverlay:SetVertexColor(color.r, color.g, color.b)
 				self.IconOverlay2:SetAtlas(secondAtlas)
 				self.IconOverlay2:Show()
 			end
 		end
 
-		if C.db["Bags"]["FavouriteItems"][item.id] then
+		if C.db["Bags"]["FavouriteItems"][item.id] and not C.db["Bags"]["ItemFilter"] then
 			self.Favourite:Show()
 		else
 			self.Favourite:Hide()
 		end
 
 		self.iLvl:SetText("")
-		if C.db["Bags"]["BagsiLvl"] and isItemNeedsLevel(item) then
-			local level = B.GetItemLevel(item.link, item.bagID, item.slotID) or item.level
-			if level > C.db["Bags"]["iLvlToShow"] then
-				local color = DB.QualityColors[item.rarity]
+		if C.db["Bags"]["BagsiLvl"] then
+			local level = item.level -- ilvl for keystone and battlepet
+			if not level and isItemNeedsLevel(item) then
+				local ilvl = B.GetItemLevel(item.link, item.bagID, item.slotID)
+				if ilvl and ilvl > C.db["Bags"]["iLvlToShow"] then
+					level = ilvl
+				end
+			end
+			if level then
+				local color = DB.QualityColors[item.quality]
 				self.iLvl:SetText(level)
 				self.iLvl:SetTextColor(color.r, color.g, color.b)
 			end
@@ -851,12 +916,17 @@ function module:OnLogin()
 
 		if item.questID or item.isQuestItem then
 			self:SetBackdropBorderColor(.8, .8, 0)
-		elseif item.rarity and item.rarity > -1 then
-			local color = DB.QualityColors[item.rarity]
+		elseif item.quality and item.quality > -1 then
+			local color = DB.QualityColors[item.quality]
 			self:SetBackdropBorderColor(color.r, color.g, color.b)
 		else
 			self:SetBackdropBorderColor(0, 0, 0)
 		end
+	end
+
+	function module:UpdateAllAnchors()
+		module:UpdateAnchors(f.main, ContainerGroups["Bag"])
+		module:UpdateAnchors(f.bank, ContainerGroups["Bank"])
 	end
 
 	function MyContainer:OnContentsChanged()
@@ -893,8 +963,7 @@ function module:OnLogin()
 		end
 		self:SetSize(width + xOffset*2, height + offset)
 
-		module:UpdateAnchors(f.main, ContainerGroups["Bag"])
-		module:UpdateAnchors(f.bank, ContainerGroups["Bank"])
+		module:UpdateAllAnchors()
 	end
 
 	function MyContainer:OnCreate(name, settings)
@@ -929,13 +998,17 @@ function module:OnLogin()
 			label = QUESTS_LABEL
 		elseif strmatch(name, "Anima") then
 			label = POWER_TYPE_ANIMA
+		elseif name == "BagRelic" then
+			label = L["KorthiaRelic"]
 		end
 		if label then
 			self.label = B.CreateFS(self, 14, label, true, "TOPLEFT", 5, -8)
 			return
 		end
 
+		self.iconSize = iconSize
 		module.CreateInfoFrame(self)
+		module.CreateFreeSlots(self)
 
 		local buttons = {}
 		buttons[1] = module.CreateCloseButton(self)
@@ -961,16 +1034,14 @@ function module:OnLogin()
 			local bu = buttons[i]
 			if not bu then break end
 			if i == 1 then
-				bu:SetPoint("TOPRIGHT", -5, -3)
+				bu:SetPoint("TOPRIGHT", -5, -5)
 			else
 				bu:SetPoint("RIGHT", buttons[i-1], "LEFT", -3, 0)
 			end
 		end
+		self.widgetButtons = buttons
 
 		self:HookScript("OnShow", B.RestoreMF)
-
-		self.iconSize = iconSize
-		module.CreateFreeSlots(self)
 	end
 
 	local BagButton = Backpack:GetClass("BagButton", true, "BagButton")
@@ -1018,6 +1089,20 @@ function module:OnLogin()
 	B:RegisterEvent("TRADE_SHOW", module.OpenBags)
 	B:RegisterEvent("TRADE_CLOSED", module.CloseBags)
 	B:RegisterEvent("BANKFRAME_OPENED", module.AutoDeposit)
+
+	-- Update infobar slots
+	local INFO = B:GetModule("Infobar")
+	if INFO.modules then
+		for _, info in pairs(INFO.modules) do
+			if info.name == "Gold" then
+				Backpack.OnOpen = function()
+					if not NDuiADB["ShowSlots"] then return end
+					info:onEvent()
+				end
+				break
+			end
+		end
+	end
 
 	-- Fixes
 	BankFrame.GetRight = function() return f.bank:GetRight() end

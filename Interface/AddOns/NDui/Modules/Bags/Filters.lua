@@ -38,7 +38,7 @@ end
 local function isItemJunk(item)
 	if not C.db["Bags"]["ItemFilter"] then return end
 	if not C.db["Bags"]["FilterJunk"] then return end
-	return (item.rarity == LE_ITEM_QUALITY_POOR or NDuiADB["CustomJunkList"][item.id]) and item.sellPrice and item.sellPrice > 0 and not module:IsPetTrashCurrency(item.id)
+	return (item.quality == LE_ITEM_QUALITY_POOR or NDuiADB["CustomJunkList"][item.id]) and item.hasPrice and not module:IsPetTrashCurrency(item.id)
 end
 
 local function isItemEquipSet(item)
@@ -54,34 +54,48 @@ local function isAzeriteArmor(item)
 	return C_AzeriteEmpoweredItem_IsAzeriteEmpoweredItemByID(item.link)
 end
 
-function module:IsArtifactRelic(item)
-	return item.classID == LE_ITEM_CLASS_GEM and item.subClassID == LE_ITEM_GEM_ARTIFACTRELIC
+local iLvlClassIDs = {
+	[LE_ITEM_CLASS_GEM] = LE_ITEM_GEM_ARTIFACTRELIC,
+	[LE_ITEM_CLASS_ARMOR] = 0,
+	[LE_ITEM_CLASS_WEAPON] = 0,
+}
+function module:IsItemHasLevel(item)
+	local index = iLvlClassIDs[item.classID]
+	return index and (index == 0 or index == item.subClassID)
 end
 
 local function isItemEquipment(item)
 	if not C.db["Bags"]["ItemFilter"] then return end
 	if not C.db["Bags"]["FilterEquipment"] then return end
-	return item.level and item.rarity > LE_ITEM_QUALITY_COMMON and (module:IsArtifactRelic(item) or item.classID == LE_ITEM_CLASS_WEAPON or item.classID == LE_ITEM_CLASS_ARMOR)
+	return item.link and item.quality > LE_ITEM_QUALITY_COMMON and module:IsItemHasLevel(item)
 end
 
+local consumableIDs = {
+	[LE_ITEM_CLASS_CONSUMABLE] = true,
+	[LE_ITEM_CLASS_ITEM_ENHANCEMENT] = true,
+}
 local function isItemConsumable(item)
 	if not C.db["Bags"]["ItemFilter"] then return end
 	if not C.db["Bags"]["FilterConsumable"] then return end
 	if isCustomFilter(item) == false then return end
-	return isCustomFilter(item) or (item.classID and (item.classID == LE_ITEM_CLASS_CONSUMABLE or item.classID == LE_ITEM_CLASS_ITEM_ENHANCEMENT))
+	return isCustomFilter(item) or consumableIDs[item.classID]
 end
 
 local function isItemLegendary(item)
 	if not C.db["Bags"]["ItemFilter"] then return end
 	if not C.db["Bags"]["FilterLegendary"] then return end
-	return item.rarity == LE_ITEM_QUALITY_LEGENDARY
+	return item.quality == LE_ITEM_QUALITY_LEGENDARY
 end
 
 local isPetToy = {
 	[174925] = true,
 }
+local collectionIDs = {
+	[LE_ITEM_MISCELLANEOUS_MOUNT] = LE_ITEM_CLASS_MISCELLANEOUS,
+	[LE_ITEM_MISCELLANEOUS_COMPANION_PET] = LE_ITEM_CLASS_MISCELLANEOUS,
+}
 local function isMountOrPet(item)
-	return (not isPetToy[item.id]) and item.classID == LE_ITEM_CLASS_MISCELLANEOUS and (item.subClassID == LE_ITEM_MISCELLANEOUS_MOUNT or item.subClassID == LE_ITEM_MISCELLANEOUS_COMPANION_PET)
+	return not isPetToy[item.id] and item.subClassID and collectionIDs[item.subClassID] == item.classID
 end
 
 local petTrashCurrenies = {
@@ -134,6 +148,27 @@ local function isAnimaItem(item)
 	return item.id and C_Item_IsAnimaItemByID(item.id)
 end
 
+local relicSpellIDs = {
+	[356931] = true,
+	[356933] = true,
+	[356934] = true,
+	[356935] = true,
+	[356936] = true,
+	[356937] = true,
+	[356938] = true,
+	[356939] = true,
+	[356940] = true,
+}
+local function isKorthiaRelicByID(itemID)
+	local _, spellID = GetItemSpell(itemID)
+	return spellID and relicSpellIDs[spellID]
+end
+local function isKorthiaRelic(item)
+	if not C.db["Bags"]["ItemFilter"] then return end
+	if not C.db["Bags"]["FilterRelic"] then return end
+	return item.id and isKorthiaRelicByID(item.id)
+end
+
 function module:GetFilters()
 	local filters = {}
 
@@ -160,6 +195,7 @@ function module:GetFilters()
 	filters.bankQuest = function(item) return isItemInBank(item) and isQuestItem(item) end
 	filters.bagAnima = function(item) return isItemInBag(item) and isAnimaItem(item) end
 	filters.bankAnima = function(item) return isItemInBank(item) and isAnimaItem(item) end
+	filters.bagRelic = function(item) return isItemInBag(item) and isKorthiaRelic(item) end
 
 	return filters
 end
