@@ -124,14 +124,18 @@ function TT:OnTooltipCleared()
 	end
 end
 
+function TT.GetDungeonScore(score)
+	local color = C_ChallengeMode_GetDungeonScoreRarityColor(score) or HIGHLIGHT_FONT_COLOR
+	return color:WrapTextInColorCode(score)
+end
+
 function TT:ShowUnitMythicPlusScore(unit)
 	if not C.db["Tooltip"]["MythicScore"] then return end
 
 	local summary = C_PlayerInfo_GetPlayerMythicPlusRatingSummary(unit)
 	local score = summary and summary.currentSeasonScore
 	if score and score > 0 then
-		local color = C_ChallengeMode_GetDungeonScoreRarityColor(score) or HIGHLIGHT_FONT_COLOR
-		GameTooltip:AddLine(format(L["MythicScore"], color:WrapTextInColorCode(score)))
+		GameTooltip:AddLine(format(L["MythicScore"], TT.GetDungeonScore(score)))
 	end
 end
 
@@ -246,7 +250,7 @@ function TT:OnTooltipSetUnit()
 
 		if not isPlayer and isShiftKeyDown then
 			local guid = UnitGUID(unit)
-			local npcID = B.GetNPCID(guid)
+			local npcID = guid and B.GetNPCID(guid)
 			if npcID then
 				self:AddLine(format(npcIDstring, npcID))
 			end
@@ -378,7 +382,7 @@ function TT:ReskinTooltip()
 	self:SetScale(C.db["Tooltip"]["Scale"])
 
 	if not self.tipStyled then
-		if self.SetBackdrop then self:SetBackdrop(nil) end
+		B.HideBackdrop(self) -- isNewPatch
 		self:DisableDrawLayer("BACKGROUND")
 		self.bg = B.SetBD(self, .7)
 		self.bg:SetInside(self)
@@ -467,7 +471,9 @@ function TT:OnLogin()
 	hooksecurefunc("GameTooltip_ShowStatusBar", TT.GameTooltip_ShowStatusBar)
 	hooksecurefunc("GameTooltip_ShowProgressBar", TT.GameTooltip_ShowProgressBar)
 	hooksecurefunc("GameTooltip_SetDefaultAnchor", TT.GameTooltip_SetDefaultAnchor)
-	hooksecurefunc("SharedTooltip_SetBackdropStyle", TT.SharedTooltip_SetBackdropStyle)
+	if not DB.isNewPatch then
+		hooksecurefunc("SharedTooltip_SetBackdropStyle", TT.SharedTooltip_SetBackdropStyle)
+	end
 	hooksecurefunc("GameTooltip_AnchorComparisonTooltips", TT.GameTooltip_ComparisonFix)
 	TT:SetupTooltipFonts()
 	GameTooltip:HookScript("OnTooltipSetItem", TT.FixRecipeItemNameWidth)
@@ -528,7 +534,8 @@ TT:RegisterTooltips("NDui", function()
 		FloatingBattlePetTooltip,
 		FloatingPetBattleAbilityTooltip,
 		IMECandidatesFrame,
-		QuickKeybindTooltip
+		QuickKeybindTooltip,
+		GameSmallHeaderTooltip,
 	}
 	for _, f in pairs(tooltips) do
 		f:HookScript("OnShow", TT.ReskinTooltip)

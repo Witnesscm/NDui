@@ -22,7 +22,7 @@ function UF:PlateInsideView()
 	if C.db["Nameplate"]["InsideView"] then
 		SetCVar("nameplateOtherTopInset", .05)
 		SetCVar("nameplateOtherBottomInset", .08)
-	else
+	elseif GetCVar("nameplateOtherTopInset") == "0.05" and GetCVar("nameplateOtherBottomInset") == "0.08" then
 		SetCVar("nameplateOtherTopInset", -1)
 		SetCVar("nameplateOtherBottomInset", -1)
 	end
@@ -195,7 +195,7 @@ function UF:UpdateColor(_, unit)
 			end
 		elseif isPlayer and (not isFriendly) and C.db["Nameplate"]["HostileCC"] then
 			r, g, b = B.UnitColor(unit)
-		elseif UnitIsTapDenied(unit) and not UnitPlayerControlled(unit) then
+		elseif UnitIsTapDenied(unit) and not UnitPlayerControlled(unit) or C.TrashUnits[npcID] then
 			r, g, b = .6, .6, .6
 		else
 			r, g, b = UnitSelectionColor(unit, true)
@@ -636,24 +636,21 @@ function UF:MouseoverIndicator(self)
 end
 
 -- Interrupt info on castbars
-local guidToPlate = {}
-function UF:UpdateCastbarInterrupt(...)
-	local _, eventType, _, sourceGUID, sourceName, _, _, destGUID = ...
-	if eventType == "SPELL_INTERRUPT" and destGUID and sourceName and sourceName ~= "" then
-		local nameplate = guidToPlate[destGUID]
-		if nameplate and nameplate.Castbar then
-			local _, class = GetPlayerInfoByGUID(sourceGUID)
-			local r, g, b = B.ClassColor(class)
-			local color = B.HexRGB(r, g, b)
-			local sourceName = Ambiguate(sourceName, "short")
-			nameplate.Castbar.Text:SetText(INTERRUPTED.." > "..color..sourceName)
-			nameplate.Castbar.Time:SetText("")
-		end
+function UF:UpdateSpellInterruptor(...)
+	local _, _, sourceGUID, sourceName, _, _, destGUID = ...
+	if destGUID == self.unitGUID and sourceGUID and sourceName and sourceName ~= "" then
+		local _, class = GetPlayerInfoByGUID(sourceGUID)
+		local r, g, b = B.ClassColor(class)
+		local color = B.HexRGB(r, g, b)
+		local sourceName = Ambiguate(sourceName, "short")
+		self.Castbar.Text:SetText(INTERRUPTED.." > "..color..sourceName)
+		self.Castbar.Time:SetText("")
 	end
 end
 
-function UF:AddInterruptInfo()
-	B:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", self.UpdateCastbarInterrupt)
+function UF:SpellInterruptor(self)
+	if not self.Castbar then return end
+	self:RegisterCombatEvent("SPELL_INTERRUPT", UF.UpdateSpellInterruptor)
 end
 
 -- Create Nameplates
@@ -705,6 +702,7 @@ function UF:CreatePlates()
 	UF:AddCreatureIcon(self)
 	UF:AddQuestIcon(self)
 	UF:AddDungeonProgress(self)
+	UF:SpellInterruptor(self)
 
 	self:RegisterEvent("PLAYER_FOCUS_CHANGED", UF.UpdateFocusColor, true)
 
@@ -886,9 +884,6 @@ function UF:PostUpdatePlates(event, unit)
 	if event == "NAME_PLATE_UNIT_ADDED" then
 		self.unitName = UnitName(unit)
 		self.unitGUID = UnitGUID(unit)
-		if self.unitGUID then
-			guidToPlate[self.unitGUID] = self
-		end
 		self.isPlayer = UnitIsPlayer(unit)
 		self.npcID = B.GetNPCID(self.unitGUID)
 		self.widgetsOnly = UnitNameplateShowsWidgetsOnly(unit)
@@ -902,9 +897,6 @@ function UF:PostUpdatePlates(event, unit)
 
 		UF.RefreshPlateType(self, unit)
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
-		if self.unitGUID then
-			guidToPlate[self.unitGUID] = nil
-		end
 		self.npcID = nil
 	end
 
@@ -916,7 +908,7 @@ function UF:PostUpdatePlates(event, unit)
 		UF.UpdateDungeonProgress(self, unit)
 		UF:UpdateClassPowerAnchor()
 
-		self.tarName:SetShown(self.npcID == 174773)
+		self.tarName:SetShown(C.ShowTargetNPCs[self.npcID])
 	end
 	UF.UpdateExplosives(self, event, unit)
 end

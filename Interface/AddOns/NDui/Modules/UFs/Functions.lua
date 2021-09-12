@@ -1,7 +1,7 @@
 local _, ns = ...
 local B, C, L, DB = unpack(ns)
 
-local oUF = ns.oUF or oUF
+local oUF = ns.oUF
 local UF = B:RegisterModule("UnitFrames")
 local AURA = B:GetModule("Auras")
 
@@ -498,6 +498,10 @@ local function createBarMover(bar, text, value, anchor)
 	bar.mover = mover
 end
 
+local function updateSpellTarget(self, _, unit)
+	B.PostCastUpdate(self.Castbar, unit)
+end
+
 function UF:CreateCastBar(self)
 	local mystyle = self.mystyle
 	if mystyle ~= "nameplate" and not C.db["UFs"]["Castbars"] then return end
@@ -582,6 +586,8 @@ function UF:CreateCastBar(self)
 		spellTarget:SetJustifyH("LEFT")
 		spellTarget:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -2)
 		cb.spellTarget = spellTarget
+
+		self:RegisterEvent("UNIT_TARGET", updateSpellTarget)
 	end
 
 	if mystyle == "nameplate" or mystyle == "boss" or mystyle == "arena" then
@@ -1465,7 +1471,7 @@ local function DGI_Visibility()
 end
 
 local function DGI_OnUpdate(self, elapsed)
-	self.elapsed = (self.elapsed or 0) + 0.1
+	self.elapsed = (self.elapsed or 0) + elapsed
 	if self.elapsed > .1 then
 		DGI_UpdateGlow()
 

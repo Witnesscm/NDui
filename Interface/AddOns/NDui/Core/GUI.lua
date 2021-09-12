@@ -218,6 +218,7 @@ G.DefaultSettings = {
 		MapScale = 1,
 		MaxMapScale = 1,
 		MinimapScale = 1.4,
+		MinimapSize = 140,
 		ShowRecycleBin = true,
 		WhoPings = true,
 		MapReveal = true,
@@ -370,6 +371,7 @@ G.DefaultSettings = {
 		MDGuildBest = true,
 		FasterSkip = false,
 		EnhanceDressup = true,
+		QuestTool = true,
 	},
 	Tutorial = {
 		Complete = false,
@@ -789,18 +791,18 @@ local NewTag = "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0|t"
 
 G.TabList = {
 	L["Actionbar"],
-	NewTag..L["Bags"],
+	L["Bags"],
 	L["Unitframes"],
 	L["RaidFrame"],
 	L["Nameplate"],
 	L["PlayerPlate"],
 	L["Auras"],
-	NewTag..L["Raid Tools"],
-	NewTag..L["ChatFrame"],
-	L["Maps"],
+	L["Raid Tools"],
+	L["ChatFrame"],
+	NewTag..L["Maps"],
 	L["Skins"],
-	NewTag..L["Tooltip"],
-	L["Misc"],
+	L["Tooltip"],
+	NewTag..L["Misc"],
 	L["UI Settings"],
 	L["Profile"],
 }
@@ -836,7 +838,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 	[2] = {
 		{1, "Bags", "Enable", HeaderTag..L["Enable Bags"]},
 		{},--blank
-		{1, "Bags", "ItemFilter", NewTag..L["Bags ItemFilter"].."*", nil, setupBagFilter, updateBagStatus},
+		{1, "Bags", "ItemFilter", L["Bags ItemFilter"].."*", nil, setupBagFilter, updateBagStatus},
 		{1, "Bags", "MultiRows", NewTag..L["MultiRows"].."*", true, nil, updateBagAnchor, L["MultiRowsTip"]},
 		{1, "Bags", "GatherEmpty", L["Bags GatherEmpty"].."*", nil, nil, updateBagStatus},
 		{1, "Bags", "SpecialBagsColor", L["SpecialBagsColor"].."*", true, nil, updateBagStatus, L["SpecialBagsColorTip"]},
@@ -1012,11 +1014,11 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{4, "Misc", "EasyMarkKey", L["EasyMark"].."*", nil, {"CTRL", "ALT", "SHIFT", DISABLE}, nil, L["EasyMarkTip"]},
 		{2, "Misc", "DBMCount", L["DBMCount"].."*", true, nil, nil, L["DBMCountTip"]},
 		{4, "Misc", "ShowMarkerBar", L["ShowMarkerBar"].."*", nil, {L["Grids"], L["Horizontal"], L["Vertical"], DISABLE}, updateMarkerGrid, L["ShowMarkerBarTip"]},
-		{3, "Misc", "MarkerSize", NewTag..L["MarkerSize"].."*", true, {20, 50, 1}, updateMarkerGrid},
+		{3, "Misc", "MarkerSize", L["MarkerSize"].."*", true, {20, 50, 1}, updateMarkerGrid},
 		{},--blank
 		{1, "Misc", "QuestNotification", HeaderTag..L["QuestNotification"].."*", nil, nil, updateQuestNotification},
 		{1, "Misc", "QuestProgress", L["QuestProgress"].."*"},
-		{1, "Misc", "OnlyCompleteRing", L["OnlyCompleteRing"].."*", true},
+		{1, "Misc", "OnlyCompleteRing", L["OnlyCompleteRing"].."*", true, nil, nil, L["OnlyCompleteRingTip"]},
 		{},--blank
 		{1, "Misc", "InterruptAlert", HeaderTag..L["InterruptAlert"].."*", nil, nil, updateInterruptAlert},
 		{1, "Misc", "OwnInterrupt", L["OwnInterrupt"].."*", true},
@@ -1045,7 +1047,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Chat", "WhisperColor", L["Differ WhisperColor"].."*", true},
 		{1, "Chat", "ChatItemLevel", L["ShowChatItemLevel"]},
 		{1, "Chat", "Freedom", L["Language Filter"], true},
-		{1, "Chat", "WhisperSound", NewTag..L["WhisperSound"].."*", nil, nil, nil, L["WhisperSoundTip"]},
+		{1, "Chat", "WhisperSound", L["WhisperSound"].."*", nil, nil, nil, L["WhisperSoundTip"]},
 		{4, "ACCOUNT", "TimestampFormat", L["TimestampFormat"].."*", nil, {DISABLE, "03:27 PM", "03:27:32 PM", "15:27", "15:27:32"}},
 		{4, "Chat", "ChatBGType", L["ChatBGType"].."*", true, {DISABLE, L["Default Dark"], L["Gradient"]}, toggleChatBackground},
 		{},--blank
@@ -1072,8 +1074,9 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Map", "CombatPulse", L["Minimap Pulse"]},
 		{1, "Map", "WhoPings", L["Show WhoPings"], true},
 		{1, "Map", "ShowRecycleBin", L["Show RecycleBin"]},
-		{1, "Misc", "ExpRep", L["Show Expbar"]},
-		{3, "Map", "MinimapScale", L["Minimap Scale"].."*", true, {1, 2, .1}, updateMinimapScale},
+		{1, "Misc", "ExpRep", L["Show Expbar"], true},
+		{3, "Map", "MinimapScale", L["Minimap Scale"].."*", nil, {.5, 3, .1}, updateMinimapScale},
+		{3, "Map", "MinimapSize", NewTag..L["Minimap Size"].."*", true, {100, 500, 1}, updateMinimapScale},
 	},
 	[11] = {
 		{1, "Skins", "BlizzardSkins", HeaderTag..L["BlizzardSkins"], nil, nil, nil, L["BlizzardSkinsTips"]},
@@ -1118,10 +1121,10 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Tooltip", "SpecLevelByShift", L["Show SpecLevelByShift"].."*", true},
 		{1, "Tooltip", "LFDRole", L["Group Roles"].."*"},
 		{1, "Tooltip", "TargetBy", L["Show TargetedBy"].."*", true},
-		{1, "Tooltip", "MythicScore", NewTag..L["MDScore"].."*", nil, nil, nil, L["MDScoreTip"]},
+		{1, "Tooltip", "MythicScore", L["MDScore"].."*", nil, nil, nil, L["MDScoreTip"]},
 		{1, "Tooltip", "HideAllID", "|cffff0000"..L["HideAllID"], true},
 		{},--blank
-		{1, "Tooltip", "DomiRank", NewTag..L["DomiRank"], nil, nil, nil, L["DomiRankTip"]},
+		{1, "Tooltip", "DomiRank", L["DomiRank"], nil, nil, nil, L["DomiRankTip"]},
 		{1, "Tooltip", "ConduitInfo", L["Show ConduitInfo"], true},
 		{},--blank
 		{1, "Tooltip", "AzeriteArmor", HeaderTag..L["Show AzeriteArmor"]},
@@ -1140,7 +1143,6 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Misc", "FasterLoot", L["Faster Loot"].."*", true, nil, updateFasterLoot},
 		{1, "Misc", "BlockInvite", "|cffff0000"..L["BlockInvite"].."*", nil, nil, nil, L["BlockInviteTip"]},
 		{1, "Misc", "FasterSkip", L["FasterMovieSkip"], true, nil, nil, L["FasterMovieSkipTip"]},
-		{},--blank
 		{1, "Misc", "MissingStats", L["Show MissingStats"]},
 		{1, "Misc", "ParagonRep", L["ParagonRep"], true},
 		{1, "Misc", "Mail", L["Mail Tool"]},
@@ -1151,6 +1153,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Misc", "MDGuildBest", L["MDGuildBest"], true, nil, nil, L["MDGuildBestTip"]},
 		{1, "Misc", "MawThreatBar", L["MawThreatBar"], nil, nil, nil, L["MawThreatBarTip"]},
 		{1, "Misc", "EnhanceDressup", L["EnhanceDressup"], true, nil, nil, L["EnhanceDressupTip"]},
+		{1, "Misc", "QuestTool", NewTag..L["QuestTool"], nil, nil, nil, L["QuestToolTip"]},
 	},
 	[14] = {
 		{1, "ACCOUNT", "VersionCheck", L["Version Check"]},
@@ -1389,7 +1392,7 @@ local function CreateContactBox(parent, text, url, index)
 end
 
 local donationList = {
-	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo, 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪，养乐多，无人知晓，秋末旷夜-迪瑟洛克，Teo，莉拉斯塔萨，音尘绝，刺王杀驾，醉跌-凤凰之神，灬麦加灬-阿古斯，漂舟不系，朵小熙，山岸逢花，乄阿财-帕奇维克以及部分未备注名字的用户。",
+	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo, 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪，养乐多，无人知晓，秋末旷夜-迪瑟洛克，Teo，莉拉斯塔萨，音尘绝，刺王杀驾，醉跌-凤凰之神，灬麦加灬-阿古斯，漂舟不系，朵小熙，山岸逢花，乄阿财-帕奇维克，乌鸦岭守墓饼-罗宁，自在独踽踽-霜之哀伤，御行宇航-碧玉矿洞，末日伯爵-奥罗以及部分未备注名字的用户。",
 	["Patreon"] = "Quentin, Julian Neigefind, silenkin, imba Villain, Zeyu Zhu, Kon Floros.",
 }
 local function CreateDonationIcon(parent, texture, name, xOffset)

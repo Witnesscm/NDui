@@ -547,6 +547,14 @@ do
 		return tex
 	end
 
+	function B:HideBackdrop()
+		if DB.isNewPatch then
+			self.NineSlice:SetAlpha(0)
+		else
+			if self.SetBackdrop then self:SetBackdrop(nil) end
+		end
+	end
+
 	-- Handle frame
 	function B:CreateBDFrame(a, gradient)
 		local frame = self
@@ -579,7 +587,7 @@ do
 	-- Handle icons
 	function B:ReskinIcon(shadow)
 		self:SetTexCoord(unpack(DB.TexCoord))
-		local bg = B.CreateBDFrame(self)
+		local bg = B.CreateBDFrame(self, .25) -- exclude from opacity control
 		if shadow then B.CreateSD(bg) end
 		return bg
 	end
@@ -1175,6 +1183,7 @@ do
 	function B:ReskinPortraitFrame()
 		B.StripTextures(self)
 		local bg = B.SetBD(self)
+		bg:SetAllPoints(self)
 		local frameName = self.GetName and self:GetName()
 		local portrait = self.PortraitTexture or self.portrait or (frameName and _G[frameName.."Portrait"])
 		if portrait then
