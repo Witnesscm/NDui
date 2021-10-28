@@ -77,7 +77,7 @@ C.Tooltips = {
 
 -- 信息条
 C.Infobar = {
-	CustomAnchor	= false,											-- 自定义位置
+	CustomAnchor	= true,												-- 自定义位置
 
 	Guild	 		= true,												-- 公会信息
 	GuildPos 		= {"BOTTOM", UIParent, -50, 4},						-- 公会信息位置
@@ -86,9 +86,9 @@ C.Infobar = {
 	Latency			= true,												-- 延迟
 	LatencyPos		= {"BOTTOM", UIParent, 150, 4},						-- 延迟信息位置
 	System			= true,												-- 帧数
-	SystemPos		= {"TOPLEFT", UIParent, 285, -6},					-- 帧数信息位置
+	SystemPos		= {"BOTTOM", UIParent, 250, 4},						-- 帧数信息位置
 	Location		= true,												-- 区域信息
-	LocationPos		= {"TOPLEFT", UIParent, 380, -6},					-- 区域信息位置
+	LocationPos		= {"BOTTOM", UIParent, "BOTTOMRIGHT", -245, 4},		-- 区域信息位置
 	Spec			= true,												-- 天赋专精
 	SpecPos			= {"BOTTOM", UIParent, -250, 4},					-- 天赋专精位置
 	Durability		= true,												-- 耐久度
@@ -96,5 +96,5 @@ C.Infobar = {
 	Gold			= true,												-- 金币信息
 	GoldPos			= {"BOTTOM", UIParent, "BOTTOMRIGHT", -145, 4}, 	-- 金币信息位置
 	Time			= true,												-- 时间信息
-	TimePos			= {"BOTTOMRIGHT", UIParent, -15, 6},				-- 时间信息位置
+	TimePos			= {"BOTTOM", UIParent, "BOTTOMRIGHT", -50, 4},		-- 时间信息位置
 }
