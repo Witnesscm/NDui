@@ -3,7 +3,7 @@ local B, C, L, DB = unpack(ns)
 local M = B:RegisterModule("Misc")
 
 local _G = getfenv(0)
-local select, floor, unpack, tonumber, gsub, strsplit = select, floor, unpack, tonumber, gsub, strsplit
+local select, floor, unpack, tonumber, gsub = select, floor, unpack, tonumber, gsub
 local InCombatLockdown, IsModifiedClick, IsAltKeyDown = InCombatLockdown, IsModifiedClick, IsAltKeyDown
 local GetNumArchaeologyRaces = GetNumArchaeologyRaces
 local GetNumArtifactsByRace = GetNumArtifactsByRace
@@ -698,6 +698,11 @@ function M:EnhanceDressup()
 	end)
 
 	B.AddTooltip(button, "ANCHOR_TOP", format(L["UndressButtonTip"], DB.LeftButton, DB.RightButton))
+
+	if DB.isNewPatch then
+		DressUpFrame.LinkButton:SetWidth(80)
+		DressUpFrame.LinkButton:SetText(SOCIAL_SHARE_TEXT)
+	end
 end
 
 function M:FuckTrainSound()

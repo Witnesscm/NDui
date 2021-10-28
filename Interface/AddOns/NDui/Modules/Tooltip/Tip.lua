@@ -19,6 +19,7 @@ local GetRaidTargetIndex, UnitGroupRolesAssigned, GetGuildInfo, IsInGuild = GetR
 local C_PetBattles_GetNumAuras, C_PetBattles_GetAuraInfo = C_PetBattles.GetNumAuras, C_PetBattles.GetAuraInfo
 local C_ChallengeMode_GetDungeonScoreRarityColor = C_ChallengeMode.GetDungeonScoreRarityColor
 local C_PlayerInfo_GetPlayerMythicPlusRatingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary
+local GameTooltip_ClearMoney, GameTooltip_ClearStatusBars, GameTooltip_ClearProgressBars, GameTooltip_ClearWidgetSet = GameTooltip_ClearMoney, GameTooltip_ClearStatusBars, GameTooltip_ClearProgressBars, GameTooltip_ClearWidgetSet
 
 local classification = {
 	elite = " |cffcc8800"..ELITE.."|r",
@@ -115,6 +116,8 @@ function TT:InsertRoleFrame(role)
 end
 
 function TT:OnTooltipCleared()
+	if self:IsForbidden() then return end
+
 	if self.factionFrame and self.factionFrame:GetAlpha() ~= 0 then
 		self.factionFrame:SetAlpha(0)
 	end
@@ -122,6 +125,11 @@ function TT:OnTooltipCleared()
 		self.roleFrame:SetAlpha(0)
 		self.roleFrame.bg:SetAlpha(0)
 	end
+
+	GameTooltip_ClearMoney(self)
+	GameTooltip_ClearStatusBars(self)
+	GameTooltip_ClearProgressBars(self)
+	GameTooltip_ClearWidgetSet(self)
 end
 
 function TT.GetDungeonScore(score)
@@ -147,7 +155,8 @@ function TT:OnTooltipSetUnit()
 	local unit = TT.GetUnit(self)
 	local isShiftKeyDown = IsShiftKeyDown()
 	if UnitExists(unit) then
-		local hexColor = B.HexRGB(B.UnitColor(unit))
+		local r, g, b = B.UnitColor(unit)
+		local hexColor = B.HexRGB(r, g, b)
 		local ricon = GetRaidTargetIndex(unit)
 		local text = GameTooltipTextLeft1:GetText()
 		if ricon and ricon > 8 then ricon = nil end
@@ -256,11 +265,7 @@ function TT:OnTooltipSetUnit()
 			end
 		end
 
-		if alive then
-			self.StatusBar:SetStatusBarColor(B.UnitColor(unit))
-		else
-			self.StatusBar:Hide()
-		end
+		self.StatusBar:SetStatusBarColor(r, g, b)
 
 		TT.InspectUnitSpecAndLevel(self, unit)
 		TT.ShowUnitMythicPlusScore(self, unit)

@@ -2,6 +2,7 @@ local _, ns = ...
 local B, C, L, DB = unpack(ns)
 local G = B:RegisterModule("GUI")
 
+local unpack, strfind = unpack, strfind
 local tonumber, pairs, ipairs, next, type, tinsert = tonumber, pairs, ipairs, next, type, tinsert
 local cr, cg, cb = DB.r, DB.g, DB.b
 local guiTab, guiPage, f = {}, {}
@@ -42,8 +43,8 @@ G.DefaultSettings = {
 	},
 	Bags = {
 		Enable = true,
-		BagsScale = 1,
 		IconSize = 34,
+		FontSize = 12,
 		BagsWidth = 12,
 		BankWidth = 14,
 		BagsiLvl = true,
@@ -235,8 +236,6 @@ G.DefaultSettings = {
 		TankMode = false,
 		TargetIndicator = 5,
 		InsideView = true,
-		PlateWidth = 190,
-		PlateHeight = 8,
 		CustomUnitColor = true,
 		CustomColor = {r=0, g=.8, b=.3},
 		UnitList = "",
@@ -260,8 +259,6 @@ G.DefaultSettings = {
 		PPFadeoutAlpha = 0,
 		PPOnFire = false,
 		NameplateClassPower = false,
-		NameTextSize = 14,
-		HealthTextSize = 16,
 		MinScale = 1,
 		MinAlpha = 1,
 		ColorBorder = false,
@@ -275,6 +272,18 @@ G.DefaultSettings = {
 		FocusColor = {r=1, g=.8, b=0},
 		CastbarGlow = true,
 		CastTarget = false,
+		FriendPlate = false,
+
+		PlateWidth = 190,
+		PlateHeight = 8,
+		NameTextSize = 14,
+		HealthTextSize = 16,
+		HealthTextOffset = 5,
+		FriendPlateWidth = 190,
+		FriendPlateHeight = 8,
+		FriendNameSize = 14,
+		FriendHealthSize = 16,
+		FriendHealthOffset = 5,
 	},
 	Skins = {
 		DBM = true,
@@ -345,6 +354,7 @@ G.DefaultSettings = {
 		BrokenAlert = false,
 		FasterLoot = true,
 		AutoQuest = false,
+		IgnoreQuestNPC = {},
 		HideTalking = true,
 		HideBossBanner = false,
 		HideBossEmote = false,
@@ -372,6 +382,10 @@ G.DefaultSettings = {
 		FasterSkip = false,
 		EnhanceDressup = true,
 		QuestTool = true,
+		InfoStrLeft = "[guild][friend][ping][fps][zone]",
+		InfoStrRight = "[spec][dura][gold][time]",
+		InfoSize = 13,
+		MaxAddOns = 12,
 	},
 	Tutorial = {
 		Complete = false,
@@ -525,6 +539,10 @@ local function setupNameplateFilter()
 	G:SetupNameplateFilter(guiPage[5])
 end
 
+local function setupNameplateSize()
+	G:SetupNameplateSize(guiPage[5])
+end
+
 local function setupPlateCastbarGlow()
 	G:PlateCastbarGlow(guiPage[5])
 end
@@ -544,6 +562,10 @@ end
 
 local function updateBagAnchor()
 	B:GetModule("Bags"):UpdateAllAnchors()
+end
+
+local function updateBagSize()
+	B:GetModule("Bags"):UpdateBagSize()
 end
 
 local function updateActionbarScale()
@@ -758,6 +780,21 @@ local function updateMarkerGrid()
 	B:GetModule("Misc"):RaidTool_UpdateGrid()
 end
 
+local function updateInfobarAnchor(self)
+	if self:GetText() == "" then
+		self:SetText(self.__default)
+		C.db[self.__key][self.__value] = self:GetText()
+	end
+
+	if not NDuiADB["DisableInfobars"] then
+		B:GetModule("Infobar"):Infobar_UpdateAnchor()
+	end
+end
+
+local function updateInfobarSize()
+	B:GetModule("Infobar"):UpdateInfobarSize()
+end
+
 local function updateSkinAlpha()
 	for _, frame in pairs(C.frames) do
 		frame:SetBackdropColor(0, 0, 0, C.db["Skins"]["SkinAlpha"])
@@ -791,19 +828,19 @@ local NewTag = "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0|t"
 
 G.TabList = {
 	L["Actionbar"],
-	L["Bags"],
+	NewTag..L["Bags"],
 	L["Unitframes"],
 	L["RaidFrame"],
-	L["Nameplate"],
+	NewTag..L["Nameplate"],
 	L["PlayerPlate"],
 	L["Auras"],
 	L["Raid Tools"],
 	L["ChatFrame"],
-	NewTag..L["Maps"],
+	L["Maps"],
 	L["Skins"],
 	L["Tooltip"],
-	NewTag..L["Misc"],
-	L["UI Settings"],
+	L["Misc"],
+	NewTag..L["UI Settings"],
 	L["Profile"],
 }
 
@@ -848,10 +885,10 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{3, "Bags", "iLvlToShow", L["iLvlToShow"].."*", nil, {1, 500, 1}, nil, L["iLvlToShowTip"]},
 		{4, "Bags", "BagSortMode", L["BagSortMode"].."*", true, {L["Forward"], L["Backward"], DISABLE}, updateBagSortOrder, L["BagSortTip"]},
 		{},--blank
-		{3, "Bags", "BagsScale", L["Bags Scale"], false, {.5, 1.5, .1}},
-		{3, "Bags", "IconSize", L["Bags IconSize"], true, {30, 42, 1}},
-		{3, "Bags", "BagsWidth", L["Bags Width"], false, {10, 40, 1}},
-		{3, "Bags", "BankWidth", L["Bank Width"], true, {10, 40, 1}},
+		{3, "Bags", "IconSize", L["Bags IconSize"].."*", nil, {20, 50, 1}, updateBagSize},
+		{3, "Bags", "FontSize", NewTag..L["Bags FontSize"].."*", true, {10, 50, 1}, updateBagSize},
+		{3, "Bags", "BagsWidth", L["Bags Width"].."*", false, {10, 40, 1}, updateBagSize},
+		{3, "Bags", "BankWidth", L["Bank Width"].."*", true, {10, 40, 1}, updateBagSize},
 	},
 	[3] = {
 		{1, "UFs", "Enable", HeaderTag..L["Enable UFs"], nil, setupUnitFrame, nil, L["HideUFWarning"]},
@@ -929,6 +966,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 	},
 	[5] = {
 		{1, "Nameplate", "Enable", HeaderTag..L["Enable Nameplate"], nil, setupNameplateFilter},
+		{1, "Nameplate", "FriendPlate", NewTag..L["FriendPlate"].."*", nil, setupNameplateSize, refreshNameplates, L["FriendPlateTip"]},
 		{1, "Nameplate", "NameOnlyMode", L["NameOnlyMode"].."*", true, nil, nil, L["NameOnlyModeTip"]},
 		{},--blank
 		{4, "Nameplate", "TargetIndicator", L["TargetIndicator"].."*", nil, {DISABLE, L["TopArrow"], L["RightArrow"], L["TargetGlow"], L["TopNGlow"], L["RightNGlow"]}, refreshNameplates},
@@ -965,10 +1003,6 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{3, "Nameplate", "VerticalSpacing", L["NP VerticalSpacing"].."*", true, {.5, 1.5, .1}, updatePlateSpacing},
 		{3, "Nameplate", "MinScale", L["Nameplate MinScale"].."*", false, {.5, 1, .1}, updatePlateScale},
 		{3, "Nameplate", "MinAlpha", L["Nameplate MinAlpha"].."*", true, {.5, 1, .1}, updatePlateAlpha},
-		{3, "Nameplate", "PlateWidth", L["NP Width"].."*", false, {50, 250, 1}, refreshNameplates},
-		{3, "Nameplate", "PlateHeight", L["NP Height"].."*", true, {5, 30, 1}, refreshNameplates},
-		{3, "Nameplate", "NameTextSize", L["NameTextSize"].."*", false, {10, 30, 1}, refreshNameplates},
-		{3, "Nameplate", "HealthTextSize", L["HealthTextSize"].."*", true, {10, 30, 1}, refreshNameplates},
 		{3, "Nameplate", "maxAuras", L["Max Auras"].."*", false, {0, 10, 1}, refreshNameplates},
 		{3, "Nameplate", "AuraSize", L["Auras Size"].."*", true, {18, 40, 1}, refreshNameplates},
 	},
@@ -1076,7 +1110,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Map", "ShowRecycleBin", L["Show RecycleBin"]},
 		{1, "Misc", "ExpRep", L["Show Expbar"], true},
 		{3, "Map", "MinimapScale", L["Minimap Scale"].."*", nil, {.5, 3, .1}, updateMinimapScale},
-		{3, "Map", "MinimapSize", NewTag..L["Minimap Size"].."*", true, {100, 500, 1}, updateMinimapScale},
+		{3, "Map", "MinimapSize", L["Minimap Size"].."*", true, {100, 500, 1}, updateMinimapScale},
 	},
 	[11] = {
 		{1, "Skins", "BlizzardSkins", HeaderTag..L["BlizzardSkins"], nil, nil, nil, L["BlizzardSkinsTips"]},
@@ -1153,11 +1187,16 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Misc", "MDGuildBest", L["MDGuildBest"], true, nil, nil, L["MDGuildBestTip"]},
 		{1, "Misc", "MawThreatBar", L["MawThreatBar"], nil, nil, nil, L["MawThreatBarTip"]},
 		{1, "Misc", "EnhanceDressup", L["EnhanceDressup"], true, nil, nil, L["EnhanceDressupTip"]},
-		{1, "Misc", "QuestTool", NewTag..L["QuestTool"], nil, nil, nil, L["QuestToolTip"]},
+		{1, "Misc", "QuestTool", L["QuestTool"], nil, nil, nil, L["QuestToolTip"]},
 	},
 	[14] = {
 		{1, "ACCOUNT", "VersionCheck", L["Version Check"]},
-		{1, "ACCOUNT", "DisableInfobars", L["DisableInfobars"], true},
+		{},--blank
+		{1, "ACCOUNT", "DisableInfobars", HeaderTag..L["DisableInfobars"]},
+		{3, "Misc", "MaxAddOns", NewTag..L["SysMaxAddOns"].."*", nil,  {1, 50, 1}, nil, L["SysMaxAddOnsTip"]},
+		{3, "Misc", "InfoSize", NewTag..L["InfobarFontSize"].."*", true,  {10, 50, 1}, updateInfobarSize},
+		{2, "Misc", "InfoStrLeft", NewTag..L["LeftInfobar"].."*", nil, nil, updateInfobarAnchor, L["InfobarStrTip"]},
+		{2, "Misc", "InfoStrRight", NewTag..L["RightInfobar"].."*", true, nil, updateInfobarAnchor, L["InfobarStrTip"]},
 		{},--blank
 		{3, "ACCOUNT", "UIScale", L["Setup UIScale"], false, {.4, 1.15, .01}},
 		{1, "ACCOUNT", "LockUIScale", HeaderTag..L["Lock UIScale"], true},
@@ -1212,7 +1251,7 @@ local function CreateTab(parent, i, name)
 	return tab
 end
 
-local function NDUI_VARIABLE(key, value, newValue)
+local function CheckUIOption(key, value, newValue)
 	if key == "ACCOUNT" then
 		if newValue ~= nil then
 			NDuiADB[value] = newValue
@@ -1225,6 +1264,14 @@ local function NDUI_VARIABLE(key, value, newValue)
 		else
 			return C.db[key][value]
 		end
+	end
+end
+
+G.needUIReload = nil
+
+local function CheckUIReload(name)
+	if not strfind(name, "%*") then
+		G.needUIReload = true
 	end
 end
 
@@ -1244,9 +1291,10 @@ local function CreateOption(i)
 				offset = offset + 35
 			end
 			cb.name = B.CreateFS(cb, 14, name, false, "LEFT", 30, 0)
-			cb:SetChecked(NDUI_VARIABLE(key, value))
+			cb:SetChecked(CheckUIOption(key, value))
 			cb:SetScript("OnClick", function()
-				NDUI_VARIABLE(key, value, cb:GetChecked())
+				CheckUIOption(key, value, cb:GetChecked())
+				CheckUIReload(name)
 				if callback then callback() end
 			end)
 			if data and type(data) == "function" then
@@ -1262,19 +1310,23 @@ local function CreateOption(i)
 		elseif optType == 2 then
 			local eb = B.CreateEditBox(parent, 200, 28)
 			eb:SetMaxLetters(999)
+			eb.__key = key
+			eb.__value = value
+			eb.__default = (key == "ACCOUNT" and G.AccountSettings[value]) or G.DefaultSettings[key][value]
 			if horizon then
 				eb:SetPoint("TOPLEFT", 345, -offset + 45)
 			else
 				eb:SetPoint("TOPLEFT", 35, -offset - 25)
 				offset = offset + 70
 			end
-			eb:SetText(NDUI_VARIABLE(key, value))
+			eb:SetText(CheckUIOption(key, value))
 			eb:HookScript("OnEscapePressed", function()
-				eb:SetText(NDUI_VARIABLE(key, value))
+				eb:SetText(CheckUIOption(key, value))
 			end)
-			eb:HookScript("OnEnterPressed", function()
-				NDUI_VARIABLE(key, value, eb:GetText())
-				if callback then callback() end
+			eb:HookScript("OnEnterPressed", function(self)
+				CheckUIOption(key, value, eb:GetText())
+				CheckUIReload(name)
+				if callback then callback(self) end
 			end)
 
 			B.CreateFS(eb, 14, name, "system", "CENTER", 0, 25)
@@ -1294,14 +1346,15 @@ local function CreateOption(i)
 			end
 			local s = B.CreateSlider(parent, name, min, max, step, x, y)
 			s.__default = (key == "ACCOUNT" and G.AccountSettings[value]) or G.DefaultSettings[key][value]
-			s:SetValue(NDUI_VARIABLE(key, value))
+			s:SetValue(CheckUIOption(key, value))
 			s:SetScript("OnValueChanged", function(_, v)
 				local current = B:Round(tonumber(v), 2)
-				NDUI_VARIABLE(key, value, current)
+				CheckUIOption(key, value, current)
+				CheckUIReload(name)
 				s.value:SetText(current)
 				if callback then callback() end
 			end)
-			s.value:SetText(B:Round(NDUI_VARIABLE(key, value), 2))
+			s.value:SetText(B:Round(CheckUIOption(key, value), 2))
 			if tooltip then
 				s.title = L["Tips"]
 				B.AddTooltip(s, "ANCHOR_RIGHT", tooltip, "info")
@@ -1321,12 +1374,12 @@ local function CreateOption(i)
 				dd:SetPoint("TOPLEFT", 35, -offset - 25)
 				offset = offset + 70
 			end
-			dd.Text:SetText(data[NDUI_VARIABLE(key, value)])
+			dd.Text:SetText(data[CheckUIOption(key, value)])
 
 			local opt = dd.options
 			dd.button:HookScript("OnClick", function()
 				for num = 1, #data do
-					if num == NDUI_VARIABLE(key, value) then
+					if num == CheckUIOption(key, value) then
 						opt[num]:SetBackdropColor(1, .8, 0, .3)
 						opt[num].selected = true
 					else
@@ -1337,7 +1390,8 @@ local function CreateOption(i)
 			end)
 			for i in pairs(data) do
 				opt[i]:HookScript("OnClick", function()
-					NDUI_VARIABLE(key, value, i)
+					CheckUIOption(key, value, i)
+					CheckUIReload(name)
 					if callback then callback() end
 				end)
 				if value == "TexStyle" then
@@ -1352,7 +1406,7 @@ local function CreateOption(i)
 			end
 		-- Colorswatch
 		elseif optType == 5 then
-			local swatch = B.CreateColorSwatch(parent, name, NDUI_VARIABLE(key, value))
+			local swatch = B.CreateColorSwatch(parent, name, CheckUIOption(key, value))
 			local width = 25 + (horizon or 0)*155
 			if horizon then
 				swatch:SetPoint("TOPLEFT", width, -offset + 30)
@@ -1392,7 +1446,7 @@ local function CreateContactBox(parent, text, url, index)
 end
 
 local donationList = {
-	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo, 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪，养乐多，无人知晓，秋末旷夜-迪瑟洛克，Teo，莉拉斯塔萨，音尘绝，刺王杀驾，醉跌-凤凰之神，灬麦加灬-阿古斯，漂舟不系，朵小熙，山岸逢花，乄阿财-帕奇维克，乌鸦岭守墓饼-罗宁，自在独踽踽-霜之哀伤，御行宇航-碧玉矿洞，末日伯爵-奥罗以及部分未备注名字的用户。",
+	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo, 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪，养乐多，无人知晓，秋末旷夜-迪瑟洛克，Teo，莉拉斯塔萨，音尘绝，刺王杀驾，醉跌-凤凰之神，灬麦加灬-阿古斯，漂舟不系，朵小熙，山岸逢花，乄阿财-帕奇维克，乌鸦岭守墓饼-罗宁，自在独踽踽-霜之哀伤，御行宇航-碧玉矿洞，末日伯爵-奥罗，阿玛忆-白银之手以及部分未备注名字的用户。",
 	["Patreon"] = "Quentin, Julian Neigefind, silenkin, imba Villain, Zeyu Zhu, Kon Floros.",
 }
 local function CreateDonationIcon(parent, texture, name, xOffset)
@@ -1483,7 +1537,10 @@ local function OpenGUI()
 	ok:SetScript("OnClick", function()
 		B:SetupUIScale()
 		f:Hide()
-		StaticPopup_Show("RELOAD_NDUI")
+		if G.needUIReload then
+			StaticPopup_Show("RELOAD_NDUI")
+			G.needUIReload = nil
+		end
 	end)
 
 	for i, name in pairs(G.TabList) do
