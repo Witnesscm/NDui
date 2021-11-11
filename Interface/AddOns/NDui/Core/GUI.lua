@@ -305,11 +305,17 @@ G.DefaultSettings = {
 
 		PlateWidth = 190,
 		PlateHeight = 8,
+		PlateCBHeight = 8,
+		PlateCBOffset = -1,
+		CBTextSize = 14,
 		NameTextSize = 14,
 		HealthTextSize = 16,
 		HealthTextOffset = 5,
 		FriendPlateWidth = 190,
 		FriendPlateHeight = 8,
+		FriendPlateCBHeight = 8,
+		FriendPlateCBOffset = -1,
+		FriendCBTextSize = 14,
 		FriendNameSize = 14,
 		FriendHealthSize = 16,
 		FriendHealthOffset = 5,
@@ -370,7 +376,7 @@ G.DefaultSettings = {
 		MissingStats = true,
 		SoloInfo = true,
 		RareAlerter = true,
-		AlertinChat = false,
+		RarePrint = true,
 		Focuser = true,
 		ExpRep = true,
 		Screenshot = true,
@@ -1106,7 +1112,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Misc", "NzothVision", L["NzothVision"], true},
 		{},--blank
 		{1, "Misc", "RareAlerter", HeaderTag..L["Rare Alert"].."*", nil, nil, updateRareAlert},
-		{1, "Misc", "AlertinChat", L["Alert In Chat"].."*"},
+		{1, "Misc", "RarePrint", L["Alert In Chat"].."*"},
 		{1, "Misc", "RareAlertInWild", L["RareAlertInWild"].."*", true},
 	},
 	[9] = {
@@ -1601,6 +1607,7 @@ local function OpenGUI()
 	end
 
 	G:CreateProfileGUI(guiPage[15]) -- profile GUI
+	G:SetupActionbarStyle(guiPage[1])
 
 	local helpInfo = B.CreateHelpInfo(f, L["Option* Tips"])
 	helpInfo:SetPoint("TOPLEFT", 20, -5)

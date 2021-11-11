@@ -68,6 +68,7 @@ function M:OnLogin()
 	M:EnhanceDressup()
 	M:FuckTrainSound()
 	M:JerryWay()
+	M:BaudErrorFrameHelpTip()
 
 	-- Unregister talent event
 	if PlayerTalentFrame then
@@ -770,4 +771,28 @@ function M:JerryWay()
 		end
 	end
 	SLASH_NDUI_JERRY_WAY1 = "/way"
+end
+
+function M:BaudErrorFrameHelpTip()
+	if not IsAddOnLoaded("!BaudErrorFrame") then return end
+	local button, count = _G.BaudErrorFrameMinimapButton, _G.BaudErrorFrameMinimapCount
+	if not button then return end
+
+	local errorInfo = {
+		text = L["BaudErrorTip"],
+		buttonStyle = HelpTip.ButtonStyle.GotIt,
+		targetPoint = HelpTip.Point.TopEdgeCenter,
+		alignment = HelpTip.Alignment.Right,
+		offsetX = -15,
+		onAcknowledgeCallback = B.HelpInfoAcknowledge,
+		callbackArg = "BaudError",
+	}
+	hooksecurefunc(count, "SetText", function(_, text)
+		if not NDuiADB["Help"]["BaudError"] then
+			text = tonumber(text)
+			if text and text > 0 then
+				HelpTip:Show(button, errorInfo)
+			end
+		end
+	end)
 end

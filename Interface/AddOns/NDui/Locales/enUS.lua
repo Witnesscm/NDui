@@ -817,3 +817,7 @@ L["BankPerRowTip"] = "|nIf Bags ItemFilter enabled, change the bank bags per row
 L["PlateAuras"] = "Nameplate Auras"
 L["QuickJoinInfo"] = "Quick apply group by double click. And leave comment by holding key ALT and double click."
 L["ActionbarSetup"] = "Actionbar Setup"
+L["BaudErrorTip"] = "UI errors popup out, click the number below to check and report."
+L["ApplyBarStyle"] = "Load this bar style by holding key CTRL and click."
+L["CastbarTextSize"] = "Castbar Text Size"
+L["CastbarTextOffset"] = "Castbar Text Y-Offset"
