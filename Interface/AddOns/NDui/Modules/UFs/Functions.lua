@@ -157,12 +157,40 @@ function UF:UpdateRaidHealthMethod()
 	end
 end
 
+UF.VariousTagIndex = {
+	[1] = "",
+	[2] = "currentpercent",
+	[3] = "currentmax",
+	[4] = "current",
+	[5] = "percent",
+	[6] = "loss",
+	[7] = "losspercent",
+}
+
+function UF:UpdateFrameHealthTag()
+	local mystyle = self.mystyle
+	local valueType
+	if mystyle == "player" or mystyle == "target" then
+		valueType = UF.VariousTagIndex[C.db["UFs"]["PlayerHPTag"]]
+	elseif mystyle == "focus" then
+		valueType = UF.VariousTagIndex[C.db["UFs"]["FocusHPTag"]]
+	elseif mystyle == "boss" or mystyle == "arena" then
+		valueType = UF.VariousTagIndex[C.db["UFs"]["BossHPTag"]]
+	else
+		valueType = UF.VariousTagIndex[C.db["UFs"]["PetHPTag"]]
+	end
+
+	self:Tag(self.healthValue, "[VariousHP("..valueType..")]")
+	self.healthValue:UpdateTag()
+end
+
 function UF:CreateHealthText(self)
 	local mystyle = self.mystyle
 	local textFrame = CreateFrame("Frame", nil, self)
 	textFrame:SetAllPoints(self.Health)
 
 	local name = B.CreateFS(textFrame, retVal(self, 13, 12, 12, 12, C.db["Nameplate"]["NameTextSize"]), "", false, "LEFT", 3, 0)
+	self.nameText = name
 	name:SetJustifyH("LEFT")
 	if mystyle == "raid" then
 		name:SetWidth(self:GetWidth()*.95)
@@ -206,11 +234,12 @@ function UF:CreateHealthText(self)
 	end
 
 	local hpval = B.CreateFS(textFrame, retVal(self, 14, 13, 13, 13, C.db["Nameplate"]["HealthTextSize"]), "", false, "RIGHT", -3, 0)
+	self.healthValue = hpval
 	if mystyle == "raid" then
 		self:Tag(hpval, "[raidhp]")
 		if self.isPartyPet then
 			hpval:SetPoint("RIGHT", -3, -1)
-			self:Tag(hpval, "[hp]")
+			self:Tag(hpval, "[VariousHP(percent)]")
 		elseif C.db["UFs"]["SimpleMode"] and not self.isPartyFrame then
 			hpval:SetPoint("RIGHT", -4, 0)
 		else
@@ -221,13 +250,10 @@ function UF:CreateHealthText(self)
 		hpval:SetScale(C.db["UFs"]["RaidTextScale"])
 	elseif mystyle == "nameplate" then
 		hpval:SetPoint("RIGHT", self, 0, 5)
-		self:Tag(hpval, "[nphp]")
+		self:Tag(hpval, "[VariousHP(currentpercent)]")
 	else
-		self:Tag(hpval, "[hp]")
+		UF.UpdateFrameHealthTag(self)
 	end
-
-	self.nameText = name
-	self.healthValue = hpval
 end
 
 function UF:UpdateRaidNameText()
@@ -331,6 +357,21 @@ function UF:CreatePowerBar(self)
 	UF:UpdatePowerBarColor(self)
 end
 
+function UF:UpdateFramePowerTag()
+	local mystyle = self.mystyle
+	local valueType
+	if mystyle == "player" or mystyle == "target" then
+		valueType = UF.VariousTagIndex[C.db["UFs"]["PlayerMPTag"]]
+	elseif mystyle == "focus" then
+		valueType = UF.VariousTagIndex[C.db["UFs"]["FocusMPTag"]]
+	else
+		valueType = UF.VariousTagIndex[C.db["UFs"]["BossMPTag"]]
+	end
+
+	self:Tag(self.powerText, "[color][VariousMP("..valueType..")]")
+	self.powerText:UpdateTag()
+end
+
 function UF:CreatePowerText(self)
 	local textFrame = CreateFrame("Frame", nil, self)
 	textFrame:SetAllPoints(self.Power)
@@ -344,8 +385,8 @@ function UF:CreatePowerText(self)
 	elseif mystyle == "focus" then
 		ppval:SetPoint("RIGHT", -3, C.db["UFs"]["FocusPowerOffset"])
 	end
-	self:Tag(ppval, "[color][power]")
 	self.powerText = ppval
+	UF.UpdateFramePowerTag(self)
 end
 
 local textScaleFrames = {
@@ -532,8 +573,8 @@ function UF:CreateCastBar(self)
 		cb:SetHeight(self:GetHeight())
 	end
 
-	local timer = B.CreateFS(cb, retVal(self, 12, 12, 12, 12, C.db["Nameplate"]["NameTextSize"]), "", false, "RIGHT", -2, 0)
-	local name = B.CreateFS(cb, retVal(self, 12, 12, 12, 12, C.db["Nameplate"]["NameTextSize"]), "", false, "LEFT", 2, 0)
+	local timer = B.CreateFS(cb, 12, "", false, "RIGHT", -2, 0)
+	local name = B.CreateFS(cb, 12, "", false, "LEFT", 2, 0)
 	name:SetPoint("RIGHT", timer, "LEFT", -5, 0)
 	name:SetJustifyH("LEFT")
 
@@ -704,7 +745,7 @@ function UF.PostUpdateIcon(element, _, button, _, _, duration, expiration, debuf
 	local fontSize = element.fontSize or element.size*.6
 	button.count:SetFont(DB.Font[1], fontSize, DB.Font[3])
 
-	if button.isDebuff and filteredStyle[style] and not button.isPlayer then
+	if C.db["UFs"]["Desaturate"] and button.isDebuff and filteredStyle[style] and not button.isPlayer then
 		button.icon:SetDesaturated(true)
 	else
 		button.icon:SetDesaturated(false)
@@ -735,12 +776,9 @@ local function bolsterPreUpdate(element)
 end
 
 local function bolsterPostUpdate(element)
-	if not element.bolsterIndex then return end
-	for _, button in pairs(element) do
-		if button == element.bolsterIndex then
-			button.count:SetText(element.bolster)
-			return
-		end
+	local button = element.bolsterIndex
+	if button then
+		button.count:SetText(element.bolster)
 	end
 end
 
@@ -750,6 +788,11 @@ function UF.PostUpdateGapIcon(_, _, icon)
 	end
 end
 
+local isCasterPlayer = {
+	["player"] = true,
+	["pet"] = true,
+	["vehicle"] = true,
+}
 function UF.CustomFilter(element, unit, button, name, _, _, _, _, _, caster, isStealable, _, spellID, _, _, _, nameplateShowAll)
 	local style = element.__owner.mystyle
 	if name and spellID == 209859 then
@@ -776,12 +819,27 @@ function UF.CustomFilter(element, unit, button, name, _, _, _, _, _, caster, isS
 			return true
 		else
 			local auraFilter = C.db["Nameplate"]["AuraFilter"]
-			return (auraFilter == 3 and nameplateShowAll) or (auraFilter ~= 1 and (caster == "player" or caster == "pet" or caster == "vehicle"))
+			return (auraFilter == 3 and nameplateShowAll) or (auraFilter ~= 1 and isCasterPlayer[caster])
 		end
-	elseif style == "focus" then
-		return (not button.isDebuff and isStealable) or (button.isDebuff and name)
 	else
 		return (element.onlyShowPlayer and button.isPlayer) or (not element.onlyShowPlayer and name)
+	end
+end
+
+function UF.UnitCustomFilter(element, _, button, name, _, _, _, _, _, _, isStealable)
+	local value = element.__value
+	if button.isDebuff then
+		if C.db["UFs"][value.."DebuffType"] == 2 then
+			return name
+		elseif C.db["UFs"][value.."DebuffType"] == 3 then
+			return button.isPlayer
+		end
+	else
+		if C.db["UFs"][value.."BuffType"] == 2 then
+			return name
+		elseif C.db["UFs"][value.."BuffType"] == 3 then
+			return isStealable
+		end
 	end
 end
 
@@ -835,15 +893,50 @@ function UF:UpdateAuraContainer(parent, element, maxAuras)
 	element:SetHeight((element.size + element.spacing) * maxLines)
 end
 
-function UF:UpdateTargetAuras()
-	local frame = _G.oUF_Target
+function UF:ConfigureAuras(element)
+	local value = element.__value
+	element.numBuffs = C.db["UFs"][value.."BuffType"] ~= 1 and 20 or 0
+	element.numDebuffs = C.db["UFs"][value.."DebuffType"] ~= 1 and 16 or 0
+	element.iconsPerRow = C.db["UFs"][value.."AurasPerRow"]
+end
+
+function UF:RefreshUFAuras(frame)
 	if not frame then return end
-
 	local element = frame.Auras
-	element.iconsPerRow = C.db["UFs"]["TargetAurasPerRow"]
+	if not element then return end
 
+	UF:ConfigureAuras(element)
 	UF:UpdateAuraContainer(frame, element, element.numBuffs + element.numDebuffs)
 	element:ForceUpdate()
+end
+
+function UF:UpdateUFAuras()
+	UF:RefreshUFAuras(_G.oUF_Player)
+	UF:RefreshUFAuras(_G.oUF_Target)
+	UF:RefreshUFAuras(_G.oUF_Focus)
+	UF:RefreshUFAuras(_G.oUF_ToT)
+end
+
+function UF:ToggleUFAuras(frame, enable)
+	if not frame then return end
+	if enable then
+		if not frame:IsElementEnabled("Auras") then
+			frame:EnableElement("Auras")
+		end
+	else
+		if frame:IsElementEnabled("Auras") then
+			frame:DisableElement("Auras")
+			frame.Auras:ForceUpdate()
+		end
+	end
+end
+
+function UF:ToggleAllAuras()
+	local enable = C.db["UFs"]["ShowAuras"]
+	UF:ToggleUFAuras(_G.oUF_Player, enable)
+	UF:ToggleUFAuras(_G.oUF_Target, enable)
+	UF:ToggleUFAuras(_G.oUF_Focus, enable)
+	UF:ToggleUFAuras(_G.oUF_ToT, enable)
 end
 
 function UF:CreateAuras(self)
@@ -855,20 +948,34 @@ function UF:CreateAuras(self)
 	bu["growth-y"] = "DOWN"
 	bu.spacing = 3
 	bu.tooltipAnchor = "ANCHOR_BOTTOMLEFT"
-	if mystyle == "target" then
+	bu.showDebuffType = true
+	if mystyle == "player" then
+		bu.initialAnchor = "TOPRIGHT"
+		bu["growth-x"] = "LEFT"
+		bu:SetPoint("TOPRIGHT", self.Power, "BOTTOMRIGHT", 0, -10)
+		bu.__value = "Player"
+		UF:ConfigureAuras(bu)
+		bu.CustomFilter = UF.UnitCustomFilter
+	elseif mystyle == "target" then
 		bu:SetPoint("TOPLEFT", self.Power, "BOTTOMLEFT", 0, -10)
-		bu.numBuffs = 20
-		bu.numDebuffs = 15
-		bu.iconsPerRow = C.db["UFs"]["TargetAurasPerRow"]
+		bu.__value = "Target"
+		UF:ConfigureAuras(bu)
+		bu.CustomFilter = UF.UnitCustomFilter
 	elseif mystyle == "tot" then
 		bu:SetPoint("TOPLEFT", self.Power, "BOTTOMLEFT", 0, -5)
 		bu.numBuffs = 0
 		bu.numDebuffs = 10
 		bu.iconsPerRow = 5
+		bu.__value = "ToT"
+		UF:ConfigureAuras(bu)
+		bu.CustomFilter = UF.UnitCustomFilter
 	elseif mystyle == "focus" then
 		bu:SetPoint("TOPLEFT", self.Power, "BOTTOMLEFT", 0, -10)
 		bu.numTotal = 23
 		bu.iconsPerRow = 8
+		bu.__value = "Focus"
+		UF:ConfigureAuras(bu)
+		bu.CustomFilter = UF.UnitCustomFilter
 	elseif mystyle == "raid" then
 		bu.initialAnchor = "LEFT"
 		bu:SetPoint("LEFT", self, 15, 0)
@@ -877,11 +984,13 @@ function UF:CreateAuras(self)
 		bu.disableCooldown = true
 		bu.gap = false
 		bu.disableMouse = true
+		bu.showDebuffType = nil
+		bu.CustomFilter = UF.CustomFilter
 	elseif mystyle == "nameplate" then
 		bu.initialAnchor = "BOTTOMLEFT"
 		bu["growth-y"] = "UP"
-		if C.db["Nameplate"]["ShowPlayerPlate"] and C.db["Nameplate"]["NameplateClassPower"] then
-			bu:SetPoint("BOTTOMLEFT", self.nameText, "TOPLEFT", 0, 10 + _G.oUF_ClassPowerBar:GetHeight())
+		if C.db["Nameplate"]["TargetPower"] then
+			bu:SetPoint("BOTTOMLEFT", self.nameText, "TOPLEFT", 0, 10 + C.db["Nameplate"]["PPBarHeight"])
 		else
 			bu:SetPoint("BOTTOMLEFT", self.nameText, "TOPLEFT", 0, 5)
 		end
@@ -890,11 +999,11 @@ function UF:CreateAuras(self)
 		bu.showDebuffType = C.db["Nameplate"]["ColorBorder"]
 		bu.gap = false
 		bu.disableMouse = true
+		bu.CustomFilter = UF.CustomFilter
 	end
 
 	UF:UpdateAuraContainer(self, bu, bu.numTotal or bu.numBuffs + bu.numDebuffs)
 	bu.showStealableBuffs = true
-	bu.CustomFilter = UF.CustomFilter
 	bu.PostCreateIcon = UF.PostCreateIcon
 	bu.PostUpdateIcon = UF.PostUpdateIcon
 	bu.PostUpdateGapIcon = UF.PostUpdateGapIcon
@@ -944,12 +1053,8 @@ function UF:CreateDebuffs(self)
 	bu["growth-x"] = "LEFT"
 	bu["growth-y"] = "DOWN"
 	bu.tooltipAnchor = "ANCHOR_BOTTOMLEFT"
-	if mystyle == "player" then
-		bu:SetPoint("TOPRIGHT", self.Power, "BOTTOMRIGHT", 0, -10)
-		bu.num = 14
-		bu.iconsPerRow = 7
-		bu.showDebuffType = true
-	elseif mystyle == "boss" or mystyle == "arena" then
+	bu.showDebuffType = true
+	if mystyle == "boss" or mystyle == "arena" then
 		bu:SetPoint("TOPRIGHT", self, "TOPLEFT", -5, 0)
 		bu.num = 10
 		bu.iconsPerRow = 5
@@ -962,7 +1067,6 @@ function UF:CreateDebuffs(self)
 		bu.size = C.db["UFs"]["RaidDebuffSize"]
 		bu.CustomFilter = UF.RaidDebuffFilter
 		bu.disableMouse = true
-		bu.showDebuffType = true
 		bu.fontSize = C.db["UFs"]["RaidDebuffSize"]-2
 	end
 
@@ -1011,8 +1115,6 @@ function UF:RefreshAurasByCombat(self)
 end
 
 -- Class Powers
-local barWidth, barHeight = unpack(C.UFs.BarSize)
-
 function UF.PostUpdateClassPower(element, cur, max, diff, powerType, chargedPowerPoints)
 	if not cur or cur == 0 then
 		for i = 1, 6 do
@@ -1041,7 +1143,7 @@ function UF.PostUpdateClassPower(element, cur, max, diff, powerType, chargedPowe
 
 	if diff then
 		for i = 1, max do
-			element[i]:SetWidth((barWidth - (max-1)*C.margin)/max)
+			element[i]:SetWidth((element.__owner.ClassPowerBar:GetWidth() - (max-1)*C.margin)/max)
 		end
 		for i = max + 1, 6 do
 			element[i].bg:Hide()
@@ -1060,13 +1162,11 @@ function UF:OnUpdateRunes(elapsed)
 	local duration = self.duration + elapsed
 	self.duration = duration
 	self:SetValue(duration)
-
-	if self.timer then
+	self.timer:SetText(nil)
+	if C.db["UFs"]["RuneTimer"] then
 		local remain = self.runeDuration - duration
 		if remain > 0 then
 			self.timer:SetText(B.FormatTime(remain))
-		else
-			self.timer:SetText(nil)
 		end
 	end
 end
@@ -1079,7 +1179,7 @@ function UF.PostUpdateRunes(element, runemap)
 			if runeReady then
 				rune:SetAlpha(1)
 				rune:SetScript("OnUpdate", nil)
-				if rune.timer then rune.timer:SetText(nil) end
+				rune.timer:SetText(nil)
 			elseif start then
 				rune:SetAlpha(.6)
 				rune.runeDuration = duration
@@ -1090,15 +1190,20 @@ function UF.PostUpdateRunes(element, runemap)
 end
 
 function UF:CreateClassPower(self)
+	local barWidth, barHeight = C.db["UFs"]["CPWidth"], C.db["UFs"]["CPHeight"]
+	local barPoint = {"BOTTOMLEFT", self, "TOPLEFT", C.db["UFs"]["CPxOffset"], C.db["UFs"]["CPyOffset"]}
 	if self.mystyle == "PlayerPlate" then
-		barWidth = C.db["Nameplate"]["NameplateClassPower"] and C.db["Nameplate"]["PlateWidth"] or C.db["Nameplate"]["PPWidth"]
-		barHeight = C.db["Nameplate"]["PPBarHeight"]
-		C.UFs.BarPoint = {"BOTTOMLEFT", self, "TOPLEFT", 0, 3}
+		barWidth, barHeight = C.db["Nameplate"]["PPWidth"], C.db["Nameplate"]["PPBarHeight"]
+		barPoint = {"BOTTOMLEFT", self, "TOPLEFT", 0, C.margin}
+	elseif self.mystyle == "targetplate" then
+		barWidth, barHeight = C.db["Nameplate"]["PlateWidth"], C.db["Nameplate"]["PPBarHeight"]
+		barPoint = {"CENTER", self}
 	end
 
-	local bar = CreateFrame("Frame", "oUF_ClassPowerBar", self.Health)
+	local isDK = DB.MyClass == "DEATHKNIGHT"
+	local bar = CreateFrame("Frame", "$parentClassPowerBar", self.Health)
 	bar:SetSize(barWidth, barHeight)
-	bar:SetPoint(unpack(C.UFs.BarPoint))
+	bar:SetPoint(unpack(barPoint))
 
 	local bars = {}
 	for i = 1, 6 do
@@ -1114,12 +1219,12 @@ function UF:CreateClassPower(self)
 			bars[i]:SetPoint("LEFT", bars[i-1], "RIGHT", C.margin, 0)
 		end
 
-		bars[i].bg = bar:CreateTexture(nil, "BACKGROUND")
+		bars[i].bg = (isDK and bars[i] or bar):CreateTexture(nil, "BACKGROUND")
 		bars[i].bg:SetAllPoints(bars[i])
 		bars[i].bg:SetTexture(DB.normTex)
 		bars[i].bg.multiplier = .25
 
-		if DB.MyClass == "DEATHKNIGHT" and C.db["UFs"]["RuneTimer"] then
+		if isDK then
 			bars[i].timer = B.CreateFS(bars[i], 13, "")
 		elseif DB.MyClass == "ROGUE" then
 			local chargeStar = bars[i]:CreateTexture()
@@ -1132,7 +1237,7 @@ function UF:CreateClassPower(self)
 		end
 	end
 
-	if DB.MyClass == "DEATHKNIGHT" then
+	if isDK then
 		bars.colorSpec = true
 		bars.sortOrder = "asc"
 		bars.PostUpdate = UF.PostUpdateRunes
@@ -1142,14 +1247,23 @@ function UF:CreateClassPower(self)
 		bars.PostUpdate = UF.PostUpdateClassPower
 		self.ClassPower = bars
 	end
+
+	self.ClassPowerBar = bar
 end
 
 function UF:StaggerBar(self)
 	if DB.MyClass ~= "MONK" then return end
 
+	local barWidth, barHeight = C.db["UFs"]["CPWidth"], C.db["UFs"]["CPHeight"]
+	local barPoint = {"BOTTOMLEFT", self, "TOPLEFT", C.db["UFs"]["CPxOffset"], C.db["UFs"]["CPyOffset"]}
+	if self.mystyle == "PlayerPlate" then
+		barWidth, barHeight = C.db["Nameplate"]["PPWidth"], C.db["Nameplate"]["PPBarHeight"]
+		barPoint = {"BOTTOMLEFT", self, "TOPLEFT", 0, C.margin}
+	end
+
 	local stagger = CreateFrame("StatusBar", nil, self.Health)
 	stagger:SetSize(barWidth, barHeight)
-	stagger:SetPoint(unpack(C.UFs.BarPoint))
+	stagger:SetPoint(unpack(barPoint))
 	stagger:SetStatusBarTexture(DB.normTex)
 	stagger:SetFrameLevel(self:GetFrameLevel() + 5)
 	B.SetBD(stagger, 0)
@@ -1165,6 +1279,71 @@ function UF:StaggerBar(self)
 
 	self.Stagger = stagger
 	self.Stagger.bg = bg
+end
+
+function UF:ToggleUFClassPower()
+	local playerFrame = _G.oUF_Player
+	if not playerFrame then return end
+
+	if C.db["UFs"]["ClassPower"] then
+		if playerFrame.ClassPower then
+			if not playerFrame:IsElementEnabled("ClassPower") then
+				playerFrame:EnableElement("ClassPower")
+				playerFrame.ClassPower:ForceUpdate()
+			end
+		end
+		if playerFrame.Runes then
+			if not playerFrame:IsElementEnabled("Runes") then
+				playerFrame:EnableElement("Runes")
+				playerFrame.Runes:ForceUpdate()
+			end
+		end
+		if playerFrame.Stagger then
+			if not playerFrame:IsElementEnabled("Stagger") then
+				playerFrame:EnableElement("Stagger")
+				playerFrame.Stagger:ForceUpdate()
+			end
+		end
+	else
+		if playerFrame.ClassPower then
+			if playerFrame:IsElementEnabled("ClassPower") then
+				playerFrame:DisableElement("ClassPower")
+			end
+		end
+		if playerFrame.Runes then
+			if playerFrame:IsElementEnabled("Runes") then
+				playerFrame:DisableElement("Runes")
+			end
+		end
+		if playerFrame.Stagger then
+			if playerFrame:IsElementEnabled("Stagger") then
+				playerFrame:DisableElement("Stagger")
+			end
+		end
+	end
+end
+
+function UF:UpdateUFClassPower()
+	local playerFrame = _G.oUF_Player
+	if not playerFrame then return end
+
+	local barWidth, barHeight = C.db["UFs"]["CPWidth"], C.db["UFs"]["CPHeight"]
+	local xOffset, yOffset = C.db["UFs"]["CPxOffset"], C.db["UFs"]["CPyOffset"]
+	local bars = playerFrame.ClassPower or playerFrame.Runes
+	if bars then
+		playerFrame.ClassPowerBar:SetSize(barWidth, barHeight)
+		playerFrame.ClassPowerBar:SetPoint("BOTTOMLEFT", playerFrame, "TOPLEFT", xOffset, yOffset)
+		local max = bars.__max
+		for i = 1, max do
+			bars[i]:SetHeight(barHeight)
+			bars[i]:SetWidth((barWidth - (max-1)*C.margin) / max)
+		end
+	end
+
+	if playerFrame.Stagger then
+		playerFrame.Stagger:SetSize(barWidth, barHeight)
+		playerFrame.Stagger:SetPoint("BOTTOMLEFT", playerFrame, "TOPLEFT", xOffset, yOffset)
+	end
 end
 
 function UF.PostUpdateAltPower(element, _, cur, _, max)

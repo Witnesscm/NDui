@@ -29,17 +29,15 @@ local function CreatePlayerStyle(self)
 	UF:CreateFCT(self)
 	UF:CreateAddPower(self)
 	UF:CreateQuestSync(self)
+	UF:CreateClassPower(self)
+	UF:StaggerBar(self)
+	UF:CreateAuras(self)
 
 	if C.db["UFs"]["Castbars"] then
 		UF:ReskinMirrorBars()
 		UF:ReskinTimerTrakcer(self)
 	end
-	if C.db["UFs"]["ClassPower"] and not C.db["Nameplate"]["ShowPlayerPlate"] then
-		UF:CreateClassPower(self)
-		UF:StaggerBar(self)
-	end
 	if not C.db["Misc"]["ExpRep"] then UF:CreateExpRepBar(self) end
-	if C.db["UFs"]["PlayerDebuff"] then UF:CreateDebuffs(self) end
 	if C.db["UFs"]["SwingBar"] then UF:CreateSwing(self) end
 	if C.db["UFs"]["QuakeTimer"] then UF:CreateQuakeTimer(self) end
 end
@@ -89,8 +87,7 @@ local function CreateToTStyle(self)
 	UF:CreateHealthText(self)
 	UF:CreatePowerBar(self)
 	UF:CreateRaidMark(self)
-
-	if C.db["UFs"]["ToTAuras"] then UF:CreateAuras(self) end
+	UF:CreateAuras(self)
 end
 
 local function CreateFocusTargetStyle(self)
@@ -140,6 +137,7 @@ local function CreateArenaStyle(self)
 	UF:CreateHealthBar(self)
 	UF:CreateHealthText(self)
 	UF:CreatePowerBar(self)
+	UF:CreatePowerText(self)
 	UF:CreateCastBar(self)
 	UF:CreateRaidMark(self)
 	UF:CreateBuffs(self)
@@ -266,11 +264,19 @@ function UF:OnLogin()
 		oUF:SpawnNamePlates("oUF_NPs", UF.PostUpdatePlates)
 	end
 
-	if C.db["Nameplate"]["ShowPlayerPlate"] then
+	do -- a playerplate-like PlayerFrame
 		oUF:RegisterStyle("PlayerPlate", UF.CreatePlayerPlate)
 		oUF:SetActiveStyle("PlayerPlate")
 		local plate = oUF:Spawn("player", "oUF_PlayerPlate", true)
 		plate.mover = B.Mover(plate, L["PlayerPlate"], "PlayerPlate", C.UFs.PlayerPlate)
+		UF:TogglePlayerPlate()
+	end
+
+	do	-- fake nameplate for target class power
+		oUF:RegisterStyle("TargetPlate", UF.CreateTargetPlate)
+		oUF:SetActiveStyle("TargetPlate")
+		oUF:Spawn("player", "oUF_TargetPlate", true)
+		UF:ToggleTargetClassPower()
 	end
 
 	-- Default Clicksets for RaidFrame
@@ -290,6 +296,7 @@ function UF:OnLogin()
 		local player = oUF:Spawn("player", "oUF_Player")
 		B.Mover(player, L["PlayerUF"], "PlayerUF", C.UFs.PlayerPos)
 		UF.ToggleCastBar(player, "Player")
+		UF:ToggleUFClassPower()
 
 		oUF:SetActiveStyle("Target")
 		local target = oUF:Spawn("target", "oUF_Target")
@@ -337,6 +344,7 @@ function UF:OnLogin()
 		end
 
 		UF:UpdateTextScale()
+		UF:ToggleAllAuras()
 	end
 
 	if C.db["UFs"]["RaidFrame"] then
