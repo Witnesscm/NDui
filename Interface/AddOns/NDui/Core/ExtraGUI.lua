@@ -235,8 +235,7 @@ function G:SetupRaidDebuffs(parent)
 			NDuiADB["RaidDebuffs"][bar.instName][bar.spellID] = prio
 			self:SetText(prio)
 		end)
-		prioBox.title = L["Tips"]
-		B.AddTooltip(prioBox, "ANCHOR_TOPRIGHT", L["Prio Editbox"], "info")
+		B.AddTooltip(prioBox, "ANCHOR_TOPRIGHT", L["Prio Editbox"], "info", true)
 		bar.prioBox = prioBox
 
 		return bar
@@ -622,8 +621,7 @@ function G:SetupNameplateFilter(parent)
 		local scroll = G:CreateScroll(frame, 240, 200)
 		scroll.box = B.CreateEditBox(frame, 185, 25)
 		scroll.box:SetPoint("TOPLEFT", 10, -10)
-		scroll.box.title = L["Tips"]
-		B.AddTooltip(scroll.box, "ANCHOR_TOPRIGHT", L["ID Intro"], "info")
+		B.AddTooltip(scroll.box, "ANCHOR_TOPRIGHT", L["ID Intro"], "info", true)
 		scroll.add = B.CreateButton(frame, 70, 25, ADD)
 		scroll.add:SetPoint("TOPRIGHT", -8, -10)
 		scroll.add:SetScript("OnClick", function()
@@ -755,8 +753,7 @@ function G:SetupBuffIndicator(parent)
 		scroll.box = B.CreateEditBox(frame, value.width, 25)
 		scroll.box:SetPoint("TOPLEFT", 10, -10)
 		scroll.box:SetMaxLetters(6)
-		scroll.box.title = L["Tips"]
-		B.AddTooltip(scroll.box, "ANCHOR_TOPRIGHT", L["ID Intro"], "info")
+		B.AddTooltip(scroll.box, "ANCHOR_TOPRIGHT", L["ID Intro"], "info", true)
 
 		scroll.add = B.CreateButton(frame, 45, 25, ADD)
 		scroll.add:SetPoint("TOPRIGHT", -8, -10)
@@ -793,8 +790,7 @@ function G:SetupBuffIndicator(parent)
 			showAll:SetPoint("LEFT", swatch, "RIGHT", 2, 0)
 			showAll:SetHitRectInsets(0, 0, 0, 0)
 			showAll.bg:SetBackdropBorderColor(1, .8, 0, .5)
-			showAll.title = L["Tips"]
-			B.AddTooltip(showAll, "ANCHOR_TOPRIGHT", L["ShowAllTip"], "info")
+			B.AddTooltip(showAll, "ANCHOR_TOPRIGHT", L["ShowAllTip"], "info", true)
 			scroll.showAll = showAll
 
 			for spellID, value in pairs(UF.CornerSpells) do
@@ -1067,8 +1063,7 @@ function G:SetupCastbar(parent)
 		box:SetChecked(C.db["UFs"][value.."CB"])
 		box.__value = value
 		box:SetScript("OnClick", toggleCastbar)
-		box.title = L["Tips"]
-		B.AddTooltip(box, "ANCHOR_RIGHT", L["ToggleCastbarTip"], "info")
+		B.AddTooltip(box, "ANCHOR_RIGHT", L["ToggleCastbarTip"], "info", true)
 
 		createOptionTitle(parent, title, offset)
 		createOptionSlider(parent, L["Width"], 100, 800, defaultValue[value][1], offset-60, value.."CBWidth", func)
@@ -1135,15 +1130,18 @@ local function toggleOptionCheck(self)
 	if self.__callback then self:__callback() end
 end
 
-local function createOptionCheck(parent, offset, text, key, value, callback)
+local function createOptionCheck(parent, offset, text, key, value, callback, tooltip)
 	local box = B.CreateCheckBox(parent)
 	box:SetPoint("TOPLEFT", 10, offset)
 	box:SetChecked(C.db[key][value])
 	box.__key = key
 	box.__value = value
 	box.__callback = callback
-	B.CreateFS(box, 14, text, false, "LEFT", 30, 0)
+	B.CreateFS(box, 14, text, "system", "LEFT", 30, 0)
 	box:SetScript("OnClick", toggleOptionCheck)
+	if tooltip then
+		B.AddTooltip(box, "ANCHOR_RIGHT", tooltip, "info", true)
+	end
 
 	return box
 end
@@ -1402,10 +1400,13 @@ function G:SetupUFAuras(parent)
 		createOptionSlider(parent, L["IconsPerRow"], 5, 20, default[3], offset-180, value.."AurasPerRow", func)
 	end
 
-	createOptionGroup(parent, L["PlayerUF"], offset, "Player", UF.UpdateUFAuras)
-	createOptionGroup(parent, L["TargetUF"], offset-240, "Target", UF.UpdateUFAuras)
-	createOptionGroup(parent, L["TotUF"], offset-480, "ToT", UF.UpdateUFAuras)
-	createOptionGroup(parent, L["FocusUF"], offset-720, "Focus", UF.UpdateUFAuras)
+	createOptionTitle(parent, GENERAL, offset)
+	createOptionCheck(parent, offset-35, L["DesaturateIcon"], "UFs", "Desaturate", UF.UpdateUFAuras, L["DesaturateIconTip"])
+	createOptionCheck(parent, offset-70, L["DebuffColor"], "UFs", "DebuffColor", UF.UpdateUFAuras, L["DebuffColorTip"])
+	createOptionGroup(parent, L["PlayerUF"], offset-110, "Player", UF.UpdateUFAuras)
+	createOptionGroup(parent, L["TargetUF"], offset-350, "Target", UF.UpdateUFAuras)
+	createOptionGroup(parent, L["TotUF"], offset-580, "ToT", UF.UpdateUFAuras)
+	createOptionGroup(parent, L["FocusUF"], offset-830, "Focus", UF.UpdateUFAuras)
 end
 
 function G:SetupActionbarStyle(parent)
