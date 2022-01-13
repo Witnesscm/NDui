@@ -3,9 +3,11 @@ local B, C, L, DB = unpack(ns)
 
 local oUF = ns.oUF
 local UF = B:GetModule("UnitFrames")
-local format, tostring = string.format, tostring
+local tostring = tostring
 
 -- Units
+local UFRangeAlpha = {insideAlpha = 1, outsideAlpha = .4}
+
 local function SetUnitFrameSize(self, unit)
 	local width = C.db["UFs"][unit.."Width"]
 	local height = C.db["UFs"][unit.."Height"] + C.db["UFs"][unit.."PowerHeight"] + C.mult
@@ -110,6 +112,7 @@ local function CreatePetStyle(self)
 	UF:CreateHealthText(self)
 	UF:CreatePowerBar(self)
 	UF:CreateRaidMark(self)
+	UF:CreateAuras(self)
 end
 
 local function CreateBossStyle(self)
@@ -147,9 +150,8 @@ end
 
 local function CreateRaidStyle(self)
 	self.mystyle = "raid"
-	self.Range = {
-		insideAlpha = 1, outsideAlpha = .4,
-	}
+	self.Range = UFRangeAlpha
+	self.disableTooltip = C.db["UFs"]["HideTip"]
 
 	UF:CreateHeader(self)
 	UF:CreateHealthBar(self)
@@ -171,12 +173,12 @@ local function CreateRaidStyle(self)
 end
 
 local function CreateSimpleRaidStyle(self)
-	self.isSimpleMode = true
+	self.raidType = "simple"
 	CreateRaidStyle(self)
 end
 
 local function CreatePartyStyle(self)
-	self.isPartyFrame = true
+	self.raidType = "party"
 	CreateRaidStyle(self)
 	UF:InterruptIndicator(self)
 	UF:CreatePartyAltPower(self)
@@ -184,10 +186,9 @@ end
 
 local function CreatePartyPetStyle(self)
 	self.mystyle = "raid"
-	self.isPartyPet = true
-	self.Range = {
-		insideAlpha = 1, outsideAlpha = .4,
-	}
+	self.raidType = "pet"
+	self.Range = UFRangeAlpha
+	self.disableTooltip = C.db["UFs"]["HideTip"]
 
 	UF:CreateHeader(self)
 	UF:CreateHealthBar(self)
@@ -231,9 +232,19 @@ local function GetRaidVisibility()
 end
 
 local function GetPartyPetVisibility()
-	local visibility = "[group:party,nogroup:raid] show;hide"
-	if C.db["UFs"]["PartyPetVsby"] == 2 then
-		visibility = "[group:raid] show;hide"
+	local visibility
+	if C.db["UFs"]["PartyPetVsby"] == 1 then
+		if C.db["UFs"]["SmartRaid"] then
+			visibility = "[@raid6,noexists,group] show;hide"
+		else
+			visibility = "[group:party,nogroup:raid] show;hide"
+		end
+	elseif C.db["UFs"]["PartyPetVsby"] == 2 then
+		if C.db["UFs"]["SmartRaid"] then
+			visibility = "[@raid6,exists] show;hide"
+		else
+			visibility = "[group:raid] show;hide"
+		end
 	elseif C.db["UFs"]["PartyPetVsby"] == 3 then
 		visibility = "[group] show;hide"
 	end
@@ -252,7 +263,11 @@ function UF:UpdateAllHeaders()
 		elseif header.groupType == "pet" then
 			RegisterStateDriver(header, "visibility", GetPartyPetVisibility())
 		elseif header.groupType == "raid" then
-			RegisterStateDriver(header, "visibility", GetRaidVisibility())
+			if header.__disabled then
+				RegisterStateDriver(header, "visibility", "hide")
+			else
+				RegisterStateDriver(header, "visibility", GetRaidVisibility())
+			end
 		end
 	end
 end
@@ -275,16 +290,25 @@ local function ResetHeaderPoints(header)
 	end
 end
 
-function UF:OnLogin()
-	local horizonRaid = C.db["UFs"]["HorizonRaid"]
-	local horizonParty = C.db["UFs"]["HorizonParty"]
-	local numGroups = C.db["UFs"]["NumGroups"]
-	local raidWidth, raidHeight = C.db["UFs"]["RaidWidth"], C.db["UFs"]["RaidHeight"]
-	local reverse = C.db["UFs"]["ReverseRaid"]
-	local partyWidth, partyHeight = C.db["UFs"]["PartyWidth"], C.db["UFs"]["PartyHeight"]
-	local petWidth, petHeight = C.db["UFs"]["PartyPetWidth"], C.db["UFs"]["PartyPetHeight"]
-	local showTeamIndex = C.db["UFs"]["ShowTeamIndex"]
+UF.PartyDirections = {
+	[1] = {name = L["GO_DOWN"], point = "TOP", xOffset = 0, yOffset = -5, initAnchor = "TOPLEFT"},
+	[2] = {name = L["GO_UP"], point = "BOTTOM", xOffset = 0, yOffset = 5, initAnchor = "BOTTOMLEFT"},
+	[3] = {name = L["GO_RIGHT"], point = "LEFT", xOffset = 5, yOffset = 0, initAnchor = "TOPLEFT"},
+	[4] = {name = L["GO_LEFT"], point = "RIGHT", xOffset = -5, yOffset = 0, initAnchor = "TOPRIGHT"},
+}
 
+UF.RaidDirections = {
+	[1] = {name = L["DOWN_RIGHT"], point = "TOP", xOffset = 0, yOffset = -5, initAnchor = "TOPLEFT", relAnchor = "TOPRIGHT", x = 5, y = 0, columnAnchorPoint = "LEFT", multX = 1, multY = -1},
+	[2] = {name = L["DOWN_LEFT"], point = "TOP", xOffset = 0, yOffset = -5, initAnchor = "TOPRIGHT", relAnchor = "TOPLEFT", x = -5, y = 0, columnAnchorPoint = "RIGHT", multX = -1, multY = -1},
+	[3] = {name = L["UP_RIGHT"], point = "BOTTOM", xOffset = 0, yOffset = 5, initAnchor = "BOTTOMLEFT", relAnchor = "BOTTOMRIGHT", x = 5, y = 0, columnAnchorPoint = "LEFT", multX = 1, multY = 1},
+	[4] = {name = L["UP_LEFT"], point = "BOTTOM", xOffset = 0, yOffset = 5, initAnchor = "BOTTOMRIGHT", relAnchor = "BOTTOMLEFT", x = -5, y = 0, columnAnchorPoint = "RIGHT", multX = -1, multY = 1},
+	[5] = {name = L["RIGHT_DOWN"], point = "LEFT", xOffset = 5, yOffset = 0, initAnchor = "TOPLEFT", relAnchor = "BOTTOMLEFT", x = 0, y = -5, columnAnchorPoint = "TOP", multX = 1, multY = -1},
+	[6] = {name = L["RIGHT_UP"], point = "LEFT", xOffset = 5, yOffset = 0, initAnchor = "BOTTOMLEFT", relAnchor = "TOPLEFT", x = 0, y = 5, columnAnchorPoint = "BOTTOM", multX = 1, multY = 1},
+	[7] = {name = L["LEFT_DOWN"], point = "RIGHT", xOffset = -5, yOffset = 0, initAnchor = "TOPRIGHT", relAnchor = "BOTTOMRIGHT", x = 0, y = -5, columnAnchorPoint = "TOP", multX = -1, multY = -1},
+	[8] = {name = L["LEFT_UP"], point = "RIGHT", xOffset = -5, yOffset = 0, initAnchor = "BOTTOMRIGHT", relAnchor = "TOPRIGHT", x = 0, y = 5, columnAnchorPoint = "BOTTOM", multX = -1, multY = 1},
+}
+
+function UF:OnLogin()
 	if C.db["Nameplate"]["Enable"] then
 		UF:SetupCVars()
 		UF:BlockAddons()
@@ -403,82 +427,110 @@ function UF:OnLogin()
 			UF:SyncWithZenTracker()
 			UF:UpdatePartyWatcherSpells()
 
+			local party
 			oUF:RegisterStyle("Party", CreatePartyStyle)
 			oUF:SetActiveStyle("Party")
 
-			local xOffset, yOffset = 5, 5
-			local partyFrameHeight = partyHeight + C.db["UFs"]["PartyPowerHeight"] + C.mult
-			local moverWidth = horizonParty and (partyWidth*5+xOffset*4) or partyWidth
-			local moverHeight = horizonParty and partyFrameHeight or (partyFrameHeight*5+yOffset*4)
-			local groupingOrder = horizonParty and "TANK,HEALER,DAMAGER,NONE" or "NONE,DAMAGER,HEALER,TANK"
-
-			local party = oUF:SpawnHeader("oUF_Party", nil, nil,
-			"showPlayer", true,
-			"showSolo", true,
-			"showParty", true,
-			"showRaid", true,
-			"xoffset", xOffset,
-			"yOffset", yOffset,
-			"groupingOrder", groupingOrder,
-			"groupBy", "ASSIGNEDROLE",
-			"sortMethod", "NAME",
-			"point", horizonParty and "LEFT" or "BOTTOM",
-			"columnAnchorPoint", "LEFT",
-			"oUF-initialConfigFunction", ([[
-				self:SetWidth(%d)
-				self:SetHeight(%d)
-			]]):format(partyWidth, partyFrameHeight))
-
-			party.groupType = "party"
-			tinsert(UF.headers, party)
-			RegisterStateDriver(party, "visibility", GetPartyVisibility())
-
-			partyMover = B.Mover(party, L["PartyFrame"], "PartyFrame", {"LEFT", UIParent, 350, 0}, moverWidth, moverHeight)
-			party:ClearAllPoints()
-			party:SetPoint("BOTTOMLEFT", partyMover)
-
-			if C.db["UFs"]["PartyPetFrame"] then
-				oUF:RegisterStyle("PartyPet", CreatePartyPetStyle)
-				oUF:SetActiveStyle("PartyPet")
-
-				local petWidth, petHeight, petPowerHeight = C.db["UFs"]["PartyPetWidth"], C.db["UFs"]["PartyPetHeight"], C.db["UFs"]["PartyPetPowerHeight"]
-				local petFrameHeight = petHeight + petPowerHeight + C.mult
-
-				local partyPet = oUF:SpawnHeader("oUF_PartyPet", "SecureGroupPetHeaderTemplate", nil,
+			local function CreatePartyHeader(name, width, height)
+				local group = oUF:SpawnHeader(name, nil, nil,
 				"showPlayer", true,
 				"showSolo", true,
 				"showParty", true,
 				"showRaid", true,
-				"xoffset", 5,
-				"yOffset", -5,
-				"columnSpacing", 5,
-				"point", "TOP",
+				"sortMethod", "NAME",
 				"columnAnchorPoint", "LEFT",
 				"oUF-initialConfigFunction", ([[
 					self:SetWidth(%d)
 					self:SetHeight(%d)
-				]]):format(petWidth, petFrameHeight))
+				]]):format(width, height))
+				return group
+			end
 
-				partyPet.groupType = "pet"
-				tinsert(UF.headers, partyPet)
-				RegisterStateDriver(partyPet, "visibility", GetPartyPetVisibility())
+			local ascRole = "TANK,HEALER,DAMAGER,NONE"
+			local descRole = "NONE,DAMAGER,HEALER,TANK"
 
-				local petMover = B.Mover(partyPet, L["PartyPetFrame"], "PartyPetFrame", {"TOPLEFT", partyMover, "BOTTOMLEFT", 0, -5})
+			function UF:CreateAndUpdatePartyHeader()
+				local index = C.db["UFs"]["PartyDirec"]
+				local sortData = UF.PartyDirections[index]
+				local partyWidth, partyHeight = C.db["UFs"]["PartyWidth"], C.db["UFs"]["PartyHeight"]
+				local partyFrameHeight = partyHeight + C.db["UFs"]["PartyPowerHeight"] + C.mult
+
+				if not party then
+					party = CreatePartyHeader("oUF_Party", partyWidth, partyFrameHeight)
+					party.groupType = "party"
+					tinsert(UF.headers, party)
+					RegisterStateDriver(party, "visibility", GetPartyVisibility())
+					partyMover = B.Mover(party, L["PartyFrame"], "PartyFrame", {"LEFT", UIParent, 350, 0})
+				end
+
+				local moverWidth = index < 3 and partyWidth or (partyWidth+5)*5-5
+				local moverHeight = index < 3 and (partyFrameHeight+5)*5-5 or partyFrameHeight
+				partyMover:SetSize(moverWidth, moverHeight)
+				party:ClearAllPoints()
+				party:SetPoint(sortData.initAnchor, partyMover)
+
+				ResetHeaderPoints(party)
+				party:SetAttribute("point", sortData.point)
+				party:SetAttribute("xOffset", sortData.xOffset)
+				party:SetAttribute("yOffset", sortData.yOffset)
+				party:SetAttribute("groupingOrder", C.db["UFs"]["DescRole"] and descRole or ascRole)
+				party:SetAttribute("groupBy", "ASSIGNEDROLE")
+			end
+
+			UF:CreateAndUpdatePartyHeader()
+
+			if C.db["UFs"]["PartyPetFrame"] then
+				local partyPet, petMover
+				oUF:RegisterStyle("PartyPet", CreatePartyPetStyle)
+				oUF:SetActiveStyle("PartyPet")
+
+				local function CreatePetGroup(name, width, height)
+					local group = oUF:SpawnHeader(name, "SecureGroupPetHeaderTemplate", nil,
+					"showPlayer", true,
+					"showSolo", true,
+					"showParty", true,
+					"showRaid", true,
+					"columnSpacing", 5,
+					"oUF-initialConfigFunction", ([[
+						self:SetWidth(%d)
+						self:SetHeight(%d)
+					]]):format(width, height))
+					return group
+				end
 
 				function UF:UpdatePartyPetHeader()
-					ResetHeaderPoints(partyPet)
-
 					local petWidth, petHeight, petPowerHeight = C.db["UFs"]["PartyPetWidth"], C.db["UFs"]["PartyPetHeight"], C.db["UFs"]["PartyPetPowerHeight"]
 					local petFrameHeight = petHeight + petPowerHeight + C.mult
 					local petsPerColumn = C.db["UFs"]["PartyPetPerCol"]
 					local maxColumns = C.db["UFs"]["PartyPetMaxCol"]
+					local index = C.db["UFs"]["PetDirec"]
+					local sortData = UF.RaidDirections[index]
 
+					if not partyPet then
+						partyPet = CreatePetGroup("oUF_PartyPet", petWidth, petFrameHeight)
+						partyPet.groupType = "pet"
+						tinsert(UF.headers, partyPet)
+						RegisterStateDriver(partyPet, "visibility", GetPartyPetVisibility())
+						petMover = B.Mover(partyPet, L["PartyPetFrame"], "PartyPet", {"TOPLEFT", partyMover, "BOTTOMLEFT", 0, -5})
+					end
+					ResetHeaderPoints(partyPet)
+
+					partyPet:SetAttribute("point", sortData.point)
+					partyPet:SetAttribute("xOffset", sortData.xOffset)
+					partyPet:SetAttribute("yOffset", sortData.yOffset)
+					partyPet:SetAttribute("columnAnchorPoint", sortData.columnAnchorPoint)
 					partyPet:SetAttribute("unitsPerColumn", petsPerColumn)
 					partyPet:SetAttribute("maxColumns", maxColumns)
 
-					local moverWidth = (petWidth*maxColumns + 5*(maxColumns-1))
-					local moverHeight = petFrameHeight*petsPerColumn + 5*(petsPerColumn-1)
+					local moverWidth = (petWidth+5)*maxColumns - 5
+					local moverHeight = (petFrameHeight+5)*petsPerColumn - 5
+					if index > 4 then
+						moverWidth = (petWidth+5)*petsPerColumn - 5
+						moverHeight = (petFrameHeight+5)*maxColumns - 5
+					end
 					petMover:SetSize(moverWidth, moverHeight)
+					partyPet:ClearAllPoints()
+					partyPet:SetPoint(sortData.initAnchor, petMover)
 				end
 
 				UF:UpdatePartyPetHeader()
@@ -491,6 +543,7 @@ function UF:OnLogin()
 			oUF:SetActiveStyle("Raid")
 
 			local scale = C.db["UFs"]["SMRScale"]/10
+			local sortData = UF.RaidDirections[C.db["UFs"]["SMRDirec"]]
 
 			local function CreateGroup(name)
 				local group = oUF:SpawnHeader(name, nil, nil,
@@ -498,11 +551,11 @@ function UF:OnLogin()
 				"showSolo", true,
 				"showParty", true,
 				"showRaid", true,
-				"xoffset", 5,
-				"yOffset", -5,
+				"point", sortData.point,
+				"xOffset", sortData.xOffset,
+				"yOffset", sortData.yOffset,
 				"columnSpacing", 5,
-				"point", "TOP",
-				"columnAnchorPoint", "LEFT",
+				"columnAnchorPoint", sortData.columnAnchorPoint,
 				"oUF-initialConfigFunction", ([[
 					self:SetWidth(%d)
 					self:SetHeight(%d)
@@ -515,6 +568,8 @@ function UF:OnLogin()
 			tinsert(UF.headers, group)
 			RegisterStateDriver(group, "visibility", GetRaidVisibility())
 			raidMover = B.Mover(group, L["RaidFrame"], "RaidFrame", {"TOPLEFT", UIParent, 35, -50})
+			group:ClearAllPoints()
+			group:SetPoint(sortData.initAnchor, raidMover)
 
 			local groupByTypes = {
 				[1] = {"1,2,3,4,5,6,7,8", "GROUP", "INDEX"},
@@ -547,16 +602,12 @@ function UF:OnLogin()
 			oUF:RegisterStyle("Raid", CreateRaidStyle)
 			oUF:SetActiveStyle("Raid")
 
-			local raidFrameHeight = raidHeight + C.db["UFs"]["RaidPowerHeight"] + C.mult
-
-			local function CreateGroup(name, i)
+			local function CreateGroup(name, i, width, height)
 				local group = oUF:SpawnHeader(name, nil, nil,
 				"showPlayer", true,
 				"showSolo", true,
 				"showParty", true,
 				"showRaid", true,
-				"xoffset", 5,
-				"yOffset", -6,
 				"groupFilter", tostring(i),
 				"groupingOrder", "1,2,3,4,5,6,7,8",
 				"groupBy", "GROUP",
@@ -564,70 +615,133 @@ function UF:OnLogin()
 				"maxColumns", 1,
 				"unitsPerColumn", 5,
 				"columnSpacing", 5,
-				"point", horizonRaid and "LEFT" or "TOP",
 				"columnAnchorPoint", "LEFT",
 				"oUF-initialConfigFunction", ([[
 					self:SetWidth(%d)
 					self:SetHeight(%d)
-				]]):format(raidWidth, raidFrameHeight))
+				]]):format(width, height))
 				return group
 			end
 
+			local teamIndexes = {}
+			local teamIndexAnchor = {
+				[1] = {"BOTTOM", "TOP", 0, 5},
+				[2] = {"BOTTOM", "TOP", 0, 5},
+				[3] = {"TOP", "BOTTOM", 0, -5},
+				[4] = {"TOP", "BOTTOM", 0, -5},
+				[5] = {"RIGHT", "LEFT", -5, 0},
+				[6] = {"RIGHT", "LEFT", -5, 0},
+				[7] = {"LEFT", "RIGHT", 5, 0},
+				[8] = {"LEFT", "RIGHT", 5, 0},
+			}
+
+			local function UpdateTeamIndex(teamIndex, showIndex, direc)
+				if not showIndex then
+					teamIndex:Hide()
+				else
+					teamIndex:Show()
+					teamIndex:ClearAllPoints()
+					local anchor = teamIndexAnchor[direc]
+					teamIndex:SetPoint(anchor[1], teamIndex.__owner, anchor[2], anchor[3], anchor[4])
+				end
+			end
+
 			local function CreateTeamIndex(header)
+				local showIndex = C.db["UFs"]["TeamIndex"]
+				local direc = C.db["UFs"]["RaidDirec"]
 				local parent = _G[header:GetName().."UnitButton1"]
 				if parent and not parent.teamIndex then
-					local teamIndex = B.CreateFS(parent, 12, format(GROUP_NUMBER, header.index))
-					teamIndex:ClearAllPoints()
-					teamIndex:SetPoint("BOTTOMLEFT", parent, "TOPLEFT", 0, 5)
+					local teamIndex = B.CreateFS(parent, 14, header.index)
 					teamIndex:SetTextColor(.6, .8, 1)
+					teamIndex.__owner = parent
+					UpdateTeamIndex(teamIndex, showIndex, direc)
+					teamIndexes[header.index] = teamIndex
 
 					parent.teamIndex = teamIndex
 				end
 			end
 
-			local groups = {}
-			for i = 1, numGroups do
-				groups[i] = CreateGroup("oUF_Raid"..i, i)
-				groups[i].index = i
-				groups[i].groupType = "raid"
-				tinsert(UF.headers, groups[i])
-				RegisterStateDriver(groups[i], "visibility", GetRaidVisibility())
-
-				if i == 1 then
-					if horizonRaid then
-						raidMover = B.Mover(groups[i], L["RaidFrame"], "RaidFrame", {"TOPLEFT", UIParent, 35, -50}, (raidWidth+5)*5-5, (raidFrameHeight+(showTeamIndex and 20 or 5))*numGroups - (showTeamIndex and 20 or 5))
-						if reverse then
-							groups[i]:ClearAllPoints()
-							groups[i]:SetPoint("BOTTOMLEFT", raidMover)
-						end
-					else
-						raidMover = B.Mover(groups[i], L["RaidFrame"], "RaidFrame", {"TOPLEFT", UIParent, 35, -50}, (raidWidth+3)*numGroups-3, (raidFrameHeight+5)*5-5)
-						if reverse then
-							groups[i]:ClearAllPoints()
-							groups[i]:SetPoint("TOPRIGHT", raidMover)
-						end
-					end
-				else
-					if horizonRaid then
-						if reverse then
-							groups[i]:SetPoint("BOTTOMLEFT", groups[i-1], "TOPLEFT", 0, showTeamIndex and 20 or 5)
-						else
-							groups[i]:SetPoint("TOPLEFT", groups[i-1], "BOTTOMLEFT", 0, showTeamIndex and -20 or -5)
-						end
-					else
-						if reverse then
-							groups[i]:SetPoint("TOPRIGHT", groups[i-1], "TOPLEFT", -5, 0)
-						else
-							groups[i]:SetPoint("TOPLEFT", groups[i-1], "TOPRIGHT", 3, 0)
-						end
-					end
-				end
-
-				if showTeamIndex then
-					CreateTeamIndex(groups[i])
-					groups[i]:HookScript("OnShow", CreateTeamIndex)
+			function UF:UpdateRaidTeamIndex()
+				local showIndex = C.db["UFs"]["TeamIndex"]
+				local direc = C.db["UFs"]["RaidDirec"]
+				for _, teamIndex in pairs(teamIndexes) do
+					UpdateTeamIndex(teamIndex, showIndex, direc)
 				end
 			end
+
+			local groups = {}
+
+			function UF:CreateAndUpdateRaidHeader(direction)
+				local index = C.db["UFs"]["RaidDirec"]
+				local rows = C.db["UFs"]["RaidRows"]
+				local numGroups = C.db["UFs"]["NumGroups"]
+				local raidWidth, raidHeight = C.db["UFs"]["RaidWidth"], C.db["UFs"]["RaidHeight"]
+				local raidFrameHeight = raidHeight + C.db["UFs"]["RaidPowerHeight"] + C.mult
+				local indexSpacing = C.db["UFs"]["TeamIndex"] and 20 or 0
+
+				local sortData = UF.RaidDirections[index]
+				for i = 1, numGroups do
+					local group = groups[i]
+					if not group then
+						group = CreateGroup("oUF_Raid"..i, i, raidWidth, raidFrameHeight)
+						group.index = i
+						group.groupType = "raid"
+						tinsert(UF.headers, group)
+						RegisterStateDriver(group, "visibility", "show")
+						RegisterStateDriver(group, "visibility", GetRaidVisibility())
+						CreateTeamIndex(group)
+
+						groups[i] = group
+					end
+
+					if not raidMover and i == 1 then
+						raidMover = B.Mover(groups[i], L["RaidFrame"], "RaidFrame", {"TOPLEFT", UIParent, 35, -50})
+					end
+
+					local groupWidth = index < 5 and raidWidth+5 or (raidWidth+5)*5
+					local groupHeight = index < 5 and (raidFrameHeight+5)*5 or raidFrameHeight+5
+					local numX = ceil(numGroups/rows)
+					local numY = min(rows, numGroups)
+					local indexSpacings = indexSpacing*(numY-1)
+					if index < 5 then
+						raidMover:SetSize(groupWidth*numX - 5, groupHeight*numY - 5 + indexSpacings)
+					else
+						raidMover:SetSize(groupWidth*numY - 5 + indexSpacings, groupHeight*numX - 5)
+					end
+
+					if direction then
+						ResetHeaderPoints(group)
+						group:SetAttribute("point", sortData.point)
+						group:SetAttribute("xOffset", sortData.xOffset)
+						group:SetAttribute("yOffset", sortData.yOffset)
+					end
+
+					group:ClearAllPoints()
+					if i == 1 then
+						group:SetPoint(sortData.initAnchor, raidMover)
+					elseif (i-1) % rows == 0 then
+						group:SetPoint(sortData.initAnchor, groups[i-rows], sortData.relAnchor, sortData.x, sortData.y)
+					else
+						local x = floor((i-1)/rows)
+						local y = (i-1)%rows
+						if index < 5 then
+							group:SetPoint(sortData.initAnchor, raidMover, sortData.initAnchor, sortData.multX*groupWidth*x, sortData.multY*(groupHeight+indexSpacing)*y)
+						else
+							group:SetPoint(sortData.initAnchor, raidMover, sortData.initAnchor, sortData.multX*(groupWidth+indexSpacing)*y, sortData.multY*groupHeight*x)
+						end
+					end
+				end
+
+				for i = 1, 8 do
+					local group = groups[i]
+					if group then
+						group.__disabled = i > C.db["UFs"]["NumGroups"]
+					end
+				end
+			end
+
+			UF:CreateAndUpdateRaidHeader(true)
+			UF:UpdateRaidTeamIndex()
 		end
 
 		UF:UpdateRaidHealthMethod()

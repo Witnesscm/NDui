@@ -744,6 +744,29 @@ do
 		end
 	end
 
+	function B:CreateAndUpdateBarTicks(bar, ticks, numTicks)
+		for i = 1, #ticks do
+			ticks[i]:Hide()
+		end
+
+		if numTicks and numTicks > 0 then
+			local width, height = bar:GetSize()
+			local delta = width / numTicks
+			for i = 1, numTicks-1 do
+				if not ticks[i] then
+					ticks[i] = bar:CreateTexture(nil, "OVERLAY")
+					ticks[i]:SetTexture(DB.normTex)
+					ticks[i]:SetVertexColor(0, 0, 0, .7)
+					ticks[i]:SetWidth(C.mult)
+					ticks[i]:SetHeight(height)
+				end
+				ticks[i]:ClearAllPoints()
+				ticks[i]:SetPoint("RIGHT", bar, "LEFT", delta * i, 0 )
+				ticks[i]:Show()
+			end
+		end
+	end
+
 	-- Handle button
 	local function Button_OnEnter(self)
 		if not self:IsEnabled() then return end
@@ -873,20 +896,6 @@ do
 	hooksecurefunc("PanelTemplates_DeselectTab", B.ResetTabAnchor)
 
 	-- Handle scrollframe
-	local function Scroll_OnEnter(self)
-		local thumb = self.thumb
-		if not thumb then return end
-		thumb.bg:SetBackdropColor(cr, cg, cb, .25)
-		thumb.bg:SetBackdropBorderColor(cr, cg, cb)
-	end
-
-	local function Scroll_OnLeave(self)
-		local thumb = self.thumb
-		if not thumb then return end
-		thumb.bg:SetBackdropColor(0, 0, 0, 0)
-		B.SetBorderColor(thumb.bg)
-	end
-
 	local function GrabScrollBarElement(frame, element)
 		local frameName = frame:GetDebugName()
 		return frame[element] or frameName and (_G[frameName..element] or strfind(frameName, element)) or nil
@@ -900,20 +909,15 @@ do
 		if thumb then
 			thumb:SetAlpha(0)
 			thumb:SetWidth(16)
-			self.thumb = thumb
-
 			local bg = B.CreateBDFrame(self, 0, true)
 			bg:SetPoint("TOPLEFT", thumb, 0, -2)
 			bg:SetPoint("BOTTOMRIGHT", thumb, 0, 4)
-			thumb.bg = bg
+			bg:SetBackdropColor(cr, cg, cb, .75)
 		end
 
 		local up, down = self:GetChildren()
 		B.ReskinArrow(up, "up")
 		B.ReskinArrow(down, "down")
-
-		self:HookScript("OnEnter", Scroll_OnEnter)
-		self:HookScript("OnLeave", Scroll_OnLeave)
 	end
 
 	-- WowTrimScrollBar
@@ -954,7 +958,7 @@ do
 		local thumb = self:GetThumb()
 		if thumb then
 			B.StripTextures(thumb, 0)
-			B.CreateBDFrame(thumb, 0, true)
+			B.CreateBDFrame(thumb, 0, true):SetBackdropColor(cr, cg, cb, .75)
 		end
 	end
 
@@ -1075,10 +1079,14 @@ do
 	function B:ReskinFilterButton()
 		B.StripTextures(self)
 		B.Reskin(self)
-		self.Text:SetPoint("CENTER")
-		B.SetupArrow(self.Icon, "right")
-		self.Icon:SetPoint("RIGHT")
-		self.Icon:SetSize(14, 14)
+		if self.Text then
+			self.Text:SetPoint("CENTER")
+		end
+		if self.Icon then
+			B.SetupArrow(self.Icon, "right")
+			self.Icon:SetPoint("RIGHT")
+			self.Icon:SetSize(14, 14)
+		end
 	end
 
 	function B:ReskinNavBar()

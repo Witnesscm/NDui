@@ -47,6 +47,7 @@ oUF.Tags.Methods["VariousHP"] = function(unit, _, arg1)
 		return oUF.Tags.Methods["DDG"](unit)
 	end
 
+	if not arg1 then return end
 	local cur, max = UnitHealth(unit), UnitHealthMax(unit)
 	local per = max == 0 and 0 or B:Round(cur/max * 100, 1)
 
@@ -66,7 +67,7 @@ oUF.Tags.Methods["VariousHP"] = function(unit, _, arg1)
 		return loss ~= 0 and B:Round(loss/max*100, 1)
 	end
 end
-oUF.Tags.Events["VariousHP"] = "UNIT_HEALTH UNIT_MAXHEALTH UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED"
+oUF.Tags.Events["VariousHP"] = "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED PARTY_MEMBER_ENABLE PARTY_MEMBER_DISABLE"
 
 oUF.Tags.Methods["VariousMP"] = function(unit, _, arg1)
 	local cur, max = UnitPower(unit), UnitPowerMax(unit)
@@ -166,17 +167,14 @@ end
 oUF.Tags.Events["fulllevel"] = "UNIT_LEVEL PLAYER_LEVEL_UP UNIT_CLASSIFICATION_CHANGED"
 
 -- RaidFrame tags
+local healthModeType = {
+	[2] = "percent",
+	[3] = "current",
+	[4] = "loss",
+	[5] = "losspercent",
+}
 oUF.Tags.Methods["raidhp"] = function(unit)
-	local healthMode, healthType = C.db["UFs"]["RaidHPMode"]
-	if healthMode == 2 then
-		healthType = "percent"
-	elseif healthMode == 3 then
-		healthType = "current"
-	elseif healthMode == 4 then
-		healthType = "loss"
-	elseif healthMode == 5 then
-		healthType = "losspercent"
-	end
+	local healthType = healthModeType[C.db["UFs"]["RaidHPMode"]]
 	return oUF.Tags.Methods["VariousHP"](unit, _, healthType)
 end
 oUF.Tags.Events["raidhp"] = oUF.Tags.Events["VariousHP"]

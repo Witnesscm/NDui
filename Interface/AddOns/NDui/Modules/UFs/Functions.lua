@@ -45,12 +45,16 @@ end
 
 -- Elements
 local function UF_OnEnter(self)
-	UnitFrame_OnEnter(self)
+	if not self.disableTooltip then
+		UnitFrame_OnEnter(self)
+	end
 	self.Highlight:Show()
 end
 
 local function UF_OnLeave(self)
-	UnitFrame_OnLeave(self)
+	if not self.disableTooltip then
+		UnitFrame_OnLeave(self)
+	end
 	self.Highlight:Hide()
 end
 
@@ -114,11 +118,11 @@ function UF:CreateHealthBar(self)
 	if mystyle == "PlayerPlate" then
 		healthHeight = C.db["Nameplate"]["PPHealthHeight"]
 	elseif mystyle == "raid" then
-		if self.isPartyFrame then
+		if self.raidType == "party" then
 			healthHeight = C.db["UFs"]["PartyHeight"]
-		elseif self.isPartyPet then
+		elseif self.raidType == "pet" then
 			healthHeight = C.db["UFs"]["PartyPetHeight"]
-		elseif self.isSimpleMode then
+		elseif self.raidType == "simple" then
 			local scale = C.db["UFs"]["SMRScale"]/10
 			healthHeight = 20*scale - 2*scale - C.mult
 		else
@@ -202,12 +206,42 @@ function UF:UpdateFrameNameTag()
 		self:Tag(name, colorTag.."[name][afkdnd]")
 	elseif mystyle == "arena" then
 		self:Tag(name, "[arenaspec] "..colorTag.."[name]")
-	elseif self.isSimpleMode and C.db["UFs"]["ShowTeamIndex"] then
+	elseif self.raidType == "simple" and C.db["UFs"]["TeamIndex"] then
 		self:Tag(name, "[group] "..colorTag.."[name]")
 	else
 		self:Tag(name, colorTag.."[name]")
 	end
 	name:UpdateTag()
+end
+
+function UF:UpdateRaidNameAnchor(name)
+	if self.raidType == "pet" then
+		name:ClearAllPoints()
+		if C.db["UFs"]["RaidHPMode"] == 1 then
+			name:SetWidth(self:GetWidth()*.95)
+			name:SetJustifyH("CENTER")
+			name:SetPoint("CENTER")
+		else
+			name:SetWidth(self:GetWidth()*.65)
+			name:SetJustifyH("LEFT")
+			name:SetPoint("LEFT", 3, -1)
+		end
+	elseif self.raidType == "simple" then
+		if C.db["UFs"]["RaidHPMode"] == 1 then
+			name:SetWidth(self:GetWidth()*.95)
+		else
+			name:SetWidth(self:GetWidth()*.65)
+		end
+	else
+		name:ClearAllPoints()
+		name:SetWidth(self:GetWidth()*.95)
+		name:SetJustifyH("CENTER")
+		if C.db["UFs"]["RaidHPMode"] == 1 then
+			name:SetPoint("CENTER")
+		else
+			name:SetPoint("TOP", 0, -3)
+		end
+	end
 end
 
 function UF:CreateHealthText(self)
@@ -219,21 +253,7 @@ function UF:CreateHealthText(self)
 	self.nameText = name
 	name:SetJustifyH("LEFT")
 	if mystyle == "raid" then
-		name:SetWidth(self:GetWidth()*.95)
-		name:ClearAllPoints()
-		if self.isPartyPet then
-			name:SetWidth(self:GetWidth()*.55)
-			name:SetPoint("LEFT", 3, -1)
-		elseif self.isSimpleMode then
-			name:SetPoint("LEFT", 4, 0)
-		else
-			name:SetJustifyH("CENTER")
-			if C.db["UFs"]["RaidHPMode"] ~= 1 then
-				name:SetPoint("TOP", 0, -3)
-			else
-				name:SetPoint("CENTER")
-			end
-		end
+		UF.UpdateRaidNameAnchor(self, name)
 		name:SetScale(C.db["UFs"]["RaidTextScale"])
 	elseif mystyle == "nameplate" then
 		name:ClearAllPoints()
@@ -250,10 +270,9 @@ function UF:CreateHealthText(self)
 	self.healthValue = hpval
 	if mystyle == "raid" then
 		self:Tag(hpval, "[raidhp]")
-		if self.isPartyPet then
+		if self.raidType == "pet" then
 			hpval:SetPoint("RIGHT", -3, -1)
-			self:Tag(hpval, "[VariousHP(current)]")
-		elseif self.isSimpleMode then
+		elseif self.raidType == "simple" then
 			hpval:SetPoint("RIGHT", -4, 0)
 		else
 			hpval:ClearAllPoints()
@@ -266,26 +285,6 @@ function UF:CreateHealthText(self)
 		self:Tag(hpval, "[VariousHP(currentpercent)]")
 	else
 		UF.UpdateFrameHealthTag(self)
-	end
-end
-
-function UF:UpdateRaidNameText()
-	for _, frame in pairs(oUF.objects) do
-		if frame.mystyle == "raid" and not frame.isPartyPet then
-			local name = frame.nameText
-			name:ClearAllPoints()
-			if frame.isSimpleMode then
-				name:SetPoint("LEFT", 4, 0)
-			else
-				name:SetJustifyH("CENTER")
-				if C.db["UFs"]["RaidHPMode"] ~= 1 then
-					name:SetPoint("TOP", 0, -3)
-				else
-					name:SetPoint("CENTER")
-				end
-			end
-			frame.healthValue:UpdateTag()
-		end
 	end
 end
 
@@ -337,11 +336,11 @@ function UF:CreatePowerBar(self)
 	if mystyle == "PlayerPlate" then
 		powerHeight = C.db["Nameplate"]["PPPowerHeight"]
 	elseif mystyle == "raid" then
-		if self.isPartyFrame then
+		if self.raidType == "party" then
 			powerHeight = C.db["UFs"]["PartyPowerHeight"]
-		elseif self.isPartyPet then
+		elseif self.raidType == "pet" then
 			powerHeight = C.db["UFs"]["PartyPetPowerHeight"]
-		elseif self.isSimpleMode then
+		elseif self.raidType == "simple" then
 			powerHeight = 2*C.db["UFs"]["SMRScale"]/10
 		else
 			powerHeight = C.db["UFs"]["RaidPowerHeight"]
@@ -437,12 +436,15 @@ function UF:UpdateRaidTextScale()
 	local scale = C.db["UFs"]["RaidTextScale"]
 	for _, frame in pairs(oUF.objects) do
 		if frame.mystyle == "raid" then
+			UF.UpdateRaidNameAnchor(frame, frame.nameText)
 			frame.nameText:SetScale(scale)
 			frame.healthValue:SetScale(scale)
+			frame.healthValue:UpdateTag()
 			if frame.powerText then frame.powerText:SetScale(scale) end
 			UF:UpdateHealthBarColor(frame, true)
 			UF:UpdatePowerBarColor(frame, true)
 			UF.UpdateFrameNameTag(frame)
+			frame.disableTooltip = C.db["UFs"]["HideTip"]
 		end
 	end
 end
@@ -555,7 +557,7 @@ local function createBarMover(bar, text, value, anchor)
 end
 
 local function updateSpellTarget(self, _, unit)
-	B.PostCastUpdate(self.Castbar, unit)
+	UF.PostCastUpdate(self.Castbar, unit)
 end
 
 function UF:ToggleCastBarLatency(frame)
@@ -563,13 +565,13 @@ function UF:ToggleCastBarLatency(frame)
 	if not frame then return end
 
 	if C.db["UFs"]["LagString"] then
-		frame:RegisterEvent("GLOBAL_MOUSE_UP", B.OnCastSent, true) -- Fix quests with WorldFrame interaction
-		frame:RegisterEvent("GLOBAL_MOUSE_DOWN", B.OnCastSent, true)
-		frame:RegisterEvent("CURRENT_SPELL_CAST_CHANGED", B.OnCastSent, true)
+		frame:RegisterEvent("GLOBAL_MOUSE_UP", UF.OnCastSent, true) -- Fix quests with WorldFrame interaction
+		frame:RegisterEvent("GLOBAL_MOUSE_DOWN", UF.OnCastSent, true)
+		frame:RegisterEvent("CURRENT_SPELL_CAST_CHANGED", UF.OnCastSent, true)
 	else
-		frame:UnregisterEvent("GLOBAL_MOUSE_UP", B.OnCastSent)
-		frame:UnregisterEvent("GLOBAL_MOUSE_DOWN", B.OnCastSent)
-		frame:UnregisterEvent("CURRENT_SPELL_CAST_CHANGED", B.OnCastSent)
+		frame:UnregisterEvent("GLOBAL_MOUSE_UP", UF.OnCastSent)
+		frame:UnregisterEvent("GLOBAL_MOUSE_DOWN", UF.OnCastSent)
+		frame:UnregisterEvent("CURRENT_SPELL_CAST_CHANGED", UF.OnCastSent)
 		if frame.Castbar then frame.Castbar.__sendTime = nil end
 	end
 end
@@ -667,12 +669,12 @@ function UF:CreateCastBar(self)
 
 	cb.Time = timer
 	cb.Text = name
-	cb.OnUpdate = B.OnCastbarUpdate
-	cb.PostCastStart = B.PostCastStart
-	cb.PostCastUpdate = B.PostCastUpdate
-	cb.PostCastStop = B.PostCastStop
-	cb.PostCastFail = B.PostCastFailed
-	cb.PostCastInterruptible = B.PostUpdateInterruptible
+	cb.OnUpdate = UF.OnCastbarUpdate
+	cb.PostCastStart = UF.PostCastStart
+	cb.PostCastUpdate = UF.PostCastUpdate
+	cb.PostCastStop = UF.PostCastStop
+	cb.PostCastFail = UF.PostCastFailed
+	cb.PostCastInterruptible = UF.PostUpdateInterruptible
 
 	self.Castbar = cb
 end
@@ -972,6 +974,7 @@ function UF:UpdateUFAuras()
 	UF:RefreshUFAuras(_G.oUF_Target)
 	UF:RefreshUFAuras(_G.oUF_Focus)
 	UF:RefreshUFAuras(_G.oUF_ToT)
+	UF:RefreshUFAuras(_G.oUF_Pet)
 
 	for i = 1, 5 do
 		UF:RefreshBuffAndDebuff(_G["oUF_Boss"..i])
@@ -1025,6 +1028,13 @@ function UF:CreateAuras(self)
 	elseif mystyle == "tot" then
 		bu:SetPoint("TOPLEFT", self.Power, "BOTTOMLEFT", 0, -5)
 		bu.__value = "ToT"
+		UF:ConfigureAuras(bu)
+		bu.CustomFilter = UF.UnitCustomFilter
+	elseif mystyle == "pet" then
+		bu.initialAnchor = "TOPRIGHT"
+		bu["growth-x"] = "LEFT"
+		bu:SetPoint("TOPRIGHT", self.Power, "BOTTOMRIGHT", 0, -5)
+		bu.__value = "Pet"
 		UF:ConfigureAuras(bu)
 		bu.CustomFilter = UF.UnitCustomFilter
 	elseif mystyle == "focus" then
@@ -1085,7 +1095,7 @@ function UF:CreateBuffs(self)
 		bu["growth-x"] = "LEFT"
 		bu:ClearAllPoints()
 		bu:SetPoint("BOTTOMRIGHT", self.Health, -C.mult, C.mult)
-		bu.num = (self.isSimpleMode or not C.db["UFs"]["ShowRaidBuff"]) and 0 or 3
+		bu.num = (self.raidType == "simple" or not C.db["UFs"]["ShowRaidBuff"]) and 0 or 3
 		bu.size = C.db["UFs"]["RaidBuffSize"]
 		bu.CustomFilter = UF.RaidBuffFilter
 		bu.disableMouse = true
@@ -1117,7 +1127,7 @@ function UF:CreateDebuffs(self)
 		bu.initialAnchor = "BOTTOMLEFT"
 		bu["growth-x"] = "RIGHT"
 		bu:SetPoint("BOTTOMLEFT", self.Health, C.mult, C.mult)
-		bu.num = (self.isSimpleMode or not C.db["UFs"]["ShowRaidDebuff"]) and 0 or 3
+		bu.num = (self.raidType == "simple" or not C.db["UFs"]["ShowRaidDebuff"]) and 0 or 3
 		bu.size = C.db["UFs"]["RaidDebuffSize"]
 		bu.CustomFilter = UF.RaidDebuffFilter
 		bu.disableMouse = true
@@ -1141,7 +1151,7 @@ function UF:UpdateRaidAuras()
 		if frame.mystyle == "raid" then
 			local debuffs = frame.Debuffs
 			if debuffs then
-				debuffs.num = (frame.isSimpleMode or not C.db["UFs"]["ShowRaidDebuff"]) and 0 or 3
+				debuffs.num = (frame.raidType == "simple" or not C.db["UFs"]["ShowRaidDebuff"]) and 0 or 3
 				debuffs.size = C.db["UFs"]["RaidDebuffSize"]
 				debuffs.fontSize = C.db["UFs"]["RaidDebuffSize"]-2
 				UF:UpdateAuraContainer(frame, debuffs, debuffs.num)
@@ -1150,7 +1160,7 @@ function UF:UpdateRaidAuras()
 
 			local buffs = frame.Buffs
 			if buffs then
-				buffs.num = (frame.isSimpleMode or not C.db["UFs"]["ShowRaidBuff"]) and 0 or 3
+				buffs.num = (frame.raidType == "simple" or not C.db["UFs"]["ShowRaidBuff"]) and 0 or 3
 				buffs.size = C.db["UFs"]["RaidBuffSize"]
 				buffs.fontSize = C.db["UFs"]["RaidBuffSize"]-2
 				UF:UpdateAuraContainer(frame, buffs, buffs.num)
@@ -1263,6 +1273,14 @@ function UF:CreateClassPower(self)
 	local bar = CreateFrame("Frame", "$parentClassPowerBar", self.Health)
 	bar:SetSize(barWidth, barHeight)
 	bar:SetPoint(unpack(barPoint))
+
+	-- show bg while size changed
+	if not isDK then
+		bar.bg = B.SetBD(bar)
+		bar.bg:SetFrameLevel(5)
+		bar.bg:SetBackdropBorderColor(1, .8, 0)
+		bar.bg:Hide()
+	end
 
 	local bars = {}
 	for i = 1, 6 do
@@ -1390,8 +1408,10 @@ function UF:UpdateUFClassPower()
 	local xOffset, yOffset = C.db["UFs"]["CPxOffset"], C.db["UFs"]["CPyOffset"]
 	local bars = playerFrame.ClassPower or playerFrame.Runes
 	if bars then
-		playerFrame.ClassPowerBar:SetSize(barWidth, barHeight)
-		playerFrame.ClassPowerBar:SetPoint("BOTTOMLEFT", playerFrame, "TOPLEFT", xOffset, yOffset)
+		local bar = playerFrame.ClassPowerBar
+		bar:SetSize(barWidth, barHeight)
+		bar:SetPoint("BOTTOMLEFT", playerFrame, "TOPLEFT", xOffset, yOffset)
+		if bar.bg then bar.bg:Show() end
 		local max = bars.__max
 		for i = 1, max do
 			bars[i]:SetHeight(barHeight)

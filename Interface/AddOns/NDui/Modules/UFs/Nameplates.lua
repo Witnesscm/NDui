@@ -6,8 +6,9 @@ local _G = getfenv(0)
 local floor, strmatch, tonumber, pairs, unpack, rad = floor, string.match, tonumber, pairs, unpack, math.rad
 local UnitThreatSituation, UnitIsTapDenied, UnitPlayerControlled, UnitIsUnit = UnitThreatSituation, UnitIsTapDenied, UnitPlayerControlled, UnitIsUnit
 local UnitReaction, UnitIsConnected, UnitIsPlayer, UnitSelectionColor = UnitReaction, UnitIsConnected, UnitIsPlayer, UnitSelectionColor
-local GetInstanceInfo, UnitClassification, UnitExists, InCombatLockdown = GetInstanceInfo, UnitClassification, UnitExists, InCombatLockdown
-local C_Scenario_GetInfo, C_Scenario_GetStepInfo, C_MythicPlus_GetCurrentAffixes = C_Scenario.GetInfo, C_Scenario.GetStepInfo, C_MythicPlus.GetCurrentAffixes
+local UnitClassification, UnitExists, InCombatLockdown = UnitClassification, UnitExists, InCombatLockdown
+local C_Scenario_GetInfo, C_Scenario_GetStepInfo = C_Scenario.GetInfo, C_Scenario.GetStepInfo
+local C_ChallengeMode_GetActiveKeystoneInfo = C_ChallengeMode.GetActiveKeystoneInfo
 local UnitGUID, GetPlayerInfoByGUID, Ambiguate = UnitGUID, GetPlayerInfoByGUID, Ambiguate
 local SetCVar, UIFrameFadeIn, UIFrameFadeOut = SetCVar, UIFrameFadeIn, UIFrameFadeOut
 local IsInRaid, IsInGroup, UnitName, UnitHealth, UnitHealthMax = IsInRaid, IsInGroup, UnitName, UnitHealth, UnitHealthMax
@@ -90,6 +91,7 @@ function UF:SetupCVars()
 end
 
 function UF:BlockAddons()
+	if not C.db["Nameplate"]["BlockDBM"] then return end
 	if not DBM or not DBM.Nameplate then return end
 
 	function DBM.Nameplate:SupportedNPMod()
@@ -427,7 +429,7 @@ function UF:UpdateQuestUnit(_, unit)
 		local text = textLine and textLine:GetText()
 		if not text then break end
 
-		if text ~= "" then
+		if text ~= " " then
 			if isInGroup and text == DB.MyName or (not isInGroup and isQuestTitle(textLine)) then
 				startLooking = true
 			elseif startLooking then
@@ -567,42 +569,33 @@ end
 
 -- Scale plates for explosives
 local hasExplosives
-local id = 120651
+local EXPLOSIVE_ID = 120651
 function UF:UpdateExplosives(event, unit)
 	if not hasExplosives or unit ~= self.unit then return end
 
 	local npcID = self.npcID
-	if event == "NAME_PLATE_UNIT_ADDED" and npcID == id then
+	if event == "NAME_PLATE_UNIT_ADDED" and npcID == EXPLOSIVE_ID then
 		self:SetScale(NDuiADB["UIScale"]*1.5)
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
 		self:SetScale(NDuiADB["UIScale"])
 	end
 end
 
-local function checkInstance()
-	local name, _, instID = GetInstanceInfo()
-	if name and instID == 8 then
+local function checkAffixes(event)
+	local _, affixes = C_ChallengeMode_GetActiveKeystoneInfo()
+	if affixes[3] and affixes[3] == 13 then
 		hasExplosives = true
 	else
 		hasExplosives = false
 	end
 end
 
-local function checkAffixes(event)
-	local affixes = C_MythicPlus_GetCurrentAffixes()
-	if not affixes then return end
-	if affixes[3] and affixes[3].id == 13 then
-		checkInstance()
-		B:RegisterEvent(event, checkInstance)
-		B:RegisterEvent("CHALLENGE_MODE_START", checkInstance)
-	end
-	B:UnregisterEvent(event, checkAffixes)
-end
-
 function UF:CheckExplosives()
 	if not C.db["Nameplate"]["ExplosivesScale"] then return end
 
-	B:RegisterEvent("PLAYER_ENTERING_WORLD", checkAffixes)
+	checkAffixes()
+	B:RegisterEvent("ZONE_CHANGED_NEW_AREA", checkAffixes)
+	B:RegisterEvent("CHALLENGE_MODE_START", checkAffixes)
 end
 
 -- Mouseover indicator
