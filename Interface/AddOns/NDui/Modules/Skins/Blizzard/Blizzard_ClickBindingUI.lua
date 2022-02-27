@@ -1,8 +1,6 @@
 local _, ns = ...
 local B, C, L, DB = unpack(ns)
 
-if not DB.isNewPatch then return end
-
 local function updateNewGlow(self)
 	if self.NewOutline:IsShown() then
 		self.bg:SetBackdropBorderColor(0, .7, .08)
@@ -80,4 +78,10 @@ C.themes["Blizzard_ClickBindingUI"] = function()
 
 	reskinPortraitIcon(frame.SpellbookPortrait, 136830)
 	reskinPortraitIcon(frame.MacrosPortrait, 136377)
+
+	frame.TutorialFrame.Bg:Hide()
+	frame.TutorialFrame.NineSlice:Hide()
+	frame.TutorialFrame.TitleBg:Hide()
+	B.SetBD(frame.TutorialFrame)
+	B.ReskinClose(frame.TutorialFrame.CloseButton)
 end
