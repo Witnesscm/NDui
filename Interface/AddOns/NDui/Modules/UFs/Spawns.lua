@@ -298,7 +298,7 @@ UF.PartyDirections = {
 }
 
 UF.RaidDirections = {
-	[1] = {name = L["DOWN_RIGHT"], point = "TOP", xOffset = 0, yOffset = -5, initAnchor = "TOPLEFT", relAnchor = "TOPRIGHT", x = 5, y = 0, columnAnchorPoint = "LEFT", multX = 1, multY = -1},
+	[1] = {name = L["DOWN_RIGHT"], point = "TOP", xOffset = 0, yOffset = -5, initAnchor = "TOPLEFT", relAnchor = "TOPRIGHT", x = 3, y = 0, columnAnchorPoint = "LEFT", multX = 1, multY = -1},
 	[2] = {name = L["DOWN_LEFT"], point = "TOP", xOffset = 0, yOffset = -5, initAnchor = "TOPRIGHT", relAnchor = "TOPLEFT", x = -5, y = 0, columnAnchorPoint = "RIGHT", multX = -1, multY = -1},
 	[3] = {name = L["UP_RIGHT"], point = "BOTTOM", xOffset = 0, yOffset = 5, initAnchor = "BOTTOMLEFT", relAnchor = "BOTTOMRIGHT", x = 5, y = 0, columnAnchorPoint = "LEFT", multX = 1, multY = 1},
 	[4] = {name = L["UP_LEFT"], point = "BOTTOM", xOffset = 0, yOffset = 5, initAnchor = "BOTTOMRIGHT", relAnchor = "BOTTOMLEFT", x = -5, y = 0, columnAnchorPoint = "RIGHT", multX = -1, multY = 1},
@@ -699,13 +699,13 @@ function UF:OnLogin()
 						raidMover = B.Mover(groups[i], L["RaidFrame"], "RaidFrame", {"TOPLEFT", UIParent, 35, -50})
 					end
 
-					local groupWidth = index < 5 and raidWidth+5 or (raidWidth+5)*5
+					local groupWidth = index < 5 and raidWidth+3 or (raidWidth+5)*5
 					local groupHeight = index < 5 and (raidFrameHeight+5)*5 or raidFrameHeight+5
 					local numX = ceil(numGroups/rows)
 					local numY = min(rows, numGroups)
 					local indexSpacings = indexSpacing*(numY-1)
 					if index < 5 then
-						raidMover:SetSize(groupWidth*numX - 5, groupHeight*numY - 5 + indexSpacings)
+						raidMover:SetSize(groupWidth*numX - 3, groupHeight*numY - 5 + indexSpacings)
 					else
 						raidMover:SetSize(groupWidth*numY - 5 + indexSpacings, groupHeight*numX - 5)
 					end
