@@ -463,14 +463,9 @@ function UF:CreatePortrait(self)
 	self.Health.bg:SetParent(self)
 end
 
-local roleTexCoord = {
-	["TANK"] = {.5, .75, 0, 1},
-	["HEALER"] = {.75, 1, 0, 1},
-	["DAMAGER"] = {.25, .5, 0, 1},
-}
 local function postUpdateRole(element, role)
 	if element:IsShown() then
-		element:SetTexCoord(unpack(roleTexCoord[role]))
+		B.ReskinSmallRole(element, role)
 	end
 end
 
@@ -514,8 +509,7 @@ function UF:CreateIcons(self)
 	else
 		ri:SetPoint("TOPRIGHT", self, 0, 8)
 	end
-	ri:SetSize(12, 12)
-	ri:SetTexture("Interface\\LFGFrame\\LFGROLE")
+	ri:SetSize(15, 15)
 	ri.PostUpdate = postUpdateRole
 	self.GroupRoleIndicator = ri
 
@@ -598,8 +592,9 @@ function UF:CreateCastBar(self)
 		cb:SetSize(C.db["UFs"]["FocusCBWidth"], C.db["UFs"]["FocusCBHeight"])
 		createBarMover(cb, L["Focus Castbar"], "FocusCB", C.UFs.Focuscb)
 	elseif mystyle == "boss" or mystyle == "arena" then
+		cb:SetPoint("TOPLEFT", self.Power, "BOTTOMLEFT", 0, -8)
 		cb:SetPoint("TOPRIGHT", self.Power, "BOTTOMRIGHT", 0, -8)
-		cb:SetSize(self:GetWidth(), 10)
+		cb:SetHeight(10)
 	elseif mystyle == "nameplate" then
 		cb:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -5)
 		cb:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -5)
