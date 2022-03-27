@@ -9,7 +9,7 @@ DB.Version = GetAddOnMetadata("NDui", "Version")
 DB.Support = GetAddOnMetadata("NDui", "X-Support")
 DB.Client = GetLocale()
 DB.ScreenWidth, DB.ScreenHeight = GetPhysicalScreenSize()
-DB.isNewPatch = select(4, GetBuildInfo()) >= 90200 -- 9.2.0
+DB.isNewPatch = select(4, GetBuildInfo()) >= 90205 -- 9.2.5
 
 -- Deprecated
 LE_ITEM_QUALITY_POOR = Enum.ItemQuality.Poor
@@ -175,13 +175,14 @@ DB.ReminderBuffs = {
 			instance = true,
 			disable = true,
 		},
-		{	itemID = 185818, -- 究极秘术
+		{	itemID = 190958, -- 究极秘术
 			spells = {
-				[351952] = true,
+				[368512] = true,
 			},
 			equip = true,
 			instance = true,
 			combat = true,
+			inGroup = true,
 		},
 	},
 	MAGE = {

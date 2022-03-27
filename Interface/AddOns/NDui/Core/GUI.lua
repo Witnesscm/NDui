@@ -206,6 +206,7 @@ G.DefaultSettings = {
 		SmartRaid = false,
 		Desaturate = true,
 		DebuffColor = false,
+		Dispellable = true,
 		CCName = true,
 		RCCName = true,
 		HideTip = false,
@@ -364,6 +365,7 @@ G.DefaultSettings = {
 		FocusColor = {r=1, g=.8, b=0},
 		CastbarGlow = true,
 		CastTarget = false,
+		Interruptor = true,
 		FriendPlate = false,
 		EnemyThru = false,
 		FriendlyThru = false,
@@ -389,6 +391,12 @@ G.DefaultSettings = {
 		HarmHeight = 60,
 		HelpWidth = 190,
 		HelpHeight = 60,
+		NameOnlyTextSize = 14,
+		NameOnlyTitleSize = 12,
+		NameOnlyTitle = true,
+		NameOnlyGuild = false,
+		CVarOnlyNames = false,
+		CVarShowNPCs = false,
 	},
 	Skins = {
 		DBM = true,
@@ -676,6 +684,10 @@ local function setupNameplateSize()
 	G:SetupNameplateSize(guiPage[5])
 end
 
+local function setupNameOnlySize()
+	G:SetupNameOnlySize(guiPage[5])
+end
+
 local function setupPlateCastbarGlow()
 	G:PlateCastbarGlow(guiPage[5])
 end
@@ -785,12 +797,8 @@ local function updateToggleDirection()
 	B:GetModule("Skins"):RefreshToggleDirection()
 end
 
-local function updatePlateInsideView()
-	B:GetModule("UnitFrames"):PlateInsideView()
-end
-
-local function updatePlateSpacing()
-	B:GetModule("UnitFrames"):UpdatePlateSpacing()
+local function updatePlateCVars()
+	B:GetModule("UnitFrames"):UpdatePlateCVars()
 end
 
 local function updateClickableSize()
@@ -840,14 +848,6 @@ local function toggleFocusCalculation()
 	if A.ToggleFocusCalculation then
 		A:ToggleFocusCalculation()
 	end
-end
-
-local function updatePlateScale()
-	B:GetModule("UnitFrames"):UpdatePlateScale()
-end
-
-local function updatePlateAlpha()
-	B:GetModule("UnitFrames"):UpdatePlateAlpha()
 end
 
 local function updateUFTextScale()
@@ -1132,11 +1132,12 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 	[5] = {
 		{1, "Nameplate", "Enable", HeaderTag..L["Enable Nameplate"], nil, setupNameplateSize, refreshNameplates},
 		{1, "Nameplate", "FriendPlate", L["FriendPlate"].."*", nil, nil, refreshNameplates, L["FriendPlateTip"]},
-		{1, "Nameplate", "NameOnlyMode", L["NameOnlyMode"].."*", true, nil, nil, L["NameOnlyModeTip"]},
+		{1, "Nameplate", "NameOnlyMode", NewTag..L["NameOnlyMode"].."*", true, setupNameOnlySize, nil, L["NameOnlyModeTip"]},
 		{4, "Nameplate", "NameType", L["NameTextType"].."*", nil, {DISABLE, L["Tag:name"], L["Tag:levelname"], L["Tag:rarename"], L["Tag:rarelevelname"]}, refreshNameplates, L["PlateLevelTagTip"]},
 		{4, "Nameplate", "HealthType", L["HealthValueType"].."*", true, G.HealthValues, refreshNameplates, L["100PercentTip"]},
 		{},--blank
 		{1, "Nameplate", "PlateAuras", HeaderTag..L["PlateAuras"].."*", nil, setupNameplateFilter, refreshNameplates},
+		{1, "Nameplate", "Dispellable", NewTag..L["Dispellable"].."*", true, nil, refreshNameplates, L["DispellableTip"]},
 		{1, "Nameplate", "Desaturate", L["DesaturateIcon"].."*", nil, nil, refreshNameplates, L["DesaturateIconTip"]},
 		{1, "Nameplate", "DebuffColor", L["DebuffColor"].."*", nil, nil, refreshNameplates, L["DebuffColorTip"]},
 		{4, "Nameplate", "AuraFilter", L["NameplateAuraFilter"].."*", true, {L["BlackNWhite"], L["PlayerOnly"], L["IncludeCrowdControl"]}, refreshNameplates},
@@ -1151,11 +1152,12 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Nameplate", "EnemyThru", L["Enemy ClickThru"].."*", true, nil, updateClickThru},
 		{1, "Nameplate", "CastbarGlow", L["PlateCastbarGlow"].."*", nil, setupPlateCastbarGlow, nil, L["PlateCastbarGlowTip"]},
 		{1, "Nameplate", "CastTarget", L["PlateCastTarget"].."*", true, nil, nil, L["PlateCastTargetTip"]},
-		{1, "Nameplate", "InsideView", L["Nameplate InsideView"].."*", nil, nil, updatePlateInsideView},
-		{1, "Nameplate", "ExplosivesScale", L["ExplosivesScale"], true, nil, nil, L["ExplosivesScaleTip"]},
+		{1, "Nameplate", "InsideView", L["Nameplate InsideView"].."*", nil, nil, UpdatePlateCVars},
+		{1, "Nameplate", "Interruptor", NewTag..L["ShowInterruptor"].."*", true},
 		{1, "Nameplate", "QuestIndicator", L["QuestIndicator"]},
-		{1, "Nameplate", "AKSProgress", L["AngryKeystones Progress"], true},
+		{1, "Nameplate", "ExplosivesScale", L["ExplosivesScale"], true, nil, nil, L["ExplosivesScaleTip"]},
 		{1, "Nameplate", "BlockDBM", L["BlockDBM"], nil, nil, nil, L["BlockDBMTip"]},
+		{1, "Nameplate", "AKSProgress", L["AngryKeystones Progress"], true},
 		{},--blank
 		{1, "Nameplate", "ColoredTarget", HeaderTag..L["ColoredTarget"].."*", nil, nil, nil, L["ColoredTargetTip"]},
 		{1, "Nameplate", "ColoredFocus", HeaderTag..L["ColoredFocus"].."*", true, nil, nil, L["ColoredFocusTip"]},
@@ -1174,12 +1176,14 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{5, "Nameplate", "InsecureColor", L["Insecure Color"].."*", 2},
 		{5, "Nameplate", "OffTankColor", L["OffTank Color"].."*", 3},
 		{},--blank
-		{3, "Nameplate", "MinScale", L["Nameplate MinScale"].."*", false, {.5, 1, .1}, updatePlateScale},
-		{3, "Nameplate", "MinAlpha", L["Nameplate MinAlpha"].."*", true, {.3, 1, .1}, updatePlateAlpha},
-		{3, "Nameplate", "VerticalSpacing", L["NP VerticalSpacing"].."*", nil, {.5, 1.5, .1}, updatePlateSpacing},
-		{3, "Nameplate", "HarmWidth", NewTag..L["PlateHarmWidth"].."*", false, {1, 500, 1}, updateClickableSize},
+		{1, "Nameplate", "CVarOnlyNames", NewTag..L["CVarOnlyNames"], nil, nil, updatePlateCVars, L["CVarOnlyNamesTip"]},
+		{1, "Nameplate", "CVarShowNPCs", NewTag..L["CVarShowNPCs"].."*", nil, nil, updatePlateCVars, L["CVarShowNPCsTip"]},
+		{3, "Nameplate", "VerticalSpacing", L["NP VerticalSpacing"].."*", true, {.5, 1.5, .1}, updatePlateCVars},
+		{3, "Nameplate", "MinScale", L["Nameplate MinScale"].."*", nil, {.5, 1, .1}, updatePlateCVars},
+		{3, "Nameplate", "MinAlpha", L["Nameplate MinAlpha"].."*", true, {.3, 1, .1}, updatePlateCVars},
+		{3, "Nameplate", "HarmWidth", NewTag..L["PlateHarmWidth"].."*", nil, {1, 500, 1}, updateClickableSize},
 		{3, "Nameplate", "HarmHeight", NewTag..L["PlateHarmHeight"].."*", true, {1, 500, 1}, updateClickableSize},
-		{3, "Nameplate", "HelpWidth", NewTag..L["PlateHelpWidth"].."*", false, {1, 500, 1}, updateClickableSize},
+		{3, "Nameplate", "HelpWidth", NewTag..L["PlateHelpWidth"].."*", nil, {1, 500, 1}, updateClickableSize},
 		{3, "Nameplate", "HelpHeight", NewTag..L["PlateHelpHeight"].."*", true, {1, 500, 1}, updateClickableSize},
 	},
 	[6] = {
@@ -1646,7 +1650,7 @@ local function CreateContactBox(parent, text, url, index)
 end
 
 local donationList = {
-	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo, 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪，养乐多，无人知晓，秋末旷夜-迪瑟洛克，Teo，莉拉斯塔萨，音尘绝，刺王杀驾，醉跌-凤凰之神，灬麦加灬-阿古斯，漂舟不系，朵小熙，山岸逢花，乄阿财-帕奇维克，乌鸦岭守墓饼-罗宁，自在独踽踽-霜之哀伤，御行宇航-碧玉矿洞，末日伯爵-奥罗，阿玛忆-白银之手，零氪-罗宁，粉色刘老头-黑曜石之锋，shadowlezi，風雲再起-帕奇维克，congfeng，东叫兽以及部分未备注名字的用户。",
+	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo (En-布鲁), 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪，养乐多，无人知晓，秋末旷夜-迪瑟洛克，Teo，莉拉斯塔萨，音尘绝，刺王杀驾，醉跌-凤凰之神，灬麦加灬-阿古斯，漂舟不系，朵小熙，山岸逢花，乄阿财-帕奇维克，乌鸦岭守墓饼-罗宁，自在独踽踽-霜之哀伤，御行宇航-碧玉矿洞，末日伯爵-奥罗，阿玛忆-白银之手，零氪-罗宁，粉色刘老头-黑曜石之锋，shadowlezi，風雲再起-帕奇维克，congfeng，东叫兽，solor以及部分未备注名字的用户。",
 	["Patreon"] = "Quentin, Julian Neigefind, silenkin, imba Villain, Zeyu Zhu, Kon Floros.",
 }
 local function CreateDonationIcon(parent, texture, name, xOffset)

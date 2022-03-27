@@ -23,7 +23,7 @@ local C_NamePlate_SetNamePlateEnemyClickThrough = C_NamePlate.SetNamePlateEnemyC
 local C_NamePlate_SetNamePlateFriendlyClickThrough = C_NamePlate.SetNamePlateFriendlyClickThrough
 
 -- Init
-function UF:PlateInsideView()
+function UF:UpdatePlateCVars()
 	if C.db["Nameplate"]["InsideView"] then
 		SetCVar("nameplateOtherTopInset", .05)
 		SetCVar("nameplateOtherBottomInset", .08)
@@ -31,20 +31,14 @@ function UF:PlateInsideView()
 		SetCVar("nameplateOtherTopInset", -1)
 		SetCVar("nameplateOtherBottomInset", -1)
 	end
-end
 
-function UF:UpdatePlateScale()
 	SetCVar("namePlateMinScale", C.db["Nameplate"]["MinScale"])
 	SetCVar("namePlateMaxScale", C.db["Nameplate"]["MinScale"])
-end
-
-function UF:UpdatePlateAlpha()
 	SetCVar("nameplateMinAlpha", C.db["Nameplate"]["MinAlpha"])
 	SetCVar("nameplateMaxAlpha", C.db["Nameplate"]["MinAlpha"])
-end
-
-function UF:UpdatePlateSpacing()
 	SetCVar("nameplateOverlapV", C.db["Nameplate"]["VerticalSpacing"])
+	SetCVar("nameplateShowOnlyNames", C.db["Nameplate"]["CVarOnlyNames"] and 1 or 0)
+	SetCVar("nameplateShowFriendlyNPCs", C.db["Nameplate"]["CVarShowNPCs"] and 1 or 0)
 end
 
 function UF:UpdateClickableSize()
@@ -66,15 +60,12 @@ function UF:UpdatePlateClickThru()
 end
 
 function UF:SetupCVars()
-	UF:PlateInsideView()
+	UF:UpdatePlateCVars()
 	SetCVar("nameplateOverlapH", .8)
-	UF:UpdatePlateSpacing()
-	UF:UpdatePlateAlpha()
 	SetCVar("nameplateSelectedAlpha", 1)
 	SetCVar("showQuestTrackingTooltips", 1)
 	SetCVar("predictedHealth", 1)
 
-	UF:UpdatePlateScale()
 	SetCVar("nameplateSelectedScale", 1)
 	SetCVar("nameplateLargerScale", 1)
 	SetCVar("nameplateGlobalScale", 1)
@@ -294,8 +285,14 @@ function UF:UpdateTargetChange()
 	if C.db["Nameplate"]["TargetIndicator"] ~= 1 then
 		if UnitIsUnit(unit, "target") and not UnitIsUnit(unit, "player") then
 			element:Show()
+			if element.TopArrow:IsShown() and not element.TopArrowAnim:IsPlaying() then
+				element.TopArrowAnim:Play()
+			end
 		else
 			element:Hide()
+			if element.TopArrowAnim:IsPlaying() then
+				element.TopArrowAnim:Stop()
+			end
 		end
 	end
 	if C.db["Nameplate"]["ColoredTarget"] then
@@ -355,6 +352,8 @@ function UF:UpdateTargetIndicator()
 	end
 end
 
+local points = {-15, -5, 0, 5, 0}
+
 function UF:AddTargetIndicator(self)
 	local frame = CreateFrame("Frame", nil, self)
 	frame:SetAllPoints()
@@ -365,6 +364,17 @@ function UF:AddTargetIndicator(self)
 	frame.TopArrow:SetSize(50, 50)
 	frame.TopArrow:SetTexture(DB.arrowTex)
 	frame.TopArrow:SetPoint("BOTTOM", frame, "TOP", 0, 20)
+
+	local animGroup = frame.TopArrow:CreateAnimationGroup()
+	animGroup:SetLooping("REPEAT")
+	local anim = animGroup:CreateAnimation("Path")
+	anim:SetDuration(1)
+	for i = 1, #points do
+		local point = anim:CreateControlPoint()
+		point:SetOrder(i)
+		point:SetOffset(0, points[i])
+	end
+	frame.TopArrowAnim = animGroup
 
 	frame.RightArrow = frame:CreateTexture(nil, "BACKGROUND", nil, -5)
 	frame.RightArrow:SetSize(50, 50)
@@ -653,6 +663,8 @@ end
 
 -- Interrupt info on castbars
 function UF:UpdateSpellInterruptor(...)
+	if not C.db["Nameplate"]["Interruptor"] then return end
+
 	local _, _, sourceGUID, sourceName, _, _, destGUID = ...
 	if destGUID == self.unitGUID and sourceGUID and sourceName and sourceName ~= "" then
 		local _, class = GetPlayerInfoByGUID(sourceGUID)
@@ -686,13 +698,6 @@ function UF:CreatePlates()
 	self.Health = health
 	self.Health.UpdateColor = UF.UpdateColor
 
-	local title = B.CreateFS(self, C.db["Nameplate"]["NameTextSize"]-1)
-	title:ClearAllPoints()
-	title:SetPoint("TOP", self, "BOTTOM", 0, -10)
-	title:Hide()
-	self:Tag(title, "[npctitle]")
-	self.npcTitle = title
-
 	local tarName = B.CreateFS(self, C.db["Nameplate"]["NameTextSize"]+4)
 	tarName:ClearAllPoints()
 	tarName:SetPoint("TOP", self, "BOTTOM", 0, -10)
@@ -712,6 +717,13 @@ function UF:CreatePlates()
 	self.powerText:ClearAllPoints()
 	self.powerText:SetPoint("TOP", self.Castbar, "BOTTOM", 0, -4)
 	self:Tag(self.powerText, "[nppp]")
+
+	local title = B.CreateFS(self, C.db["Nameplate"]["NameOnlyTitleSize"])
+	title:ClearAllPoints()
+	title:SetPoint("TOP", self.nameText, "BOTTOM", 0, -3)
+	title:Hide()
+	self:Tag(title, "[npctitle]")
+	self.npcTitle = title
 
 	UF:MouseoverIndicator(self)
 	UF:AddTargetIndicator(self)
@@ -751,6 +763,7 @@ function UF:UpdateNameplateAuras()
 	element.numTotal = C.db["Nameplate"]["maxAuras"]
 	element.size = C.db["Nameplate"]["AuraSize"]
 	element.showDebuffType = C.db["Nameplate"]["DebuffColor"]
+	element.showStealableBuffs = C.db["Nameplate"]["Dispellable"]
 	element.desaturateDebuff = C.db["Nameplate"]["Desaturate"]
 	element:SetWidth(self:GetWidth())
 	element:SetHeight((element.size + element.spacing) * 2)
@@ -780,30 +793,37 @@ function UF:UpdateNameplateSize()
 	local font, fontFlag = DB.Font[1], DB.Font[3]
 	local iconSize = plateHeight + plateCBHeight + 5
 	local nameType = C.db["Nameplate"]["NameType"]
+	local nameOnlyTextSize, nameOnlyTitleSize = C.db["Nameplate"]["NameOnlyTextSize"], C.db["Nameplate"]["NameOnlyTitleSize"]
 
-	self:SetSize(plateWidth, plateHeight)
-	self.nameText:SetFont(font, nameTextSize, fontFlag)
-	if self.plateType ~= "NameOnly" then
+	if self.plateType == "NameOnly" then
+		self.nameText:SetFont(font, nameOnlyTextSize, fontFlag)
+		self:Tag(self.nameText, "[nprare][nplevel][color][name]")
+		self.__tagIndex = 6
+		self.npcTitle:SetFont(font, nameOnlyTitleSize, fontFlag)
+		self.npcTitle:UpdateTag()
+	else
+		self.nameText:SetFont(font, nameTextSize, fontFlag)
 		self:Tag(self.nameText, UF.PlateNameTags[nameType])
-		self.nameText:UpdateTag()
 		self.__tagIndex = nameType
+
+		self:SetSize(plateWidth, plateHeight)
+		self.tarName:SetFont(font, nameTextSize+4, fontFlag)
+		self.Castbar.Icon:SetSize(iconSize, iconSize)
+		self.Castbar.glowFrame:SetSize(iconSize+8, iconSize+8)
+		self.Castbar:SetHeight(plateCBHeight)
+		self.Castbar.Time:SetFont(font, CBTextSize, fontFlag)
+		self.Castbar.Time:SetPoint("TOPRIGHT", self.Castbar, "RIGHT", 0, plateCBOffset)
+		self.Castbar.Text:SetFont(font, CBTextSize, fontFlag)
+		self.Castbar.Text:SetPoint("TOPLEFT", self.Castbar, "LEFT", 0, plateCBOffset)
+		self.Castbar.Shield:SetPoint("TOP", self.Castbar, "CENTER", 0, plateCBOffset)
+		self.Castbar.Shield:SetSize(CBTextSize + 4, CBTextSize + 4)
+		self.Castbar.spellTarget:SetFont(font, CBTextSize+3, fontFlag)
+		self.healthValue:SetFont(font, healthTextSize, fontFlag)
+		self.healthValue:SetPoint("RIGHT", self, 0, healthTextOffset)
+		self:Tag(self.healthValue, "[VariousHP("..UF.VariousTagIndex[C.db["Nameplate"]["HealthType"]]..")]")
+		self.healthValue:UpdateTag()
 	end
-	self.npcTitle:SetFont(font, nameTextSize-1, fontFlag)
-	self.tarName:SetFont(font, nameTextSize+4, fontFlag)
-	self.Castbar.Icon:SetSize(iconSize, iconSize)
-	self.Castbar.glowFrame:SetSize(iconSize+8, iconSize+8)
-	self.Castbar:SetHeight(plateCBHeight)
-	self.Castbar.Time:SetFont(font, CBTextSize, fontFlag)
-	self.Castbar.Time:SetPoint("TOPRIGHT", self.Castbar, "RIGHT", 0, plateCBOffset)
-	self.Castbar.Text:SetFont(font, CBTextSize, fontFlag)
-	self.Castbar.Text:SetPoint("TOPLEFT", self.Castbar, "LEFT", 0, plateCBOffset)
-	self.Castbar.Shield:SetPoint("TOP", self.Castbar, "CENTER", 0, plateCBOffset)
-	self.Castbar.Shield:SetSize(CBTextSize + 4, CBTextSize + 4)
-	self.Castbar.spellTarget:SetFont(font, CBTextSize+3, fontFlag)
-	self.healthValue:SetFont(font, healthTextSize, fontFlag)
-	self.healthValue:SetPoint("RIGHT", self, 0, healthTextOffset)
-	self:Tag(self.healthValue, "[VariousHP("..UF.VariousTagIndex[C.db["Nameplate"]["HealthType"]]..")]")
-	self.healthValue:UpdateTag()
+	self.nameText:UpdateTag()
 end
 
 function UF:RefreshNameplats()
@@ -845,9 +865,6 @@ function UF:UpdatePlateByType()
 		end
 
 		name:SetJustifyH("CENTER")
-		self:Tag(name, "[nprare][nplevel][color][name]")
-		self.__tagIndex = 6
-		name:UpdateTag()
 		name:SetPoint("CENTER", self, "BOTTOM")
 		hpval:Hide()
 		title:Show()
@@ -879,10 +896,9 @@ function UF:UpdatePlateByType()
 			self.widgetContainer:ClearAllPoints()
 			self.widgetContainer:SetPoint("TOP", self.Castbar, "BOTTOM", 0, -5)
 		end
-
-		UF.UpdateNameplateSize(self)
 	end
 
+	UF.UpdateNameplateSize(self)
 	UF.UpdateTargetIndicator(self)
 	UF.ToggleNameplateAuras(self)
 end
