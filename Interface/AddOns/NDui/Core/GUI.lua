@@ -78,7 +78,8 @@ G.DefaultSettings = {
 		BagsiLvl = true,
 		BagSortMode = 1,
 		ItemFilter = true,
-		FavouriteItems = {},
+		CustomItems = {},
+		CustomNames = {},
 		GatherEmpty = false,
 		ShowNewItem = true,
 		SplitCount = 1,
@@ -214,26 +215,32 @@ G.DefaultSettings = {
 		RCCName = true,
 		HideTip = false,
 		DescRole = true,
+		PlayerAbsorb = false,
 
 		PlayerWidth = 245,
 		PlayerHeight = 24,
+		PlayerNameOffset = 0,
 		PlayerPowerHeight = 4,
 		PlayerPowerOffset = 2,
 		PlayerHPTag = 2,
 		PlayerMPTag = 4,
 		FocusWidth = 200,
 		FocusHeight = 22,
+		FocusNameOffset = 0,
 		FocusPowerHeight = 3,
 		FocusPowerOffset = 2,
 		FocusHPTag = 2,
 		FocusMPTag = 4,
 		PetWidth = 120,
 		PetHeight = 18,
+		PetNameOffset = 0,
 		PetPowerHeight = 2,
 		PetHPTag = 4,
 		BossWidth = 150,
 		BossHeight = 22,
+		BossNameOffset = 0,
 		BossPowerHeight = 2,
+		BossPowerOffset = 2,
 		BossHPTag = 5,
 		BossMPTag = 5,
 
@@ -332,10 +339,11 @@ G.DefaultSettings = {
 		TankMode = false,
 		TargetIndicator = 5,
 		InsideView = true,
-		CustomUnitColor = true,
+		ShowCustomUnits = true,
 		CustomColor = {r=0, g=.8, b=.3},
-		UnitList = "",
-		ShowPowerList = "",
+		CustomUnits = {},
+		ShowPowerUnits = true,
+		PowerUnits = {},
 		VerticalSpacing = .7,
 		ShowPlayerPlate = false,
 		PPWidth = 175,
@@ -375,11 +383,11 @@ G.DefaultSettings = {
 		EnemyThru = false,
 		FriendlyThru = false,
 		BlockDBM = true,
-		Dispellable = true,
+		DispellMode = 1,
 		UnitTargeted = false,
 		ColorByDot = false,
-		ColorDots = "",
 		DotColor = {r=1, g=.5, b=.2},
+		DotSpells = {},
 
 		PlateWidth = 190,
 		PlateHeight = 8,
@@ -616,6 +624,29 @@ loader:SetScript("OnEvent", function(self, _, addon)
 	else
 		C.db = NDuiPDB[NDuiADB["ProfileIndex"][DB.MyFullName] - 1]
 	end
+	-- Transfer old data START
+	if C.db["Bags"] and C.db["Bags"]["FavouriteItems"] and next(C.db["Bags"]["FavouriteItems"]) then
+		for itemID in pairs(C.db["Bags"]["FavouriteItems"]) do
+			if not C.db["Bags"]["CustomItems"] then
+				C.db["Bags"]["CustomItems"] = {}
+			end
+			C.db["Bags"]["CustomItems"][itemID] = 1
+		end
+		C.db["Bags"]["FavouriteItems"] = nil
+	end
+	if C.db["Nameplate"] and C.db["Nameplate"]["UnitList"] then
+		if not C.db["Nameplate"]["CustomUnits"] then
+			C.db["Nameplate"]["CustomUnits"] = {}
+		end
+		B.SplitList(C.db["Nameplate"]["CustomUnits"], C.db["Nameplate"]["UnitList"])
+	end
+	if C.db["Nameplate"] and C.db["Nameplate"]["ColorDots"] then
+		if not C.db["Nameplate"]["DotSpells"] then
+			C.db["Nameplate"]["DotSpells"] = {}
+		end
+		B.SplitList(C.db["Nameplate"]["DotSpells"], C.db["Nameplate"]["ColorDots"])
+	end
+	-- Transfer old data END
 	InitialSettings(G.DefaultSettings, C.db, true)
 
 	B:SetupUIScale(true)
@@ -690,6 +721,18 @@ end
 
 local function setupNameplateFilter()
 	G:SetupNameplateFilter(guiPage[5])
+end
+
+local function setupNameplateColorDots()
+	G:NameplateColorDots(guiPage[5])
+end
+
+local function setupNameplateUnitFilter()
+	G:NameplateUnitFilter(guiPage[5])
+end
+
+local function setupNameplatePowerUnits()
+	G:NameplatePowerUnits(guiPage[5])
 end
 
 local function setupNameplateSize()
@@ -825,10 +868,6 @@ local function updatePowerUnitList()
 	B:GetModule("UnitFrames"):CreatePowerUnitTable()
 end
 
-local function refreshColorDots()
-	B:GetModule("UnitFrames"):RefreshColorDots()
-end
-
 local function refreshNameplates()
 	B:GetModule("UnitFrames"):RefreshAllPlates()
 end
@@ -868,6 +907,12 @@ end
 
 local function updateUFTextScale()
 	B:GetModule("UnitFrames"):UpdateTextScale()
+end
+
+local function togglePlayerAbsorb()
+	if _G.oUF_Player then
+		B:GetModule("UnitFrames").UpdateFrameHealthTag(_G.oUF_Player)
+	end
 end
 
 local function toggleUFClassPower()
@@ -1045,9 +1090,9 @@ G.TabList = {
 	NewTag..L["Nameplate"],
 	L["PlayerPlate"],
 	L["Auras"],
-	NewTag..L["Raid Tools"],
-	NewTag..L["ChatFrame"],
-	NewTag..L["Maps"],
+	L["Raid Tools"],
+	L["ChatFrame"],
+	L["Maps"],
 	L["Skins"],
 	L["Tooltip"],
 	L["Misc"],
@@ -1102,22 +1147,23 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{3, "Bags", "BankWidth", L["Bank Width"].."*", true, {10, 40, 1}, updateBagSize},
 	},
 	[3] = {
-		{1, "UFs", "Enable", HeaderTag..L["Enable UFs"], nil, setupUnitFrame, nil, L["HideUFWarning"]},
+		{1, "UFs", "Enable", NewTag..HeaderTag..L["Enable UFs"], nil, setupUnitFrame, nil, L["HideUFWarning"]},
 		{1, "UFs", "Arena", L["Arena Frame"], true},
 		{1, "UFs", "ShowAuras", L["ShowAuras"].."*", nil, setupUFAuras, toggleAllAuras},
 		{1, "UFs", "ClassPower", L["UFs ClassPower"].."*", true, setupClassPower, toggleUFClassPower},
 		{1, "UFs", "Portrait", L["UFs Portrait"]},
 		{1, "UFs", "CCName", L["ClassColor Name"].."*", true, nil, updateUFTextScale},
+		{1, "UFs", "PlayerAbsorb", NewTag..L["PlayerAbsorb"].."*", nil, nil, togglePlayerAbsorb, L["PlayerAbsorbTip"]},
 		{3, "UFs", "UFTextScale", L["UFTextScale"].."*", nil, {.8, 1.5, .05}, updateUFTextScale},
 		{4, "UFs", "HealthColor", L["HealthColor"].."*", true, {L["Default Dark"], L["ClassColorHP"], L["GradientHP"]}, updateUFTextScale},
 		{},--blank
 		{1, "UFs", "Castbars", HeaderTag..L["UFs Castbar"], nil, setupCastbar},
 		{1, "UFs", "LagString", L["Castbar LagString"].."*", true, nil, toggleCastBarLatency},
 		{1, "UFs", "SwingBar", L["UFs SwingBar"].."*", nil, setupSwingBars, toggleSwingBars},
-		{1, "UFs", "QuakeTimer", L["UFs QuakeTimer"], true},
+		{1, "UFs", "QuakeTimer", L["UFs QuakeTimer"], true, nil, nil, L["QuakeTimerTip"]},
 		{},--blank
 		{1, "UFs", "CombatText", HeaderTag..L["UFs CombatText"]},
-		{1, "UFs", "ScrollingCT", NewTag..L["ScrollingCT"].."*", true},
+		{1, "UFs", "ScrollingCT", L["ScrollingCT"].."*", true},
 		{1, "UFs", "AutoAttack", L["CombatText AutoAttack"].."*"},
 		{1, "UFs", "PetCombatText", L["CombatText ShowPets"].."*", true},
 		{1, "UFs", "HotsDots", L["CombatText HotsDots"].."*"},
@@ -1173,9 +1219,9 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{4, "Nameplate", "HealthType", L["HealthValueType"].."*", true, G.HealthValues, refreshNameplates, L["100PercentTip"]},
 		{},--blank
 		{1, "Nameplate", "PlateAuras", HeaderTag..L["PlateAuras"].."*", nil, setupNameplateFilter, refreshNameplates},
-		{1, "Nameplate", "Dispellable", L["Dispellable"].."*", true, nil, refreshNameplates, L["DispellableTip"]},
 		{1, "Nameplate", "Desaturate", L["DesaturateIcon"].."*", nil, nil, refreshNameplates, L["DesaturateIconTip"]},
-		{1, "Nameplate", "DebuffColor", L["DebuffColor"].."*", nil, nil, refreshNameplates, L["DebuffColorTip"]},
+		{1, "Nameplate", "DebuffColor", L["DebuffColor"].."*", true, nil, refreshNameplates, L["DebuffColorTip"]},
+		{4, "Nameplate", "DispellMode", NewTag..L["Dispellable"].."*", nil, {L["Filter"], L["Always"], DISABLE}, refreshNameplates, L["DispellableTip"]},
 		{4, "Nameplate", "AuraFilter", L["NameplateAuraFilter"].."*", true, {L["BlackNWhite"], L["PlayerOnly"], L["IncludeCrowdControl"]}, refreshNameplates},
 		{3, "Nameplate", "maxAuras", L["Max Auras"].."*", false, {1, 20, 1}, refreshNameplates},
 		{3, "Nameplate", "AuraSize", L["Auras Size"].."*", true, {18, 40, 1}, refreshNameplates},
@@ -1186,7 +1232,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Nameplate", "HostileCC", L["Hostile CC"].."*", true},
 		{1, "Nameplate", "FriendlyThru", "|cffff0000"..L["Friendly ClickThru"].."*", nil, nil, updateClickThru, L["PlateClickThruTip"]},
 		{1, "Nameplate", "EnemyThru", "|cffff0000"..L["Enemy ClickThru"].."*", true, nil, updateClickThru, L["PlateClickThruTip"]},
-		{1, "Nameplate", "CastbarGlow", L["PlateCastbarGlow"].."*", nil, setupPlateCastbarGlow, nil, L["PlateCastbarGlowTip"]},
+		{1, "Nameplate", "UnitTargeted", NewTag..L["Show TargetedBy"].."*", nil, nil, refreshPlateByEvents, L["TargetedByTip"]},
 		{1, "Nameplate", "CastTarget", L["PlateCastTarget"].."*", true, nil, nil, L["PlateCastTargetTip"]},
 		{1, "Nameplate", "InsideView", L["Nameplate InsideView"].."*", nil, nil, UpdatePlateCVars},
 		{1, "Nameplate", "Interruptor", L["ShowInterruptor"].."*", true},
@@ -1194,20 +1240,15 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Nameplate", "ExplosivesScale", L["ExplosivesScale"], true, nil, nil, L["ExplosivesScaleTip"]},
 		{1, "Nameplate", "BlockDBM", L["BlockDBM"], nil, nil, nil, L["BlockDBMTip"]},
 		{1, "Nameplate", "AKSProgress", L["AngryKeystones Progress"], true},
-		{1, "Nameplate", "UnitTargeted", NewTag..L["Show TargetedBy"].."*", nil, nil, refreshPlateByEvents, L["TargetedByTip"]},
 		{},--blank
 		{1, "Nameplate", "ColoredTarget", HeaderTag..L["ColoredTarget"].."*", nil, nil, nil, L["ColoredTargetTip"]},
 		{1, "Nameplate", "ColoredFocus", HeaderTag..L["ColoredFocus"].."*", true, nil, nil, L["ColoredFocusTip"]},
 		{5, "Nameplate", "TargetColor", L["TargetNP Color"].."*"},
 		{5, "Nameplate", "FocusColor", L["FocusNP Color"].."*", 2},
-		{1, "Nameplate", "ColorByDot", NewTag..HeaderTag..L["ColorByDot"].."*", nil, nil, nil, L["ColorByDotTip"]},
-		{5, "Nameplate", "DotColor", NewTag..L["DotColor"].."*"},
-		{2, "Nameplate", "ColorDots", NewTag..L["ColorDots"].."*", true, nil, refreshColorDots, L["ColorDotsTip"]},
-		{},--blank
-		{1, "Nameplate", "CustomUnitColor", HeaderTag..L["CustomUnitColor"].."*", nil, nil, updateCustomUnitList, L["CustomUnitColorTip"]},
-		{5, "Nameplate", "CustomColor", L["Custom Color"].."*", 2},
-		{2, "Nameplate", "UnitList", L["UnitColor List"].."*", nil, nil, updateCustomUnitList, L["CustomUnitTips"]},
-		{2, "Nameplate", "ShowPowerList", L["ShowPowerList"].."*", true, nil, updatePowerUnitList, L["CustomUnitTips"]},
+		{1, "Nameplate", "ColorByDot", NewTag..HeaderTag..L["ColorByDot"].."*", nil, setupNameplateColorDots, nil, L["ColorByDotTip"]},
+		{1, "Nameplate", "CastbarGlow", HeaderTag..L["PlateCastbarGlow"].."*", true, setupPlateCastbarGlow, nil, L["PlateCastbarGlowTip"]},
+		{1, "Nameplate", "ShowCustomUnits", NewTag..HeaderTag..L["ShowCustomUnits"].."*", nil, setupNameplateUnitFilter, updateCustomUnitList, L["CustomUnitsTip"]},
+		{1, "Nameplate", "ShowPowerUnits", NewTag..HeaderTag..L["ShowPowerUnits"].."*", true, setupNameplatePowerUnits, updatePowerUnitList, L["PowerUnitsTip"]},
 		{},--blank
 		{1, "Nameplate", "TankMode", HeaderTag..L["Tank Mode"].."*", nil, nil, nil, L["TankModeTip"]},
 		{1, "Nameplate", "DPSRevertThreat", L["DPS Revert Threat"].."*", true, nil, nil, L["RevertThreatTip"]},
@@ -1279,7 +1320,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Misc", "InstAlertOnly", L["InstAlertOnly"].."*", true, nil, updateInterruptAlert, L["InstAlertOnlyTip"]},
 		{},--blank
 		{1, "Misc", "ExplosiveCount", L["Explosive Alert"].."*", nil, nil, updateExplosiveAlert, L["ExplosiveAlertTip"]},
-		{1, "Misc", "SpellItemAlert", NewTag..L["SpellItemAlert"].."*", true, nil, updateSpellItemAlert, L["SpellItemAlertTip"]},
+		{1, "Misc", "SpellItemAlert", L["SpellItemAlert"].."*", true, nil, updateSpellItemAlert, L["SpellItemAlertTip"]},
 		{1, "Misc", "SoloInfo", L["SoloInfo"].."*", nil, nil, updateSoloInfo},
 		{1, "Misc", "NzothVision", L["NzothVision"], true},
 		{},--blank
@@ -1300,7 +1341,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Chat", "Freedom", L["Language Filter"].."*", true, nil, toggleLanguageFilter},
 		{1, "Chat", "WhisperSound", L["WhisperSound"].."*", nil, nil, nil, L["WhisperSoundTip"]},
 		{1, "Chat", "BottomBox", L["BottomBox"].."*", true, nil, toggleEditBoxAnchor},
-		{1, "Chat", "SysFont", NewTag..L["SysFont"], nil, nil, nil, L["SysFontTip"]},
+		{1, "Chat", "SysFont", L["SysFont"], nil, nil, nil, L["SysFontTip"]},
 		{4, "ACCOUNT", "TimestampFormat", L["TimestampFormat"].."*", nil, {DISABLE, "03:27 PM", "03:27:32 PM", "15:27", "15:27:32"}},
 		{4, "Chat", "ChatBGType", L["ChatBGType"].."*", true, {DISABLE, L["Default Dark"], L["Gradient"]}, toggleChatBackground},
 		{},--blank
@@ -1328,7 +1369,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Map", "Clock", L["Minimap Clock"].."*", true, nil, showMinimapClock},
 		{1, "Map", "CombatPulse", L["Minimap Pulse"]},
 		{1, "Map", "WhoPings", L["Show WhoPings"], true},
-		{1, "Map", "EasyVolume", NewTag..L["EasyVolume"], nil, nil, nil, L["EasyVolumeTip"]},
+		{1, "Map", "EasyVolume", L["EasyVolume"], nil, nil, nil, L["EasyVolumeTip"]},
 		{1, "Misc", "ExpRep", L["Show Expbar"], true},
 		{1, "Map", "ShowRecycleBin", L["Show RecycleBin"]},
 		{2, "ACCOUNT", "IgnoredButtons", L["IgnoredButtons"], nil, nil, nil, L["IgnoredButtonsTip"]},
@@ -1694,7 +1735,7 @@ local function CreateContactBox(parent, text, url, index)
 end
 
 local donationList = {
-	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo (En-布鲁), 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪, 养乐多, 无人知晓, 秋末旷夜-迪瑟洛克, Teo, 莉拉斯塔萨, 音尘绝, 刺王杀驾, 醉跌-凤凰之神, 灬麦加灬-阿古斯, 漂舟不系, 朵小熙, 山岸逢花, 乄阿财-帕奇维克, 乌鸦岭守墓饼-罗宁, 自在独踽踽-霜之哀伤, 御行宇航-碧玉矿洞, 末日伯爵-奥罗, 阿玛忆-白银之手, 零氪-罗宁, 粉色刘老头-黑曜石之锋, shadowlezi, 風雲再起-帕奇维克, congfeng, 东叫兽, solor, DC_Doraemon, 不明飞行物以及部分未备注名字的用户。",
+	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo (En-布鲁), 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪, 养乐多, 无人知晓, 秋末旷夜-迪瑟洛克, Teo, 莉拉斯塔萨, 音尘绝, 刺王杀驾, 醉跌-凤凰之神, 灬麦加灬-阿古斯, 漂舟不系, 朵小熙, 山岸逢花, 乄阿财-帕奇维克, 乌鸦岭守墓饼-罗宁, 自在独踽踽-霜之哀伤, 御行宇航-碧玉矿洞, 末日伯爵-奥罗, 阿玛忆-白银之手, 零氪-罗宁, 粉色刘老头-黑曜石之锋, shadowlezi, 風雲再起-帕奇维克, congfeng, 东叫兽, solor, DC_Doraemon, 不明飞行物，Seraphinee-冰风岗，怜悯，小甜甜赵顶天-贫瘠之地以及部分未备注名字的用户。",
 	["Patreon"] = "Quentin, Julian Neigefind, silenkin, imba Villain, Zeyu Zhu, Kon Floros.",
 }
 local function CreateDonationIcon(parent, texture, name, xOffset)

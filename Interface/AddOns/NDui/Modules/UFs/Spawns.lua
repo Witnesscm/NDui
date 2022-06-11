@@ -319,7 +319,7 @@ function UF:OnLogin()
 		UF:QuestIconCheck()
 		UF:RefreshPlateByEvents()
 		UF:RefreshMajorSpells()
-		UF:RefreshColorDots()
+		UF:RefreshNameplateFilters()
 
 		oUF:RegisterStyle("Nameplates", UF.CreatePlates)
 		oUF:SetActiveStyle("Nameplates")
@@ -415,6 +415,7 @@ function UF:OnLogin()
 	end
 
 	if C.db["UFs"]["RaidFrame"] then
+		SetCVar("predictedHealth", 1)
 		UF:AddClickSetsListener()
 		UF:UpdateCornerSpells()
 		UF.headers = {}
