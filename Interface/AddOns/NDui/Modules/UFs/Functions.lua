@@ -202,9 +202,9 @@ function UF:UpdateFrameNameTag()
 	if mystyle == "player" then
 		self:Tag(name, " "..colorTag.."[name]")
 	elseif mystyle == "target" then
-		self:Tag(name, "[fulllevel] "..colorTag.."[name][afkdnd]")
+		self:Tag(name, " [fulllevel] "..colorTag.."[name][afkdnd]")
 	elseif mystyle == "focus" then
-		self:Tag(name, colorTag.."[name][afkdnd]")
+		self:Tag(name, " "..colorTag.."[name][afkdnd]")
 	elseif mystyle == "arena" then
 		self:Tag(name, "[arenaspec] "..colorTag.."[name]")
 	elseif self.raidType == "simple" and C.db["UFs"]["TeamIndex"] then
@@ -536,7 +536,7 @@ function UF:CreateIcons(self)
 	self.LeaderIndicator = li
 
 	local ai = self:CreateTexture(nil, "OVERLAY")
-	ai:SetPoint("TOPLEFT", self, 0, 8)
+	ai:SetPoint("TOPLEFT", self, -1, 8)
 	ai:SetSize(12, 12)
 	self.AssistantIndicator = ai
 end
@@ -792,8 +792,7 @@ function UF.PostUpdateIcon(element, _, button, _, _, duration, expiration, debuf
 		button:SetSize(element.size, element.size)
 	end
 
-	local fontSize = element.fontSize or element.size*.6
-	button.count:SetFont(DB.Font[1], fontSize, DB.Font[3])
+	B.SetFontSize(button.count, element.fontSize or element.size*.6)
 
 	if element.desaturateDebuff and button.isDebuff and filteredStyle[style] and not button.isPlayer then
 		button.icon:SetDesaturated(true)
@@ -1341,11 +1340,16 @@ function UF:CreateClassPower(self)
 		if isDK then
 			bars[i].timer = B.CreateFS(bars[i], 13, "")
 		elseif DB.MyClass == "ROGUE" then
-			local chargeStar = bars[i]:CreateTexture()
+			if not bar.chargeParent then
+				bar.chargeParent = CreateFrame("Frame", nil, bar)
+				bar.chargeParent:SetAllPoints()
+				bar.chargeParent:SetFrameLevel(8)
+			end
+			local chargeStar = bar.chargeParent:CreateTexture()
 			chargeStar:SetAtlas("VignetteKill")
 			chargeStar:SetDesaturated(true)
 			chargeStar:SetSize(22, 22)
-			chargeStar:SetPoint("CENTER")
+			chargeStar:SetPoint("CENTER", bars[i])
 			chargeStar:Hide()
 			bars[i].chargeStar = chargeStar
 		end
