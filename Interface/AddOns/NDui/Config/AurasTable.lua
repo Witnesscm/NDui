@@ -27,7 +27,7 @@ local function newAuraFormat(value)
 	local newTable = {}
 	for _, v in pairs(value) do
 		local id = v.AuraID or v.SpellID or v.ItemID or v.SlotID or v.TotemID or v.IntID
-		if id then
+		if id and not v.Disabled then
 			newTable[id] = v
 		end
 	end
@@ -40,7 +40,7 @@ function module:AddNewAuraWatch(class, list)
 			local spellID = v.AuraID or v.SpellID
 			if spellID then
 				local name = GetSpellInfo(spellID)
-				if not name then
+				if not name and not v.Disabled then
 					wipe(v)
 					if DB.isDeveloper then print(format("|cffFF0000Invalid spellID:|r '%s' %s", class, spellID)) end
 				end
@@ -81,14 +81,6 @@ function module:AddDeprecatedGroup()
 	end
 
 	wipe(C.DeprecatedAuras)
-end
-
--- RaidFrame spells
-local RaidBuffs = {}
-function module:AddClassSpells(list)
-	for class, value in pairs(list) do
-		RaidBuffs[class] = value
-	end
 end
 
 -- RaidFrame debuffs
@@ -160,24 +152,21 @@ function module:CheckMajorSpells()
 	end
 end
 
-local function checkNameplateFilter(index)
-	local VALUE = (index == 1 and C.WhiteList) or (index == 2 and C.BlackList)
-	if VALUE then
-		for spellID in pairs(VALUE) do
-			local name = GetSpellInfo(spellID)
-			if name then
-				if NDuiADB["NameplateFilter"][index][spellID] then
-					NDuiADB["NameplateFilter"][index][spellID] = nil
-				end
-			else
-				if DB.isDeveloper then print("Invalid nameplate filter ID: "..spellID) end
+local function CheckNameplateFilter(list, key)
+	for spellID in pairs(list) do
+		local name = GetSpellInfo(spellID)
+		if name then
+			if NDuiADB[key][spellID] then
+				NDuiADB[key][spellID] = nil
 			end
+		else
+			if DB.isDeveloper then print("Invalid nameplate filter ID: "..spellID) end
 		end
+	end
 
-		for spellID, value in pairs(NDuiADB["NameplateFilter"][index]) do
-			if value == false and VALUE[spellID] == nil then
-				NDuiADB["NameplateFilter"][index][spellID] = nil
-			end
+	for spellID, value in pairs(NDuiADB[key]) do
+		if value == false and list[spellID] == nil then
+			NDuiADB[key][spellID] = nil
 		end
 	end
 end
@@ -196,8 +185,8 @@ local function cleanupNameplateUnits(VALUE)
 end
 
 function module:CheckNameplateFilters()
-	checkNameplateFilter(1)
-	checkNameplateFilter(2)
+	CheckNameplateFilter(C.WhiteList, "NameplateWhite")
+	CheckNameplateFilter(C.BlackList, "NameplateBlack")
 	cleanupNameplateUnits("CustomUnits")
 	cleanupNameplateUnits("PowerUnits")
 end
@@ -219,7 +208,6 @@ function module:OnLogin()
 	RaidDebuffs[0] = {} -- OTHER spells
 	module:AddDeprecatedGroup()
 	C.AuraWatchList = AuraWatchList
-	C.RaidBuffs = RaidBuffs
 	C.RaidDebuffs = RaidDebuffs
 
 	module:CheckPartySpells()

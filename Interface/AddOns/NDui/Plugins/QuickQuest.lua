@@ -8,7 +8,7 @@ local B, C, L, DB = unpack(ns)
 local next, ipairs, select = next, ipairs, select
 local IsAltKeyDown = IsAltKeyDown
 local UnitGUID, IsShiftKeyDown, GetItemInfoFromHyperlink = UnitGUID, IsShiftKeyDown, GetItemInfoFromHyperlink
-local GetNumTrackingTypes, GetTrackingInfo, GetInstanceInfo, GetQuestID = GetNumTrackingTypes, GetTrackingInfo, GetInstanceInfo, GetQuestID
+local GetTrackingInfo, GetInstanceInfo, GetQuestID = GetTrackingInfo, GetInstanceInfo, GetQuestID
 local GetNumActiveQuests, GetActiveTitle, GetActiveQuestID, SelectActiveQuest = GetNumActiveQuests, GetActiveTitle, GetActiveQuestID, SelectActiveQuest
 local IsQuestCompletable, GetNumQuestItems, GetQuestItemLink, QuestIsFromAreaTrigger = IsQuestCompletable, GetNumQuestItems, GetQuestItemLink, QuestIsFromAreaTrigger
 local QuestGetAutoAccept, AcceptQuest, CloseQuest, CompleteQuest, AcknowledgeAutoAcceptQuest = QuestGetAutoAccept, AcceptQuest, CloseQuest, CompleteQuest, AcknowledgeAutoAcceptQuest
@@ -20,13 +20,13 @@ local C_QuestLog_IsQuestTrivial = C_QuestLog.IsQuestTrivial
 local C_QuestLog_GetQuestTagInfo = C_QuestLog.GetQuestTagInfo
 local C_GossipInfo_GetOptions = C_GossipInfo.GetOptions
 local C_GossipInfo_SelectOption = C_GossipInfo.SelectOption
-local C_GossipInfo_GetNumOptions = C_GossipInfo.GetNumOptions
 local C_GossipInfo_GetActiveQuests = C_GossipInfo.GetActiveQuests
 local C_GossipInfo_SelectActiveQuest = C_GossipInfo.SelectActiveQuest
 local C_GossipInfo_GetAvailableQuests = C_GossipInfo.GetAvailableQuests
 local C_GossipInfo_GetNumActiveQuests = C_GossipInfo.GetNumActiveQuests
 local C_GossipInfo_SelectAvailableQuest = C_GossipInfo.SelectAvailableQuest
 local C_GossipInfo_GetNumAvailableQuests = C_GossipInfo.GetNumAvailableQuests
+local GetNumTrackingTypes = DB.isNewPatch and C_Minimap.GetNumTrackingTypes or GetNumTrackingTypes
 local MINIMAP_TRACKING_TRIVIAL_QUESTS = MINIMAP_TRACKING_TRIVIAL_QUESTS
 
 local choiceQueue
@@ -35,7 +35,7 @@ local choiceQueue
 local created
 local function setupCheckButton()
 	if created then return end
-	local mono = CreateFrame("CheckButton", nil, WorldMapFrame.BorderFrame, "OptionsCheckButtonTemplate")
+	local mono = CreateFrame("CheckButton", nil, WorldMapFrame.BorderFrame, "OptionsBaseCheckButtonTemplate")
 	mono:SetHitRectInsets(-5, -5, -5, -5)
 	mono:SetPoint("TOPRIGHT", -140, 0)
 	mono:SetSize(26, 26)
@@ -188,17 +188,12 @@ local ignoreGossipNPC = {
 	[184587] = true, -- 集市，塔皮克斯
 }
 
-local rogueClassHallInsignia = {
-	[97004] = true, -- "Red" Jack Findle
-	[96782] = true, -- Lucian Trias
-	[93188] = true, -- Mongar
-	[107486] = true, -- CoS rumors
+local autoSelectFirstOptionList = {
+	[97004] = true, -- "Red" Jack Findle, Rogue ClassHall
+	[96782] = true, -- Lucian Trias, Rogue ClassHall
+	[93188] = true, -- Mongar, Rogue ClassHall
+	[107486] = true, -- 群星密探
 	[167839] = true, -- 灵魂残渣，爬塔
-}
-
-local followerAssignees = {
-	[138708] = true, -- 半兽人迦罗娜
-	[135614] = true, -- 马迪亚斯·肖尔大师
 }
 
 local autoGossipTypes = {
@@ -222,8 +217,14 @@ QuickQuest:Register("GOSSIP_SHOW", function()
 		for index, questInfo in ipairs(C_GossipInfo_GetActiveQuests()) do
 			local questID = questInfo.questID
 			local isWorldQuest = questID and C_QuestLog_IsWorldQuest(questID)
-			if questInfo.isComplete and (not questID or not isWorldQuest) then
-				C_GossipInfo_SelectActiveQuest(index)
+			if DB.isNewPatch then
+				if questInfo.isComplete and not isWorldQuest then
+					C_GossipInfo_SelectActiveQuest(questID)
+				end
+			else
+				if questInfo.isComplete and (not questID or not isWorldQuest) then
+					C_GossipInfo_SelectActiveQuest(index)
+				end
 			end
 		end
 	end
@@ -233,33 +234,41 @@ QuickQuest:Register("GOSSIP_SHOW", function()
 		for index, questInfo in ipairs(C_GossipInfo_GetAvailableQuests()) do
 			local trivial = questInfo.isTrivial
 			if not trivial or IsTrackingHidden() or (trivial and npcID == 64337) then
-				C_GossipInfo_SelectAvailableQuest(index)
+				if DB.isNewPatch then
+					C_GossipInfo_SelectAvailableQuest(questInfo.questID)
+				else
+					C_GossipInfo_SelectAvailableQuest(index)
+				end
 			end
 		end
 	end
 
-	if rogueClassHallInsignia[npcID] then
-		return C_GossipInfo_SelectOption(1)
+	local gossipInfoTable = C_GossipInfo_GetOptions()
+	if not gossipInfoTable then return end
+
+	local numOptions = #gossipInfoTable
+	local firstOptionID = gossipInfoTable[1] and gossipInfoTable[1].gossipOptionID
+
+	if autoSelectFirstOptionList[npcID] then
+		if DB.isNewPatch then
+			return C_GossipInfo_SelectOption(firstOptionID)
+		else
+			return C_GossipInfo_SelectOption(1)
+		end
 	end
 
-	if available == 0 and active == 0 then
-		local numOptions = C_GossipInfo_GetNumOptions()
-		if numOptions == 1 then
-			if npcID == 57850 then
-				return C_GossipInfo_SelectOption(1)
-			end
-
-			local _, instance, _, _, _, _, _, mapID = GetInstanceInfo()
-			if instance ~= "raid" and not ignoreGossipNPC[npcID] and not ignoreInstances[mapID] then
-				local gossipInfoTable = C_GossipInfo_GetOptions()
+	if available == 0 and active == 0 and numOptions == 1 then
+		local _, instance, _, _, _, _, _, mapID = GetInstanceInfo()
+		if instance ~= "raid" and not ignoreGossipNPC[npcID] and not ignoreInstances[mapID] then
+			if DB.isNewPatch then
+				return C_GossipInfo_SelectOption(firstOptionID)
+			else
 				local gType = gossipInfoTable[1] and gossipInfoTable[1].type
 				if gType and autoGossipTypes[gType] then
 					C_GossipInfo_SelectOption(1)
 					return
 				end
 			end
-		elseif followerAssignees[npcID] and numOptions > 1 then
-			return C_GossipInfo_SelectOption(1)
 		end
 	end
 end)
@@ -523,5 +532,13 @@ end
 
 QuestNpcNameFrame:HookScript("OnShow", UnitQuickQuestStatus)
 QuestNpcNameFrame:HookScript("OnMouseDown", ToggleQuickQuestStatus)
-GossipNpcNameFrame:HookScript("OnShow", UnitQuickQuestStatus)
-GossipNpcNameFrame:HookScript("OnMouseDown", ToggleQuickQuestStatus)
+if DB.isNewPatch then
+	local frame = GossipFrame.TitleContainer or GossipFrame.NameFrame
+	if frame then
+		frame:HookScript("OnShow", UnitQuickQuestStatus)
+		frame:HookScript("OnMouseDown", ToggleQuickQuestStatus)
+	end
+else
+	GossipNpcNameFrame:HookScript("OnShow", UnitQuickQuestStatus)
+	GossipNpcNameFrame:HookScript("OnMouseDown", ToggleQuickQuestStatus)
+end

@@ -172,6 +172,9 @@ local list = {
 		{AuraID = 32182, UnitID = "player"},	-- 英勇
 		{AuraID = 80353, UnitID = "player"},	-- 时间扭曲
 		{AuraID = 264667, UnitID = "player"},	-- 原始狂怒
+		{AuraID = 390386, UnitID = "player", Disabled = not DB.isNewPatch},	-- 守护之怒，龙希尔
+		{AuraID = 363534, UnitID = "player", Disabled = not DB.isNewPatch},	-- 回溯，龙希尔
+		{AuraID = 357170, UnitID = "player", Disabled = not DB.isNewPatch},	-- 时间膨胀，龙希尔
 		{AuraID = 178207, UnitID = "player"},	-- 狂怒战鼓
 		{AuraID = 230935, UnitID = "player"},	-- 高山战鼓
 		{AuraID = 256740, UnitID = "player"},	-- 漩涡战鼓
@@ -207,6 +210,7 @@ local list = {
 		{AuraID = 207498, UnitID = "player"},	-- 先祖护佑
 		{AuraID = 238698, UnitID = "player"},	-- 吸血光环
 		{AuraID = 209426, UnitID = "player"},	-- 幻影打击
+		{AuraID = 374227, UnitID = "player", Disabled = not DB.isNewPatch},	-- 微风
 		{AuraID = 114018, UnitID = "player", Flash = true},	-- 帷幕
 		{AuraID = 115834, UnitID = "player", Flash = true},
 	},
@@ -281,12 +285,17 @@ local list = {
 		{AuraID = 350885, UnitID = "player"},	-- 集市，超光速震荡
 		{AuraID = 350804, UnitID = "player"},	-- 集市，坍缩能量
 		{AuraID = 349999, UnitID = "player"},	-- 集市，心能引爆
+		{AuraID = 357042, UnitID = "player"},	-- 集市，凌光炸弹
 		{AuraID = 359019, UnitID = "player", Flash = true},	-- 集市，快拍提速
 		{AuraID = 173324, UnitID = "player", Flash = true},	-- 码头，锯齿蒺藜
+		{AuraID = 172963, UnitID = "player", Flash = true},	-- 码头，破门斩斧
 		{AuraID = 160681, UnitID = "player", Flash = true},	-- 车站，火力压制
 		{AuraID = 166676, UnitID = "player", Flash = true},	-- 车站，榴弹爆破
 		{AuraID = 291937, UnitID = "player", Flash = true},	-- 车间，垃圾掩体
 		{AuraID = 230087, UnitID = "player", Flash = true},	-- 卡上，振作
+		{AuraID = 228993, UnitID = "player", Flash = true},	-- 卡下，腐蚀之池
+		{AuraID = 228331, UnitID = "player", Flash = true},	-- 卡下，爆裂充能
+		{AuraID = 227480, UnitID = "player", Flash = true},	-- 卡下，烈焰狂风
 		-- 团本
 		{AuraID = 342077, UnitID = "player"},	-- 回声定位，咆翼
 		{AuraID = 329725, UnitID = "player"},	-- 根除，毁灭者

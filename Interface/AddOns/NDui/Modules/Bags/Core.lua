@@ -384,10 +384,19 @@ function module:GetEmptySlot(name)
 		if slotID then
 			return -1, slotID
 		end
-		for bagID = 5, 11 do
-			local slotID = module:GetContainerEmptySlot(bagID)
-			if slotID then
-				return bagID, slotID
+		if DB.isNewPatch then
+			for bagID = 6, 12 do
+				local slotID = module:GetContainerEmptySlot(bagID)
+				if slotID then
+					return bagID, slotID
+				end
+			end
+		else
+			for bagID = 5, 11 do
+				local slotID = module:GetContainerEmptySlot(bagID)
+				if slotID then
+					return bagID, slotID
+				end
 			end
 		end
 	elseif name == "Reagent" then
@@ -500,11 +509,11 @@ end
 local function splitOnClick(self)
 	if not splitEnable then return end
 
-	PickupContainerItem(self.bagID, self.slotID)
+	PickupContainerItem(self.bagId, self.slotId)
 
-	local texture, itemCount, locked = GetContainerItemInfo(self.bagID, self.slotID)
+	local texture, itemCount, locked = GetContainerItemInfo(self.bagId, self.slotId)
 	if texture and not locked and itemCount and itemCount > C.db["Bags"]["SplitCount"] then
-		SplitContainerItem(self.bagID, self.slotID, C.db["Bags"]["SplitCount"])
+		SplitContainerItem(self.bagId, self.slotId, C.db["Bags"]["SplitCount"])
 
 		local bagID, slotID = module:GetEmptySlot("Bag")
 		if slotID then
@@ -610,7 +619,7 @@ end
 local function favouriteOnClick(self)
 	if not favouriteEnable then return end
 
-	local texture, _, _, quality, _, _, link, _, _, itemID = GetContainerItemInfo(self.bagID, self.slotID)
+	local texture, _, _, quality, _, _, link, _, _, itemID = GetContainerItemInfo(self.bagId, self.slotId)
 	if texture and quality > LE_ITEM_QUALITY_POOR then
 		ClearCursor()
 		module.selectItemID = itemID
@@ -670,7 +679,7 @@ end
 local function customJunkOnClick(self)
 	if not customJunkEnable then return end
 
-	local texture, _, _, _, _, _, _, _, _, itemID = GetContainerItemInfo(self.bagID, self.slotID)
+	local texture, _, _, _, _, _, _, _, _, itemID = GetContainerItemInfo(self.bagId, self.slotId)
 	local price = select(11, GetItemInfo(itemID))
 	if texture and price > 0 then
 		if NDuiADB["CustomJunkList"][itemID] then
@@ -718,9 +727,9 @@ end
 local function deleteButtonOnClick(self)
 	if not deleteEnable then return end
 
-	local texture, _, _, quality = GetContainerItemInfo(self.bagID, self.slotID)
+	local texture, _, _, quality = GetContainerItemInfo(self.bagId, self.slotId)
 	if IsControlKeyDown() and IsAltKeyDown() and texture and (quality < LE_ITEM_QUALITY_RARE or quality == LE_ITEM_QUALITY_HEIRLOOM) then
-		PickupContainerItem(self.bagID, self.slotID)
+		PickupContainerItem(self.bagId, self.slotId)
 		DeleteCursorItem()
 	end
 end
@@ -857,8 +866,8 @@ function module:OnLogin()
 	MyButton:Scaffold("Default")
 
 	function MyButton:OnCreate()
-		self:SetNormalTexture(nil)
-		self:SetPushedTexture(nil)
+		self:SetNormalTexture("")
+		self:SetPushedTexture(DB.blankTex)
 		self:SetHighlightTexture(DB.bdTex)
 		self:GetHighlightTexture():SetVertexColor(1, 1, 1, .25)
 		self:GetHighlightTexture():SetInside()
@@ -884,7 +893,7 @@ function module:OnLogin()
 		self.Favourite:SetSize(30, 30)
 		self.Favourite:SetPoint("TOPLEFT", -12, 9)
 
-		self.Quest = B.CreateFS(self, 30, "!", "system", "LEFT", 3, 0)
+		self.QuestTag = B.CreateFS(self, 30, "!", "system", "LEFT", 3, 0)
 		self.iLvl = B.CreateFS(self, C.db["Bags"]["FontSize"], "", false, "BOTTOMLEFT", 1, 2)
 
 		if showNewItem then
@@ -898,12 +907,17 @@ function module:OnLogin()
 			self.canIMogIt:SetSize(13, 13)
 			self.canIMogIt:SetPoint(unpack(CanIMogIt.ICON_LOCATIONS[CanIMogItOptions["iconLocation"]]))
 		end
+
+		if DB.isNewPatch and not self.ProfessionQualityOverlay then
+			self.ProfessionQualityOverlay = self:CreateTexture(nil, "OVERLAY")
+			self.ProfessionQualityOverlay:SetPoint("TOPLEFT", -3, 2)
+		end
 	end
 
 	function MyButton:ItemOnEnter()
 		if self.glowFrame then
 			B.HideOverlayGlow(self.glowFrame)
-			C_NewItems_RemoveNewItem(self.bagID, self.slotID)
+			C_NewItems_RemoveNewItem(self.bagId, self.slotId)
 		end
 	end
 
@@ -940,7 +954,7 @@ function module:OnLogin()
 	local function UpdateCanIMogIt(self, item)
 		if not self.canIMogIt then return end
 
-		local text, unmodifiedText = CanIMogIt:GetTooltipText(nil, item.bagID, item.slotID)
+		local text, unmodifiedText = CanIMogIt:GetTooltipText(nil, item.bagId, item.slotId)
 		if text and text ~= "" then
 			local icon = CanIMogIt.tooltipOverlayIcons[unmodifiedText]
 			self.canIMogIt:SetTexture(icon)
@@ -954,11 +968,11 @@ function module:OnLogin()
 		if not hasPawn then return end
 		if not PawnIsContainerItemAnUpgrade then return end
 		if self.UpgradeIcon then
-			self.UpgradeIcon:SetShown(PawnIsContainerItemAnUpgrade(item.bagID, item.slotID))
+			self.UpgradeIcon:SetShown(PawnIsContainerItemAnUpgrade(item.bagId, item.slotId))
 		end
 	end
 
-	function MyButton:OnUpdate(item)
+	function MyButton:OnUpdateButton(item)
 		if self.JunkIcon then
 			if (MerchantFrame:IsShown() or customJunkEnable) and (item.quality == LE_ITEM_QUALITY_POOR or NDuiADB["CustomJunkList"][item.id]) and item.hasPrice then
 				self.JunkIcon:Show()
@@ -982,6 +996,11 @@ function module:OnLogin()
 			end
 		end
 
+		if self.ProfessionQualityOverlay then -- isNewPatch
+			self.ProfessionQualityOverlay:SetAtlas(nil)
+			SetItemCraftingQualityOverlay(self, item.link)
+		end
+
 		if C.db["Bags"]["CustomItems"][item.id] and not C.db["Bags"]["ItemFilter"] then
 			self.Favourite:Show()
 		else
@@ -992,7 +1011,7 @@ function module:OnLogin()
 		if C.db["Bags"]["BagsiLvl"] then
 			local level = item.level -- ilvl for keystone and battlepet
 			if not level and isItemNeedsLevel(item) then
-				local ilvl = B.GetItemLevel(item.link, item.bagID ~= -1 and item.bagID, item.slotID) -- SetBagItem return nil for default bank slots
+				local ilvl = B.GetItemLevel(item.link, item.bagId ~= -1 and item.bagId, item.slotId) -- SetBagItem return nil for default bank slots
 				if ilvl and ilvl > C.db["Bags"]["iLvlToShow"] then
 					level = ilvl
 				end
@@ -1005,7 +1024,7 @@ function module:OnLogin()
 		end
 
 		if self.glowFrame then
-			if C_NewItems_IsNewItem(item.bagID, item.slotID) then
+			if C_NewItems_IsNewItem(item.bagId, item.slotId) then
 				B.ShowOverlayGlow(self.glowFrame)
 			else
 				B.HideOverlayGlow(self.glowFrame)
@@ -1013,7 +1032,7 @@ function module:OnLogin()
 		end
 
 		if C.db["Bags"]["SpecialBagsColor"] then
-			local bagType = module.BagsType[item.bagID]
+			local bagType = module.BagsType[item.bagId]
 			local color = bagTypeColor[bagType] or bagTypeColor[0]
 			self:SetBackdropColor(unpack(color))
 		else
@@ -1034,9 +1053,9 @@ function module:OnLogin()
 
 	function MyButton:OnUpdateQuest(item)
 		if item.questID and not item.questActive then
-			self.Quest:Show()
+			self.QuestTag:Show()
 		else
-			self.Quest:Hide()
+			self.QuestTag:Hide()
 		end
 
 		if item.questID or item.isQuestItem then
@@ -1149,7 +1168,7 @@ function module:OnLogin()
 		buttons[1] = module.CreateCloseButton(self, f)
 		buttons[2] = module.CreateSortButton(self, name)
 		if name == "Bag" then
-			module.CreateBagBar(self, settings, 4)
+			module.CreateBagBar(self, settings, DB.isNewPatch and 5 or 4)
 			buttons[3] = module.CreateBagToggle(self)
 			buttons[4] = module.CreateSplitButton(self)
 			buttons[5] = module.CreateFavouriteButton(self)
@@ -1209,8 +1228,8 @@ function module:OnLogin()
 
 	local BagButton = Backpack:GetClass("BagButton", true, "BagButton")
 	function BagButton:OnCreate()
-		self:SetNormalTexture(nil)
-		self:SetPushedTexture(nil)
+		self:SetNormalTexture(DB.blankTex)
+		self:SetPushedTexture(DB.blankTex)
 		self:SetHighlightTexture(DB.bdTex)
 		self:GetHighlightTexture():SetVertexColor(1, 1, 1, .25)
 		self:GetHighlightTexture():SetInside()
@@ -1221,7 +1240,7 @@ function module:OnLogin()
 		self.Icon:SetTexCoord(unpack(DB.TexCoord))
 	end
 
-	function BagButton:OnUpdate()
+	function BagButton:OnUpdateButton()
 		self:SetBackdropBorderColor(0, 0, 0)
 
 		local id = GetInventoryItemID("player", (self.GetInventorySlot and self:GetInventorySlot()) or self.invID)
@@ -1234,9 +1253,9 @@ function module:OnLogin()
 		end
 
 		if classID == LE_ITEM_CLASS_CONTAINER then
-			module.BagsType[self.bagID] = subClassID or 0
+			module.BagsType[self.bagId] = subClassID or 0
 		else
-			module.BagsType[self.bagID] = 0
+			module.BagsType[self.bagId] = 0
 		end
 	end
 
@@ -1255,7 +1274,7 @@ function module:OnLogin()
 
 	-- Update infobar slots
 	local INFO = B:GetModule("Infobar")
-	if INFO.modules then
+	if INFO and INFO.modules then
 		for _, info in pairs(INFO.modules) do
 			if info.name == "Gold" then
 				Backpack.OnOpen = function()
@@ -1283,4 +1302,9 @@ function module:OnLogin()
 	end
 	local shiftUpdater = CreateFrame("Frame", nil, f.main)
 	shiftUpdater:SetScript("OnUpdate", onUpdate)
+
+	if DB.isNewPatch then
+		MicroButtonAndBagsBar:Hide()
+		MicroButtonAndBagsBar:UnregisterAllEvents()
+	end
 end

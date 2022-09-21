@@ -1,18 +1,16 @@
 # NDui
 
-## [6.27.0](https://github.com/siweia/NDui/tree/6.27.0) (2022-8-22)
+## [6.28.0](https://github.com/siweia/NDui/tree/6.28.0) (2022-9-15)
 
-- Update skin for WA.
-- Update skin for VenturePlan 4.30.
 - Update auras and nameplate filters.
-- Replace spell texture for Zul'Gamux in S4.
-- No longer show solo tips in mythic+ Karazan.
-- Correct tooltip anchor on bossframe buffs.
-- Update map reveal data.
-- Smaller font size for friendly nameplates in dungeons.
-- Support transparent healthbar for unitframes.
-- Be able to disable powerbar for unitframes.
-- No longer require UI reload for unitframe's portrait.
-- Replace nameplate elite icon.
-- Raidframe border and glow tweaks.
-- Update infobar gold module.
+- New layout for unitframes and raidframes.
+- Add pet castbar on top of power.
+- Update infobar friends module for wotlk info.
+- Update spells watcher on player nameplate for Paladin.
+- Update default UI skins.
+- Refactor all aura indicators for raidframes.
+- Refactor resting indicator for playerframe.
+- Now save anchor for CharacterFrame.
+- Remove some invalid data.
+- Remove domination ranks and instant sockets.
+- Plenty updates for 10.0, support to build 45570.

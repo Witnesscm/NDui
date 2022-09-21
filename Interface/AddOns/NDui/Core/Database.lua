@@ -9,7 +9,7 @@ DB.Version = GetAddOnMetadata("NDui", "Version")
 DB.Support = GetAddOnMetadata("NDui", "X-Support")
 DB.Client = GetLocale()
 DB.ScreenWidth, DB.ScreenHeight = GetPhysicalScreenSize()
-DB.isNewPatch = select(4, GetBuildInfo()) >= 90207 -- 9.2.7
+DB.isNewPatch = select(4, GetBuildInfo()) >= 100000 -- 10.0
 
 -- Deprecated
 LE_ITEM_QUALITY_POOR = Enum.ItemQuality.Poor
@@ -53,7 +53,7 @@ for index, value in pairs(qualityColors) do
 	DB.QualityColors[index] = {r = value.r, g = value.g, b = value.b}
 end
 DB.QualityColors[-1] = {r = 0, g = 0, b = 0}
-DB.QualityColors[LE_ITEM_QUALITY_POOR] = {r = .61, g = .61, b = .61}
+DB.QualityColors[LE_ITEM_QUALITY_POOR] = {r = COMMON_GRAY_COLOR.r, g = COMMON_GRAY_COLOR.g, b = COMMON_GRAY_COLOR.b}
 DB.QualityColors[LE_ITEM_QUALITY_COMMON] = {r = 0, g = 0, b = 0}
 DB.QualityColors[99] = {r = 1, g = 0, b = 0}
 
@@ -65,6 +65,7 @@ DB.NDuiString = "|cff0080ffNDui:|r"
 -- Textures
 local Media = "Interface\\Addons\\NDui\\Media\\"
 DB.bdTex = "Interface\\ChatFrame\\ChatFrameBackground"
+DB.blankTex = Media.."blankTex"
 DB.glowTex = Media.."glowTex"
 DB.normTex = Media.."normTex"
 DB.gradTex = Media.."gradTex"

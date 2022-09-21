@@ -150,7 +150,7 @@ G.DefaultSettings = {
 		SMRGroups = 6,
 		SMRDirec = 1,
 		InstanceAuras = true,
-		DispellOnly = false,
+		DispellType = 1,
 		RaidDebuffScale = 1,
 		SpecRaidPos = false,
 		RaidHealthColor = 1,
@@ -159,7 +159,7 @@ G.DefaultSettings = {
 		RaidHeight = 32,
 		RaidPowerHeight = 2,
 		RaidHPMode = 1,
-		AurasClickThrough = false,
+		AuraClickThru = false,
 		CombatText = true,
 		HotsDots = true,
 		AutoAttack = true,
@@ -216,6 +216,7 @@ G.DefaultSettings = {
 		HideTip = false,
 		DescRole = true,
 		PlayerAbsorb = false,
+		AutoBuffs = false,
 
 		PlayerWidth = 245,
 		PlayerHeight = 24,
@@ -256,6 +257,7 @@ G.DefaultSettings = {
 		FocusCB = true,
 		FocusCBWidth = 320,
 		FocusCBHeight = 20,
+		PetCB = true,
 
 		PlayerNumBuff = 20,
 		PlayerNumDebuff = 20,
@@ -462,7 +464,6 @@ G.DefaultSettings = {
 		ConduitInfo = true,
 		HideAllID = false,
 		MythicScore = true,
-		DomiRank = true,
 	},
 	Misc = {
 		Mail = true,
@@ -531,7 +532,6 @@ G.AccountSettings = {
 	ChatFilterList = "%*",
 	ChatFilterWhiteList = "",
 	TimestampFormat = 4,
-	NameplateFilter = {[1]={}, [2]={}},
 	RaidDebuffs = {},
 	Changelog = {},
 	totalGold = {},
@@ -548,8 +548,6 @@ G.AccountSettings = {
 	DBMRequest = false,
 	SkadaRequest = false,
 	BWRequest = false,
-	RaidAuraWatch = {},
-	RaidClickSets = {}, -- deprecated
 	ClickSets = {},
 	TexStyle = 2,
 	KeystoneInfo = {},
@@ -567,6 +565,10 @@ G.AccountSettings = {
 	SmoothAmount = .25,
 	AutoRecycle = true,
 	IgnoredButtons = "",
+	RaidBuffsWhite = {},
+	RaidDebuffsBlack = {},
+	NameplateWhite = {},
+	NameplateBlack = {},
 }
 
 -- Initial settings
@@ -615,6 +617,29 @@ loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, _, addon)
 	if addon ~= "NDui" then return end
 
+	-- Transfer old data START
+	if NDuiADB["NameplateFilter"] then
+		if NDuiADB["NameplateFilter"][1] then
+			if not NDuiADB["NameplateWhite"] then NDuiADB["NameplateWhite"] = {} end
+			for spellID, value in pairs(NDuiADB["NameplateFilter"][1]) do
+				NDuiADB["NameplateWhite"][spellID] = value
+			end
+		end
+		if NDuiADB["NameplateFilter"][2] then
+			if not NDuiADB["NameplateBlack"] then NDuiADB["NameplateBlack"] = {} end
+			for spellID, value in pairs(NDuiADB["NameplateFilter"][2]) do
+				NDuiADB["NameplateBlack"][spellID] = value
+			end
+		end
+	end
+	if NDuiADB["RaidAuraWatch"] then
+		if not NDuiADB["RaidBuffsWhite"] then NDuiADB["RaidBuffsWhite"] = {} end
+		for spellID in pairs(NDuiADB["RaidAuraWatch"]) do
+			NDuiADB["RaidBuffsWhite"][spellID] = true
+		end
+	end
+	-- Transfer old data END
+
 	InitialSettings(G.AccountSettings, NDuiADB)
 	if not next(NDuiPDB) then
 		for i = 1, 5 do NDuiPDB[i] = {} end
@@ -633,29 +658,6 @@ loader:SetScript("OnEvent", function(self, _, addon)
 	else
 		C.db = NDuiPDB[NDuiADB["ProfileIndex"][DB.MyFullName] - 1]
 	end
-	-- Transfer old data START
-	if C.db["Bags"] and C.db["Bags"]["FavouriteItems"] and next(C.db["Bags"]["FavouriteItems"]) then
-		for itemID in pairs(C.db["Bags"]["FavouriteItems"]) do
-			if not C.db["Bags"]["CustomItems"] then
-				C.db["Bags"]["CustomItems"] = {}
-			end
-			C.db["Bags"]["CustomItems"][itemID] = 1
-		end
-		C.db["Bags"]["FavouriteItems"] = nil
-	end
-	if C.db["Nameplate"] and C.db["Nameplate"]["UnitList"] then
-		if not C.db["Nameplate"]["CustomUnits"] then
-			C.db["Nameplate"]["CustomUnits"] = {}
-		end
-		B.SplitList(C.db["Nameplate"]["CustomUnits"], C.db["Nameplate"]["UnitList"])
-	end
-	if C.db["Nameplate"] and C.db["Nameplate"]["ColorDots"] then
-		if not C.db["Nameplate"]["DotSpells"] then
-			C.db["Nameplate"]["DotSpells"] = {}
-		end
-		B.SplitList(C.db["Nameplate"]["DotSpells"], C.db["Nameplate"]["ColorDots"])
-	end
-	-- Transfer old data END
 	InitialSettings(G.DefaultSettings, C.db, true)
 
 	B:SetupUIScale(true)
@@ -720,8 +722,16 @@ local function setupClickCast()
 	G:SetupClickCast(guiPage[4])
 end
 
-local function setupBuffIndicator()
-	G:SetupBuffIndicator(guiPage[4])
+local function setupDebuffsIndicator()
+	G:SetupDebuffsIndicator(guiPage[4])
+end
+
+local function setupBuffsIndicator()
+	G:SetupBuffsIndicator(guiPage[4])
+end
+
+local function setupSpellsIndicator()
+	G:SetupSpellsIndicator(guiPage[4])
 end
 
 local function setupPartyWatcher()
@@ -936,14 +946,6 @@ local function updateRaidTextScale()
 	B:GetModule("UnitFrames"):UpdateRaidTextScale()
 end
 
-local function refreshRaidFrameIcons()
-	B:GetModule("UnitFrames"):RefreshRaidFrameIcons()
-end
-
-local function updateRaidAuras()
-	B:GetModule("UnitFrames"):UpdateRaidAuras()
-end
-
 local function updateRaidHealthMethod()
 	B:GetModule("UnitFrames"):UpdateRaidHealthMethod()
 end
@@ -983,6 +985,10 @@ end
 
 local function updateScrollingFont()
 	B:GetModule("UnitFrames"):UpdateScrollingFont()
+end
+
+local function updateRaidAurasOptions()
+	B:GetModule("UnitFrames"):RaidAuras_UpdateOptions()
 end
 
 local function updateMinimapScale()
@@ -1164,12 +1170,13 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "UFs", "CCName", L["ClassColor Name"].."*", true, nil, updateUFTextScale},
 		{1, "UFs", "PlayerAbsorb", L["PlayerAbsorb"].."*", nil, nil, togglePlayerAbsorb, L["PlayerAbsorbTip"]},
 		{3, "UFs", "UFTextScale", L["UFTextScale"].."*", nil, {.8, 1.5, .05}, updateUFTextScale},
-		{4, "UFs", "HealthColor", NewTag..L["HealthColor"].."*", true, {L["Default Dark"], L["ClassColorHP"], L["GradientHP"], L["ClearHealth"]}, updateUFTextScale},
+		{4, "UFs", "HealthColor", NewTag..L["HealthColor"].."*", true, {L["Default Dark"], L["ClassColorHP"], L["GradientHP"], L["ClearHealth"], L["ClearClass"]}, updateUFTextScale},
 		{},--blank
 		{1, "UFs", "Castbars", HeaderTag..L["UFs Castbar"], nil, setupCastbar},
 		{1, "UFs", "LagString", L["Castbar LagString"].."*", true, nil, toggleCastBarLatency},
 		{1, "UFs", "SwingBar", L["UFs SwingBar"].."*", nil, setupSwingBars, toggleSwingBars},
 		{1, "UFs", "QuakeTimer", L["UFs QuakeTimer"], true, nil, nil, L["QuakeTimerTip"]},
+		{1, "UFs", "PetCB", NewTag..L["PetCastbar"]},
 		{},--blank
 		{1, "UFs", "CombatText", HeaderTag..L["UFs CombatText"]},
 		{1, "UFs", "ScrollingCT", L["ScrollingCT"].."*", true},
@@ -1189,26 +1196,26 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "UFs", "PWOnRight", L["PartyWatcherOnRight"].."*", nil, nil, updatePartyElements},
 		{1, "UFs", "PartyWatcherSync", L["PartyWatcherSync"], true, nil, nil, L["PartyWatcherSyncTip"]},
 		{},--blank
-		{1, "UFs", "ShowRaidDebuff", L["ShowRaidDebuff"].."*", nil, nil, updateRaidAuras, L["ShowRaidDebuffTip"]},
-		{1, "UFs", "ShowRaidBuff", L["ShowRaidBuff"].."*", true, nil, updateRaidAuras, L["ShowRaidBuffTip"]},
-		{1, "UFs", "DebuffClickThru", L["DebuffClickThru"].."*", nil, nil, updateRaidAuras, L["ClickThroughTip"]},
-		{1, "UFs", "BuffClickThru", L["BuffClickThru"].."*", true, nil, updateRaidAuras, L["ClickThroughTip"]},
-		{3, "UFs", "RaidDebuffSize", L["RaidDebuffSize"].."*", nil, {5, 30, 1}, updateRaidAuras},
-		{3, "UFs", "RaidBuffSize", L["RaidBuffSize"].."*", true, {5, 30, 1}, updateRaidAuras},
+		{1, "UFs", "ShowRaidDebuff", NewTag..L["ShowRaidDebuff"].."*", nil, setupDebuffsIndicator, updateRaidAurasOptions, L["ShowRaidDebuffTip"]},
+		{1, "UFs", "ShowRaidBuff", NewTag..L["ShowRaidBuff"].."*", true, setupBuffsIndicator, updateRaidAurasOptions, L["ShowRaidBuffTip"]},
+		{1, "UFs", "DebuffClickThru", L["DebuffClickThru"].."*", nil, nil, updateRaidAurasOptions, L["ClickThroughTip"]},
+		{1, "UFs", "BuffClickThru", L["BuffClickThru"].."*", true, nil, updateRaidAurasOptions, L["ClickThroughTip"]},
+		{3, "UFs", "RaidDebuffSize", L["RaidDebuffSize"].."*", nil, {5, 30, 1}, updateRaidAurasOptions},
+		{3, "UFs", "RaidBuffSize", L["RaidBuffSize"].."*", true, {5, 30, 1}, updateRaidAurasOptions},
 		{},--blank
-		{1, "UFs", "RaidBuffIndicator", HeaderTag..L["RaidBuffIndicator"], nil, setupBuffIndicator, nil, L["RaidBuffIndicatorTip"]},
-		{4, "UFs", "BuffIndicatorType", L["BuffIndicatorType"].."*", nil, {L["BI_Blocks"], L["BI_Icons"], L["BI_Numbers"]}, refreshRaidFrameIcons},
-		{3, "UFs", "BuffIndicatorScale", L["BuffIndicatorScale"].."*", true, {.8, 2, .1}, refreshRaidFrameIcons},
+		{1, "UFs", "RaidBuffIndicator", HeaderTag..L["RaidBuffIndicator"].."*", nil, setupSpellsIndicator, updateRaidAurasOptions, L["RaidBuffIndicatorTip"]},
+		{4, "UFs", "BuffIndicatorType", L["BuffIndicatorType"].."*", nil, {L["BI_Blocks"], L["BI_Icons"], L["BI_Numbers"]}, updateRaidAurasOptions},
+		{3, "UFs", "BuffIndicatorScale", L["BuffIndicatorScale"].."*", true, {.8, 2, .1}, updateRaidAurasOptions},
 		{},--blank
-		{1, "UFs", "InstanceAuras", HeaderTag..L["Instance Auras"], nil, setupRaidDebuffs, nil, L["InstanceAurasTip"]},
-		{1, "UFs", "DispellOnly", L["DispellableOnly"].."*", nil, nil, nil, L["DispellableOnlyTip"]},
-		{1, "UFs", "AurasClickThrough", L["RaidAuras ClickThrough"], nil, nil, nil, L["ClickThroughTip"]},
-		{3, "UFs", "RaidDebuffScale", L["RaidDebuffScale"].."*", true, {.8, 2, .1}, refreshRaidFrameIcons},
+		{1, "UFs", "InstanceAuras", HeaderTag..L["Instance Auras"].."*", nil, setupRaidDebuffs, updateRaidAurasOptions, L["InstanceAurasTip"]},
+		{1, "UFs", "AuraClickThru", L["RaidAuras ClickThrough"].."*", true, nil, updateRaidAurasOptions, L["ClickThroughTip"]},
+		{4, "UFs", "DispellType", L["Dispellable"].."*", nil, {L["Always"], L["Filter"], DISABLE}, updateRaidAurasOptions, L["DispellTypeTip"]},
+		{3, "UFs", "RaidDebuffScale", L["RaidDebuffScale"].."*", true, {.8, 2, .1}, updateRaidAurasOptions},
 		{},--blank
 		{1, "UFs", "RaidClickSets", HeaderTag..L["Enable ClickSets"], nil, setupClickCast},
 		{1, "UFs", "AutoRes", HeaderTag..L["UFs AutoRes"], true},
 		{},--blank
-		{4, "UFs", "RaidHealthColor", NewTag..L["HealthColor"].."*", nil, {L["Default Dark"], L["ClassColorHP"], L["GradientHP"], L["ClearHealth"]}, updateRaidTextScale},
+		{4, "UFs", "RaidHealthColor", NewTag..L["HealthColor"].."*", nil, {L["Default Dark"], L["ClassColorHP"], L["GradientHP"], L["ClearHealth"], L["ClearClass"]}, updateRaidTextScale},
 		{4, "UFs", "RaidHPMode", L["HealthValueType"].."*", true, {DISABLE, L["ShowHealthPercent"], L["ShowHealthCurrent"], L["ShowHealthLoss"], L["ShowHealthLossPercent"]}, updateRaidTextScale, L["100PercentTip"]},
 		{1, "UFs", "ShowSolo", L["ShowSolo"].."*", nil, nil, updateAllHeaders, L["ShowSoloTip"]},
 		{1, "UFs", "SmartRaid", HeaderTag..L["SmartRaid"].."*", nil, nil, updateAllHeaders, L["SmartRaidTip"]},
@@ -1426,8 +1433,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Tooltip", "MythicScore", L["MDScore"].."*", nil, nil, nil, L["MDScoreTip"]},
 		{1, "Tooltip", "HideAllID", "|cffff0000"..L["HideAllID"], true},
 		{},--blank
-		{1, "Tooltip", "DomiRank", L["DomiRank"], nil, nil, nil, L["DomiRankTip"]},
-		{1, "Tooltip", "ConduitInfo", L["Show ConduitInfo"], true},
+		{1, "Tooltip", "ConduitInfo", L["Show ConduitInfo"]},
 		{},--blank
 		{1, "Tooltip", "AzeriteArmor", HeaderTag..L["Show AzeriteArmor"]},
 		{1, "Tooltip", "OnlyArmorIcons", L["Armor icons only"].."*", true},
@@ -1740,7 +1746,7 @@ local function CreateContactBox(parent, text, url, index)
 end
 
 local donationList = {
-	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo(En-布鲁), 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪, 养乐多, 无人知晓, 秋末旷夜-迪瑟洛克, Teo, 莉拉斯塔萨, 音尘绝, 刺王杀驾, 醉跌-凤凰之神, 灬麦加灬-阿古斯, 漂舟不系, 朵小熙, 山岸逢花, 乄阿财-帕奇维克, 乌鸦岭守墓饼-罗宁, 自在独踽踽-霜之哀伤, 御行宇航-碧玉矿洞, 末日伯爵-奥罗, 阿玛忆-白银之手, 零氪-罗宁, 粉色刘老头-黑曜石之锋, shadowlezi, 風雲再起-帕奇维克, congfeng, 东叫兽, solor, DC_Doraemon, 不明飞行物，Seraphinee-冰风岗，怜悯，小甜甜赵顶天-贫瘠之地，浅羽凝-湖畔镇，十方-火妖，科比小迷弟-哈霍兰，信仰之业-霜之哀伤，喷大水丶-奥罗以及部分未备注名字的用户。",
+	["afdian"] = "33578473, normanvon, y368413, EK, msylgj, 夜丨灬清寒, akakai, reisen410, 其实你很帥, 萨菲尔, Antares, RyanZ, fldqw, Mario, 时光旧予, 食铁骑兵, 爱蕾丝的基总, 施然, 命运镇魂曲, 不可语上, Leo(En-布鲁), 忘川, 刘翰承, 悟空海外党, cncj, 暗月, 汪某人, 黑手, iraq120, 嗜血未冷, 我又不是妖怪, 养乐多, 无人知晓, 秋末旷夜-迪瑟洛克, Teo, 莉拉斯塔萨, 音尘绝, 刺王杀驾, 醉跌-凤凰之神, 灬麦加灬-阿古斯, 漂舟不系, 朵小熙, 山岸逢花, 乄阿财-帕奇维克, 乌鸦岭守墓饼-罗宁, 自在独踽踽-霜之哀伤, 御行宇航-碧玉矿洞, 末日伯爵-奥罗, 阿玛忆-白银之手, 零氪-罗宁, 粉色刘老头-黑曜石之锋, shadowlezi, 風雲再起-帕奇维克, congfeng, 东叫兽, solor, DC_Doraemon, 不明飞行物，Seraphinee-冰风岗，怜悯，小甜甜赵顶天-贫瘠之地，浅羽凝-湖畔镇，十方-火妖，科比小迷弟-哈霍兰，信仰之业-霜之哀伤，喷大水丶-奥罗，卓越，白色恶魔-风行者，Shadowbaner-死亡之翼，霸亡别姬-埃提耶什，惊雪-遗忘海岸以及部分未备注名字的用户。",
 	["Patreon"] = "Quentin, Julian Neigefind, silenkin, imba Villain, Zeyu Zhu, Kon Floros.",
 }
 local function CreateDonationIcon(parent, texture, name, xOffset)

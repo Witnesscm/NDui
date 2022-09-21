@@ -1,6 +1,55 @@
 local _, ns = ...
 local B, C, L, DB = unpack(ns)
 
+local function handleSpellButton(self)
+	if SpellBookFrame.bookType == BOOKTYPE_PROFESSION then return end
+
+	local slot, slotType = SpellBook_GetSpellBookSlot(self)
+	local isPassive = IsPassiveSpell(slot, SpellBookFrame.bookType)
+	local name = self:GetName()
+	local highlightTexture = _G[name.."Highlight"]
+	if isPassive then
+		highlightTexture:SetColorTexture(1, 1, 1, 0)
+	else
+		highlightTexture:SetColorTexture(1, 1, 1, .25)
+	end
+
+	local subSpellString = _G[name.."SubSpellName"]
+	local isOffSpec = self.offSpecID ~= 0 and SpellBookFrame.bookType == BOOKTYPE_SPELL
+	subSpellString:SetTextColor(1, 1, 1)
+
+	if slotType == "FUTURESPELL" then
+		local level = GetSpellAvailableLevel(slot, SpellBookFrame.bookType)
+		if level and level > UnitLevel("player") then
+			self.SpellName:SetTextColor(.7, .7, .7)
+			subSpellString:SetTextColor(.7, .7, .7)
+		end
+	else
+		if slotType == "SPELL" and isOffSpec then
+			subSpellString:SetTextColor(.7, .7, .7)
+		end
+	end
+	self.RequiredLevelString:SetTextColor(.7, .7, .7)
+
+	local ic = _G[name.."IconTexture"]
+	if ic.bg then
+		ic.bg:SetShown(ic:IsShown())
+	end
+
+	if self.ClickBindingIconCover and self.ClickBindingIconCover:IsShown() then
+		self.SpellName:SetTextColor(.7, .7, .7)
+	end
+end
+
+local function handleSkillButton(button)
+	if not button then return end
+	button:SetCheckedTexture(DB.blankTex)
+	button:SetPushedTexture(DB.blankTex)
+	button.IconTexture:SetInside()
+	button.bg = B.ReskinIcon(button.IconTexture)
+	button.highlightTexture:SetInside(bg)
+end
+
 tinsert(C.defaultThemes, function()
 	if not C.db["Skins"]["BlizzardSkins"] then return end
 
@@ -22,51 +71,19 @@ tinsert(C.defaultThemes, function()
 		bu.TextBackground:Hide()
 		bu.TextBackground2:Hide()
 		bu.UnlearnedFrame:SetAlpha(0)
-		bu:SetCheckedTexture("")
-		bu:SetPushedTexture("")
+		bu:SetCheckedTexture(DB.blankTex)
+		bu:SetPushedTexture(DB.blankTex)
 
 		ic.bg = B.ReskinIcon(ic)
+
+		if DB.isNewPatch then
+			hooksecurefunc(bu, "UpdateButton", handleSpellButton)
+		end
 	end
 
-	hooksecurefunc("SpellButton_UpdateButton", function(self)
-		if SpellBookFrame.bookType == BOOKTYPE_PROFESSION then return end
-
-		local slot, slotType = SpellBook_GetSpellBookSlot(self)
-		local isPassive = IsPassiveSpell(slot, SpellBookFrame.bookType)
-		local name = self:GetName()
-		local highlightTexture = _G[name.."Highlight"]
-		if isPassive then
-			highlightTexture:SetColorTexture(1, 1, 1, 0)
-		else
-			highlightTexture:SetColorTexture(1, 1, 1, .25)
-		end
-
-		local subSpellString = _G[name.."SubSpellName"]
-		local isOffSpec = self.offSpecID ~= 0 and SpellBookFrame.bookType == BOOKTYPE_SPELL
-		subSpellString:SetTextColor(1, 1, 1)
-
-		if slotType == "FUTURESPELL" then
-			local level = GetSpellAvailableLevel(slot, SpellBookFrame.bookType)
-			if level and level > UnitLevel("player") then
-				self.SpellName:SetTextColor(.7, .7, .7)
-				subSpellString:SetTextColor(.7, .7, .7)
-			end
-		else
-			if slotType == "SPELL" and isOffSpec then
-				subSpellString:SetTextColor(.7, .7, .7)
-			end
-		end
-		self.RequiredLevelString:SetTextColor(.7, .7, .7)
-
-		local ic = _G[name.."IconTexture"]
-		if ic.bg then
-			ic.bg:SetShown(ic:IsShown())
-		end
-
-		if self.ClickBindingIconCover and self.ClickBindingIconCover:IsShown() then
-			self.SpellName:SetTextColor(.7, .7, .7)
-		end
-	end)
+	if not DB.isNewPatch then
+		hooksecurefunc("SpellButton_UpdateButton", handleSpellButton)
+	end
 
 	SpellBookSkillLineTab1:SetPoint("TOPLEFT", SpellBookSideTabsFrame, "TOPRIGHT", 2, -36)
 
@@ -105,43 +122,54 @@ tinsert(C.defaultThemes, function()
 		B.StripTextures(bu.statusBar)
 		bu.statusBar:SetHeight(10)
 		bu.statusBar:SetStatusBarTexture(DB.bdTex)
-		bu.statusBar:GetStatusBarTexture():SetGradient("VERTICAL", 0, .6, 0, 0, .8, 0)
+		if DB.isNewPatch then
+			bu.statusBar:GetStatusBarTexture():SetGradient("VERTICAL", CreateColor(0, .6, 0, 1), CreateColor(0, .8, 0, 1))
+		else
+			bu.statusBar:GetStatusBarTexture():SetGradient("VERTICAL", 0, .6, 0, 0, .8, 0)
+		end
 		bu.statusBar.rankText:SetPoint("CENTER")
 		B.CreateBDFrame(bu.statusBar, .25)
 		if i > 2 then
 			bu.statusBar:ClearAllPoints()
 			bu.statusBar:SetPoint("BOTTOMLEFT", 16, 3)
 		end
+
+		if DB.isNewPatch then
+			handleSkillButton(bu.SpellButton1)
+			handleSkillButton(bu.SpellButton2)
+		end
 	end
 
-	local professionbuttons = {
-		"PrimaryProfession1SpellButtonTop",
-		"PrimaryProfession1SpellButtonBottom",
-		"PrimaryProfession2SpellButtonTop",
-		"PrimaryProfession2SpellButtonBottom",
-		"SecondaryProfession1SpellButtonLeft",
-		"SecondaryProfession1SpellButtonRight",
-		"SecondaryProfession2SpellButtonLeft",
-		"SecondaryProfession2SpellButtonRight",
-		"SecondaryProfession3SpellButtonLeft",
-		"SecondaryProfession3SpellButtonRight",
-	}
+	if not DB.isNewPatch then
+		local professionbuttons = {
+			"PrimaryProfession1SpellButtonTop",
+			"PrimaryProfession1SpellButtonBottom",
+			"PrimaryProfession2SpellButtonTop",
+			"PrimaryProfession2SpellButtonBottom",
+			"SecondaryProfession1SpellButtonLeft",
+			"SecondaryProfession1SpellButtonRight",
+			"SecondaryProfession2SpellButtonLeft",
+			"SecondaryProfession2SpellButtonRight",
+			"SecondaryProfession3SpellButtonLeft",
+			"SecondaryProfession3SpellButtonRight",
+		}
 
-	for _, button in pairs(professionbuttons) do
-		local bu = _G[button]
-		B.StripTextures(bu)
-		bu:SetPushedTexture("")
+		for _, button in pairs(professionbuttons) do
+			local bu = _G[button]
+			B.StripTextures(bu)
+			bu:SetPushedTexture(DB.blankTex)
 
-		local icon = bu.iconTexture
-		icon:ClearAllPoints()
-		icon:SetPoint("TOPLEFT", 2, -2)
-		icon:SetPoint("BOTTOMRIGHT", -2, 2)
-		B.ReskinIcon(icon)
+			local icon = bu.iconTexture
+			icon:ClearAllPoints()
+			icon:SetPoint("TOPLEFT", 2, -2)
+			icon:SetPoint("BOTTOMRIGHT", -2, 2)
+			B.ReskinIcon(icon)
 
-		bu.highlightTexture:SetAllPoints(icon)
-		local check = bu:GetCheckedTexture()
-		check:SetTexture(DB.textures.pushed)
-		check:SetAllPoints(icon)
+			bu.highlightTexture:SetAllPoints(icon)
+			local check = bu:GetCheckedTexture()
+			check:SetTexture(DB.textures.pushed)
+			check:SetAllPoints(icon)
+		end
 	end
 
 	for i = 1, 2 do
@@ -184,7 +212,18 @@ tinsert(C.defaultThemes, function()
 		else
 			self.highlightTexture:SetColorTexture(1, 1, 1, .25)
 		end
-		self.spellString:SetTextColor(1, 1, 1);
-		self.subSpellString:SetTextColor(1, 1, 1)
+		if self.spellString then
+			self.spellString:SetTextColor(1, 1, 1)
+		end
+		if self.subSpellString then
+			self.subSpellString:SetTextColor(1, 1, 1)
+		end
+		-- isNewPatch
+		if self.SpellName then
+			self.SpellName:SetTextColor(1, 1, 1)
+		end
+		if self.SpellSubName then
+			self.SpellSubName:SetTextColor(1, 1, 1)
+		end
 	end)
 end)

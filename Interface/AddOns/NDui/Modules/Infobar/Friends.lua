@@ -21,10 +21,10 @@ local InviteToGroup = C_PartyInfo.InviteUnit
 local BNET_CLIENT_WOW, UNKNOWN, GUILD_ONLINE_LABEL = BNET_CLIENT_WOW, UNKNOWN, GUILD_ONLINE_LABEL
 local FRIENDS_TEXTURE_ONLINE, FRIENDS_TEXTURE_AFK, FRIENDS_TEXTURE_DND = FRIENDS_TEXTURE_ONLINE, FRIENDS_TEXTURE_AFK, FRIENDS_TEXTURE_DND
 local RAF_RECRUIT_FRIEND, RAF_RECRUITER_FRIEND = RAF_RECRUIT_FRIEND, RAF_RECRUITER_FRIEND
-local EXPANSION_NAME0 = EXPANSION_NAME0
+local EXPANSION_NAME0, EXPANSION_NAME2 = EXPANSION_NAME0, EXPANSION_NAME2
 local WOW_PROJECT_ID = WOW_PROJECT_ID or 1
 local WOW_PROJECT_60 = WOW_PROJECT_CLASSIC or 2
-local WOW_PROJECT_TBC = WOW_PROJECT_BURNING_CRUSADE_CLASSIC or 5
+local WOW_PROJECT_WRATH = 11
 local CLIENT_WOW_DIFF = "WoV" -- for sorting
 
 local r, g, b = DB.r, DB.g, DB.b
@@ -136,8 +136,8 @@ local function buildBNetTable(num)
 
 				if wowProjectID == WOW_PROJECT_60 then
 					gameText = EXPANSION_NAME0
-				elseif wowProjectID == WOW_PROJECT_TBC then
-					gameText = gsub(gameText, "%s%-.+", "")
+				elseif wowProjectID == WOW_PROJECT_WRATH then
+					gameText = EXPANSION_NAME2
 				end
 
 				local infoText = GetOnlineInfoText(client, isMobile, rafLinkType, gameText)
@@ -328,13 +328,13 @@ local function buttonOnEnter(self)
 			local level = gameAccountInfo.characterLevel
 			local gameText = gameAccountInfo.richPresence or ""
 			local wowProjectID = gameAccountInfo.wowProjectID
-			local clientString = BNet_GetClientEmbeddedTexture(client, 16)
+			local clientString = DB.isNewPatch and BNet_GetClientEmbeddedAtlas(client, 16) or BNet_GetClientEmbeddedTexture(client, 16)
 			if client == BNET_CLIENT_WOW then
 				if charName ~= "" then -- fix for weird account
 					realmName = (DB.MyRealm == realmName or realmName == "") and "" or "-"..realmName
 
 					-- Get TBC realm name from richPresence
-					if wowProjectID == WOW_PROJECT_TBC then
+					if wowProjectID == WOW_PROJECT_WRATH then
 						local realm, count = gsub(gameText, "^.-%-%s", "")
 						if count > 0 then
 							realmName = "-"..realm
@@ -428,7 +428,11 @@ function info:FriendsPanel_UpdateButton(button)
 		local classColor = DB.ClassColors[class] or levelColor
 		button.name:SetText(format("%s%s|r %s%s", levelColor, level, B.HexRGB(classColor), name))
 		button.zone:SetText(format("%s%s", zoneColor, area))
-		button.gameIcon:SetTexture(BNet_GetClientTexture(BNET_CLIENT_WOW))
+		if DB.isNewPatch then
+			button.gameIcon:SetAtlas(BNet_GetBattlenetClientAtlas(BNET_CLIENT_WOW))
+		else
+			button.gameIcon:SetTexture(BNet_GetClientTexture(BNET_CLIENT_WOW))
+		end
 
 		button.isBNet = nil
 		button.data = friendTable[index]
@@ -448,11 +452,19 @@ function info:FriendsPanel_UpdateButton(button)
 		button.zone:SetText(format("%s%s", zoneColor, infoText))
 
 		if client == CLIENT_WOW_DIFF then
-			button.gameIcon:SetTexture(BNet_GetClientTexture(BNET_CLIENT_WOW))
+			if DB.isNewPatch then
+				button.gameIcon:SetAtlas(BNet_GetBattlenetClientAtlas(BNET_CLIENT_WOW))
+			else
+				button.gameIcon:SetTexture(BNet_GetClientTexture(BNET_CLIENT_WOW))
+			end
 		elseif client == BNET_CLIENT_WOW then
 			button.gameIcon:SetTexture("Interface\\FriendsFrame\\PlusManz-"..factionName)
 		else
-			button.gameIcon:SetTexture(BNet_GetClientTexture(client))
+			if DB.isNewPatch then
+				button.gameIcon:SetAtlas(BNet_GetBattlenetClientAtlas(client))
+			else
+				button.gameIcon:SetTexture(BNet_GetClientTexture(client))
+			end
 		end
 
 		button.isBNet = true

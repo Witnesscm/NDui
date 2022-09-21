@@ -50,6 +50,8 @@ if (tonumber(UIDROPDOWNMENU_OPEN_PATCH_VERSION) or 0) < 1 then
 	end)
 end
 
+if NDui[4].isNewPatch then return end
+
 -- https://www.townlong-yak.com/bugs/gXwH4P-IOFrameSelection
 if (tonumber(IOFRAME_SELECTION_PATCH_VERSION) or 0) < 1 then
 	IOFRAME_SELECTION_PATCH_VERSION = 1

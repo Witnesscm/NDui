@@ -6,6 +6,7 @@ local _G = _G
 local type, pairs, tonumber, wipe, next, select, unpack = type, pairs, tonumber, table.wipe, next, select, unpack
 local strmatch, gmatch, strfind, format, gsub = string.match, string.gmatch, string.find, string.format, string.gsub
 local min, max, floor, rad = math.min, math.max, math.floor, math.rad
+local CreateColor = CreateColor
 
 -- Math
 do
@@ -84,7 +85,7 @@ do
 				self.timer:SetText(text)
 			else
 				self:SetScript("OnUpdate", nil)
-				self.timer:SetText(nil)
+				self.timer:SetText("")
 			end
 			self.elapsed = 0
 		end
@@ -388,6 +389,7 @@ do
 	end
 
 	function B:HideOption()
+		if not self then return end -- isNewPatch
 		self:SetAlpha(0)
 		self:SetScale(.0001)
 	end
@@ -537,7 +539,11 @@ do
 
 		local tex = self:CreateTexture(nil, "BACKGROUND")
 		tex:SetTexture(DB.bdTex)
-		tex:SetGradientAlpha(orientation, r, g, b, a1, r, g, b, a2)
+		if DB.isNewPatch then
+			tex:SetGradient(orientation, CreateColor(r, g, b, a1), CreateColor(r, g, b, a2))
+		else
+			tex:SetGradientAlpha(orientation, r, g, b, a1, r, g, b, a2)
+		end
 		if width then tex:SetWidth(width) end
 		if height then tex:SetHeight(height) end
 
@@ -605,6 +611,7 @@ do
 		if not a then tinsert(C.frames, self) end
 	end
 
+	local gradientFrom, gradientTo = CreateColor(0, 0, 0, .5), CreateColor(.3, .3, .3, .3)
 	function B:CreateGradient()
 		local tex = self:CreateTexture(nil, "BORDER")
 		tex:SetInside()
@@ -612,7 +619,11 @@ do
 		if C.db["Skins"]["FlatMode"] then
 			tex:SetVertexColor(.3, .3, .3, .25)
 		else
-			tex:SetGradientAlpha("Vertical", 0, 0, 0, .5, .3, .3, .3, .3)
+			if DB.isNewPatch then
+				tex:SetGradient("Vertical", gradientFrom, gradientTo)
+			else
+				tex:SetGradientAlpha("Vertical", 0, 0, 0, .5, .3, .3, .3, .3)
+			end
 		end
 
 		return tex
@@ -739,8 +750,10 @@ do
 		local color = DB.QualityColors[quality or 1]
 		self.__owner.bg:SetBackdropBorderColor(color.r, color.g, color.b)
 	end
+
+	local greyRGB = DB.QualityColors[0].r
 	local function updateIconBorderColor(self, r, g, b)
-		if not r or (r==.65882 and g==.65882 and b==.65882) or (r>.99 and g>.99 and b>.99) then
+		if not r or r == greyRGB or (r>.99 and g>.99 and b>.99) then
 			r, g, b = 0, 0, 0
 		end
 		self.__owner.bg:SetBackdropBorderColor(r, g, b)
@@ -809,7 +822,7 @@ do
 				if not ticks[i] then
 					ticks[i] = bar:CreateTexture(nil, "OVERLAY")
 					ticks[i]:SetTexture(DB.normTex)
-					ticks[i]:SetVertexColor(0, 0, 0, .7)
+					ticks[i]:SetVertexColor(0, 0, 0)
 					ticks[i]:SetWidth(C.mult)
 					ticks[i]:SetHeight(height)
 				end
@@ -877,10 +890,10 @@ do
 		"Center",
 	}
 	function B:Reskin(noHighlight, override)
-		if self.SetNormalTexture and not override then self:SetNormalTexture("") end
-		if self.SetHighlightTexture then self:SetHighlightTexture("") end
-		if self.SetPushedTexture then self:SetPushedTexture("") end
-		if self.SetDisabledTexture then self:SetDisabledTexture("") end
+		if self.SetNormalTexture and not override then self:SetNormalTexture(DB.blankTex) end
+		if self.SetHighlightTexture then self:SetHighlightTexture(DB.blankTex) end
+		if self.SetPushedTexture then self:SetPushedTexture(DB.blankTex) end
+		if self.SetDisabledTexture then self:SetDisabledTexture(DB.blankTex) end
 
 		local buttonName = self.GetName and self:GetName()
 		for _, region in pairs(blizzRegions) do
@@ -987,6 +1000,7 @@ do
 
 	local function reskinTrimScrollArrow(self, direction)
 		if not self then return end
+		if not self.Texture then return end -- CovenantMissonFrame, isNewPatch
 
 		self.Texture:SetAlpha(0)
 		self.Overlay:SetAlpha(0)
@@ -1010,7 +1024,7 @@ do
 
 		local thumb = self:GetThumb()
 		if thumb then
-			B.StripTextures(thumb, 0)
+			thumb:DisableDrawLayer("BACKGROUND")
 			B.CreateBDFrame(thumb, 0, true):SetBackdropColor(cr, cg, cb, .75)
 		end
 	end
@@ -1092,6 +1106,7 @@ do
 		local bg = B.CreateBDFrame(self, 0, true)
 		bg:SetPoint("TOPLEFT", -2, 0)
 		bg:SetPoint("BOTTOMRIGHT")
+		self.__bg = bg
 
 		if height then self:SetHeight(height) end
 		if width then self:SetWidth(width) end
@@ -1116,9 +1131,9 @@ do
 
 		self:SetDisabledTexture(DB.bdTex)
 		local dis = self:GetDisabledTexture()
-		dis:SetVertexColor(0, 0, 0, .3)
+		dis:SetVertexColor(0, 0, 0, .5)
 		dis:SetDrawLayer("OVERLAY")
-		dis:SetAllPoints()
+		dis:SetInside()
 
 		local tex = self:CreateTexture(nil, "ARTWORK")
 		tex:SetAllPoints()
@@ -1183,8 +1198,8 @@ do
 
 	-- Handle checkbox and radio
 	function B:ReskinCheck(forceSaturation)
-		self:SetNormalTexture("")
-		self:SetPushedTexture("")
+		self:SetNormalTexture(DB.blankTex)
+		self:SetPushedTexture(DB.blankTex)
 
 		local bg = B.CreateBDFrame(self, 0, true)
 		bg:SetInside(self, 4, 4)
@@ -1196,17 +1211,21 @@ do
 		hl:SetVertexColor(cr, cg, cb, .25)
 
 		local ch = self:GetCheckedTexture()
-		ch:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
-		ch:SetTexCoord(0, 1, 0, 1)
+		if DB.isNewPatch then
+			ch:SetAtlas("checkmark-minimal")
+		else
+			ch:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+		end
 		ch:SetDesaturated(true)
+		ch:SetTexCoord(0, 1, 0, 1)
 		ch:SetVertexColor(cr, cg, cb)
 
 		self.forceSaturation = forceSaturation
 	end
 
 	function B:ReskinRadio()
-		self:SetNormalTexture("")
-		self:SetHighlightTexture("")
+		self:GetNormalTexture():SetAlpha(0)
+		self:GetHighlightTexture():SetAlpha(0)
 		self:SetCheckedTexture(DB.bdTex)
 
 		local ch = self:GetCheckedTexture()
@@ -1236,7 +1255,7 @@ do
 
 	-- Handle slider
 	function B:ReskinSlider(vertical)
-		self:SetBackdrop(nil)
+		if self.SetBackdrop then self:SetBackdrop(nil) end -- isNewPatch
 		B.StripTextures(self)
 
 		local bg = B.CreateBDFrame(self, 0, true)
@@ -1272,12 +1291,12 @@ do
 	local function resetCollapseTexture(self, texture)
 		if self.settingTexture then return end
 		self.settingTexture = true
-		self:SetNormalTexture("")
+		self:SetNormalTexture(DB.blankTex)
 
 		if texture and texture ~= "" then
-			if strfind(texture, "Plus") or strfind(texture, "Closed") then
+			if strfind(texture, "Plus") or strfind(texture, "[Cc]losed") then
 				self.__texture:DoCollapse(true)
-			elseif strfind(texture, "Minus") or strfind(texture, "Open") then
+			elseif strfind(texture, "Minus") or strfind(texture, "[Oo]pen") then
 				self.__texture:DoCollapse(false)
 			end
 			self.bg:Show()
@@ -1288,8 +1307,9 @@ do
 	end
 
 	function B:ReskinCollapse(isAtlas)
-		self:SetHighlightTexture("")
-		self:SetPushedTexture("")
+		self:SetNormalTexture(DB.blankTex)
+		self:SetHighlightTexture(DB.blankTex)
+		self:SetPushedTexture(DB.blankTex)
 
 		local bg = B.CreateBDFrame(self, .25, true)
 		bg:ClearAllPoints()
@@ -1417,8 +1437,11 @@ do
 
 	function B:StyleSearchButton()
 		B.StripTextures(self)
-		if self.icon then B.ReskinIcon(self.icon) end
 		B.CreateBDFrame(self, .25)
+		local icon = self.icon or self.Icon
+		if icon then
+			B.ReskinIcon(icon)
+		end
 
 		self:SetHighlightTexture(DB.bdTex)
 		local hl = self:GetHighlightTexture()
@@ -1526,7 +1549,7 @@ do
 	end
 
 	function B:CreateCheckBox()
-		local cb = CreateFrame("CheckButton", nil, self, "InterfaceOptionsCheckButtonTemplate")
+		local cb = CreateFrame("CheckButton", nil, self, "InterfaceOptionsBaseCheckButtonTemplate")
 		cb:SetScript("OnClick", nil) -- reset onclick handler
 		B.ReskinCheck(cb)
 

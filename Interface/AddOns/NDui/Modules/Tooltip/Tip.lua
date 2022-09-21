@@ -44,18 +44,18 @@ function TT:HideLines()
 		local linetext = tiptext:GetText()
 		if linetext then
 			if linetext == PVP then
-				tiptext:SetText(nil)
+				tiptext:SetText("")
 				tiptext:Hide()
 			elseif linetext == FACTION_HORDE then
 				if C.db["Tooltip"]["FactionIcon"] then
-					tiptext:SetText(nil)
+					tiptext:SetText("")
 					tiptext:Hide()
 				else
 					tiptext:SetText("|cffff5040"..linetext.."|r")
 				end
 			elseif linetext == FACTION_ALLIANCE then
 				if C.db["Tooltip"]["FactionIcon"] then
-					tiptext:SetText(nil)
+					tiptext:SetText("")
 					tiptext:Hide()
 				else
 					tiptext:SetText("|cff4080ff"..linetext.."|r")
@@ -491,7 +491,6 @@ function TT:OnLogin()
 	TT:TargetedInfo()
 	TT:AzeriteArmor()
 	TT:ConduitCollectionData()
-	TT:DominationRank()
 	B:RegisterEvent("MODIFIER_STATE_CHANGED", TT.ResetUnit)
 end
 
@@ -547,6 +546,11 @@ TT:RegisterTooltips("NDui", function()
 	}
 	for _, f in pairs(tooltips) do
 		f:HookScript("OnShow", TT.ReskinTooltip)
+	end
+
+	if SettingsTooltip then -- isNewPatch
+		TT.ReskinTooltip(SettingsTooltip)
+		SettingsTooltip:SetScale(UIParent:GetScale())
 	end
 
 	-- DropdownMenu

@@ -25,6 +25,16 @@ function module:TabSetAlpha(alpha)
 	end
 end
 
+local function updateChatAnchor(self, _, _, _, x, y)
+	if not C.db["Chat"]["Lock"] then return end
+	if not (x == 0 and y == 30) then
+		self:ClearAllPoints()
+		self:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 30)
+		self:SetWidth(C.db["Chat"]["ChatWidth"])
+		self:SetHeight(C.db["Chat"]["ChatHeight"])
+	end
+end
+
 local isScaling = false
 function module:UpdateChatSize()
 	if not C.db["Chat"]["Lock"] then return end
@@ -91,8 +101,10 @@ function module:SkinChat()
 
 	local name = self:GetName()
 	local font, fontSize = self:GetFont()
-	self:SetMaxResize(DB.ScreenWidth, DB.ScreenHeight)
-	self:SetMinResize(100, 50)
+	if not DB.isNewPatch then
+		self:SetMaxResize(DB.ScreenWidth, DB.ScreenHeight)
+		self:SetMinResize(100, 50)
+	end
 	self:SetFont(fontFile or font, fontSize, fontOutline)
 	if fontOutline ~= "" then
 		self:SetShadowColor(0, 0, 0, 0)
@@ -449,7 +461,11 @@ function module:OnLogin()
 	if C.db["Chat"]["Lock"] then
 		module:UpdateChatSize()
 		B:RegisterEvent("UI_SCALE_CHANGED", module.UpdateChatSize)
-		hooksecurefunc("FCF_SavePositionAndDimensions", module.UpdateChatSize)
-		FCF_SavePositionAndDimensions(ChatFrame1)
+		if DB.isNewPatch then
+			hooksecurefunc(ChatFrame1, "SetPoint", updateChatAnchor)
+		else
+			hooksecurefunc("FCF_SavePositionAndDimensions", module.UpdateChatSize)
+			FCF_SavePositionAndDimensions(ChatFrame1)
+		end
 	end
 end

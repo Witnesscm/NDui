@@ -10,8 +10,8 @@ local function reskinQuestIcon(button)
 
 	if not button.styled then
 		button:SetSize(24, 24)
-		button:SetNormalTexture("")
-		button:SetPushedTexture("")
+		button:SetNormalTexture(DB.blankTex)
+		button:SetPushedTexture(DB.blankTex)
 		button:GetHighlightTexture():SetColorTexture(1, 1, 1, .25)
 		local icon = button.icon or button.Icon
 		if icon then
@@ -217,8 +217,8 @@ tinsert(C.defaultThemes, function()
 	hooksecurefunc("ScenarioSpellButton_UpdateCooldown", function(spellButton)
 		if not spellButton.styled then
 			local bg = B.ReskinIcon(spellButton.Icon)
-			spellButton:SetNormalTexture(nil)
-			spellButton:SetPushedTexture(nil)
+			spellButton:SetNormalTexture("")
+			spellButton:SetPushedTexture("")
 			local hl = spellButton:GetHighlightTexture()
 			hl:SetColorTexture(1, 1, 1, .25)
 			hl:SetInside(bg)
@@ -257,9 +257,10 @@ tinsert(C.defaultThemes, function()
 		ObjectiveTrackerBlocksFrame.AchievementHeader,
 		ObjectiveTrackerBlocksFrame.ScenarioHeader,
 		ObjectiveTrackerBlocksFrame.CampaignQuestHeader,
+		ObjectiveTrackerBlocksFrame.ProfessionHeader, -- isNewPatch
 		BONUS_OBJECTIVE_TRACKER_MODULE.Header,
 		WORLD_QUEST_TRACKER_MODULE.Header,
-		ObjectiveTrackerFrame.BlocksFrame.UIWidgetsHeader
+		ObjectiveTrackerFrame.BlocksFrame.UIWidgetsHeader,
 	}
 	for _, header in pairs(headers) do
 		reskinHeader(header)

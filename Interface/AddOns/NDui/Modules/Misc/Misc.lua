@@ -70,6 +70,7 @@ function M:OnLogin()
 	M:BaudErrorFrameHelpTip()
 	M:EnhancedPicker()
 	M:UpdateMaxZoomLevel()
+	M:MoveBlizzFrames()
 
 	-- Unregister talent event
 	if PlayerTalentFrame then
@@ -280,6 +281,14 @@ function M:MoveQuestTracker()
 	tracker:SetClampedToScreen(false)
 	tracker:SetMovable(true)
 	if tracker:IsMovable() then tracker:SetUserPlaced(true) end
+
+	if not DB.isNewPatch then return end
+	hooksecurefunc(tracker, "SetPoint", function(self, _, parent)
+		if parent ~= frame then
+			self:ClearAllPoints()
+			self:SetPoint("TOPRIGHT", frame)
+		end
+	end)
 end
 
 -- Achievement screenshot
@@ -887,4 +896,9 @@ end
 
 function M:UpdateMaxZoomLevel()
 	SetCVar("cameraDistanceMaxZoomFactor", C.db["Misc"]["MaxZoom"])
+end
+
+-- Move and save blizz frames
+function M:MoveBlizzFrames()
+	B:BlizzFrameMover(CharacterFrame)
 end

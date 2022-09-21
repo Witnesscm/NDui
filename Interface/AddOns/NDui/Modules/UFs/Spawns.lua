@@ -29,6 +29,7 @@ local function CreatePlayerStyle(self)
 	UF:CreateCastBar(self)
 	UF:CreateRaidMark(self)
 	UF:CreateIcons(self)
+	UF:CreateRestingIndicator(self)
 	UF:CreatePrediction(self)
 	UF:CreateFCT(self)
 	UF:CreateAddPower(self)
@@ -115,6 +116,7 @@ local function CreatePetStyle(self)
 	UF:CreatePowerBar(self)
 	UF:CreateRaidMark(self)
 	UF:CreateAuras(self)
+	UF:CreateSparkleCastBar(self)
 end
 
 local function CreateBossStyle(self)
@@ -165,13 +167,10 @@ local function CreateRaidStyle(self)
 	UF:CreateRaidIcons(self)
 	UF:CreatePrediction(self)
 	UF:CreateClickSets(self)
-	UF:CreateRaidDebuffs(self)
 	UF:CreateThreatBorder(self)
-	UF:CreateAuras(self)
-	UF:CreateBuffs(self)
-	UF:CreateDebuffs(self)
-	UF:RefreshAurasByCombat(self)
-	UF:CreateBuffIndicator(self)
+	if self.raidType ~= "simple" then
+		UF:CreateRaidAuras(self)
+	end
 end
 
 local function CreateSimpleRaidStyle(self)
@@ -416,12 +415,15 @@ function UF:OnLogin()
 		UF:UpdateScrollingFont()
 		UF:TogglePortraits()
 		UF:CheckPowerBars()
+		UF:UpdateRaidInfo() -- RaidAuras
 	end
 
 	if C.db["UFs"]["RaidFrame"] then
 		SetCVar("predictedHealth", 1)
 		UF:AddClickSetsListener()
 		UF:UpdateCornerSpells()
+		UF:UpdateRaidBuffsWhite()
+		UF:UpdateRaidDebuffsBlack()
 		UF.headers = {}
 
 		-- Hide Default RaidFrame
@@ -584,7 +586,7 @@ function UF:OnLogin()
 
 			local groupByTypes = {
 				[1] = {"1,2,3,4,5,6,7,8", "GROUP", "INDEX"},
-				[2] = {"DEATHKNIGHT,WARRIOR,DEMONHUNTER,ROGUE,MONK,PALADIN,DRUID,SHAMAN,HUNTER,PRIEST,MAGE,WARLOCK", "CLASS", "NAME"},
+				[2] = {"DEATHKNIGHT,WARRIOR,DEMONHUNTER,ROGUE,MONK,PALADIN,DRUID,SHAMAN,HUNTER,EVOKER,PRIEST,MAGE,WARLOCK", "CLASS", "NAME"},
 				[3] = {"TANK,HEALER,DAMAGER,NONE", "ASSIGNEDROLE", "NAME"},
 			}
 			function UF:UpdateSimpleModeHeader()
@@ -785,18 +787,22 @@ function UF:OnLogin()
 			B:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", UpdateSpecPos)
 
 			if raidMover then
-				raidMover:HookScript("OnDragStop", function()
+				local function updateRaidMover()
 					local specIndex = GetSpecialization()
 					if not specIndex then return end
 					C.db["Mover"]["RaidPos"..specIndex] = C.db["Mover"]["RaidFrame"]
-				end)
+				end
+				raidMover:HookScript("OnDragStop", updateRaidMover)
+				raidMover:HookScript("OnHide", updateRaidMover)
 			end
 			if partyMover then
-				partyMover:HookScript("OnDragStop", function()
+				local function updatePartyMover()
 					local specIndex = GetSpecialization()
 					if not specIndex then return end
 					C.db["Mover"]["PartyPos"..specIndex] = C.db["Mover"]["PartyFrame"]
-				end)
+				end
+				partyMover:HookScript("OnDragStop", updatePartyMover)
+				partyMover:HookScript("OnHide", updatePartyMover)
 			end
 		end
 	end
