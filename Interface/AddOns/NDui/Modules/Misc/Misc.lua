@@ -270,6 +270,8 @@ end
 
 -- Reanchor ObjectiveTracker
 function M:MoveQuestTracker()
+	if DB.isNewPatch then return end
+
 	local frame = CreateFrame("Frame", "NDuiQuestMover", UIParent)
 	frame:SetSize(240, 50)
 	B.Mover(frame, L["QuestTracker"], "QuestTracker", {"TOPRIGHT", Minimap, "BOTTOMRIGHT", -70, -55})
@@ -282,7 +284,6 @@ function M:MoveQuestTracker()
 	tracker:SetMovable(true)
 	if tracker:IsMovable() then tracker:SetUserPlaced(true) end
 
-	if not DB.isNewPatch then return end
 	hooksecurefunc(tracker, "SetPoint", function(self, _, parent)
 		if parent ~= frame then
 			self:ClearAllPoints()
@@ -752,6 +753,10 @@ function M:MenuButton_GuildInvite()
 	GuildInvite(M.MenuButtonName)
 end
 
+function M:MenuButton_Whisper()
+	ChatFrame_SendTell(M.MenuButtonName)
+end
+
 function M:QuickMenuButton()
 	if not C.db["Misc"]["MenuButton"] then return end
 
@@ -759,13 +764,14 @@ function M:QuickMenuButton()
 		{text = ADD_FRIEND, func = M.MenuButton_AddFriend, color = {0, .6, 1}},
 		{text = gsub(CHAT_GUILD_INVITE_SEND, HEADER_COLON, ""), func = M.MenuButton_GuildInvite, color = {0, .8, 0}},
 		{text = COPY_NAME, func = M.MenuButton_CopyName, color = {1, 0, 0}},
+		{text = WHISPER, func = M.MenuButton_Whisper, color = {1, .5, 1}},
 	}
 
 	local frame = CreateFrame("Frame", "NDuiMenuButtonFrame", DropDownList1)
 	frame:SetSize(10, 10)
 	frame:SetPoint("TOPLEFT")
 	frame:Hide()
-	for i = 1, 3 do
+	for i = 1, 4 do
 		local button = CreateFrame("Button", nil, frame)
 		button:SetSize(25, 10)
 		button:SetPoint("TOPLEFT", frame, (i-1)*28 + 2, -2)
@@ -861,7 +867,7 @@ function M:EnhancedPicker()
 	colorBar:SetPoint("BOTTOM", 0, 38)
 
 	local count = 0
-	for name, class in pairs(DB.ClassList) do
+	for class, name in pairs(LOCALIZED_CLASS_NAMES_MALE) do
 		local value = DB.ClassColors[class]
 		if value then
 			local bu = B.CreateButton(colorBar, 22, 22, true)

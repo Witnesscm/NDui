@@ -4,8 +4,6 @@ local B, C, L, DB = unpack(ns)
 local module = B:RegisterModule("Bags")
 local cargBags = ns.cargBags
 local ipairs, strmatch, unpack, ceil = ipairs, string.match, unpack, math.ceil
-local LE_ITEM_QUALITY_POOR, LE_ITEM_QUALITY_RARE, LE_ITEM_QUALITY_HEIRLOOM = LE_ITEM_QUALITY_POOR, LE_ITEM_QUALITY_RARE, LE_ITEM_QUALITY_HEIRLOOM
-local LE_ITEM_CLASS_CONTAINER = LE_ITEM_CLASS_CONTAINER
 local SortBankBags, SortReagentBankBags, SortBags = SortBankBags, SortReagentBankBags, SortBags
 local GetContainerNumSlots, GetContainerItemInfo, PickupContainerItem = GetContainerNumSlots, GetContainerItemInfo, PickupContainerItem
 local C_NewItems_IsNewItem, C_NewItems_RemoveNewItem, C_Timer_After = C_NewItems.IsNewItem, C_NewItems.RemoveNewItem, C_Timer.After
@@ -15,12 +13,29 @@ local IsCosmeticItem = IsCosmeticItem
 local IsControlKeyDown, IsAltKeyDown, IsShiftKeyDown, DeleteCursorItem = IsControlKeyDown, IsAltKeyDown, IsShiftKeyDown, DeleteCursorItem
 local GetItemInfo, GetContainerItemID, SplitContainerItem = GetItemInfo, GetContainerItemID, SplitContainerItem
 
+if DB.isNewPatch then
+	GetContainerItemID = C_Container.GetContainerItemID
+	GetContainerNumSlots = C_Container.GetContainerNumSlots
+	SortBags = C_Container.SortBags
+	SortBankBags = C_Container.SortBankBags
+	SortReagentBankBags = C_Container.SortReagentBankBags
+	PickupContainerItem = C_Container.PickupContainerItem
+	SplitContainerItem = C_Container.SplitContainerItem
+end
+
 local sortCache = {}
 function module:ReverseSort()
 	for bag = 0, 4 do
 		local numSlots = GetContainerNumSlots(bag)
 		for slot = 1, numSlots do
-			local texture, _, locked = GetContainerItemInfo(bag, slot)
+			local texture, locked
+			if DB.isNewPatch then
+				local info = C_Container.GetContainerItemInfo(bag, slot)
+				texture = info and info.iconFileID
+				locked = info and info.isLocked
+			else
+				texture, _, locked = GetContainerItemInfo(bag, slot)
+			end
 			if (slot <= numSlots/2) and texture and not locked and not sortCache["b"..bag.."s"..slot] then
 				PickupContainerItem(bag, slot)
 				PickupContainerItem(bag, numSlots+1 - slot)
@@ -117,14 +132,26 @@ function module:CreateInfoFrame()
 	infoFrame:SetPoint("TOPLEFT", 10, 0)
 	infoFrame:SetSize(140, 32)
 	local icon = infoFrame:CreateTexture(nil, "ARTWORK")
-	icon:SetSize(20, 20)
-	icon:SetPoint("LEFT", 0, -1)
-	icon:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
+	if DB.isNewPatch then
+		icon:SetAtlas("talents-search-match")
+		icon:SetSize(52, 52)
+		icon:SetPoint("LEFT", -15, 0)
+	else
+		icon:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
+		icon:SetSize(20, 20)
+		icon:SetPoint("LEFT", 0, -1)
+	end
 	icon:SetVertexColor(DB.r, DB.g, DB.b)
 	local hl = infoFrame:CreateTexture(nil, "HIGHLIGHT")
-	hl:SetSize(20, 20)
-	hl:SetPoint("LEFT", 0, -1)
-	hl:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
+	if DB.isNewPatch then
+		hl:SetAtlas("talents-search-match")
+		hl:SetSize(52, 52)
+		hl:SetPoint("LEFT", -15, 0)
+	else
+		hl:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
+		hl:SetSize(20, 20)
+		hl:SetPoint("LEFT", 0, -1)
+	end
 
 	local search = self:SpawnPlugin("SearchBar", infoFrame)
 	search.highlightFunction = highlightFunction
@@ -511,7 +538,15 @@ local function splitOnClick(self)
 
 	PickupContainerItem(self.bagId, self.slotId)
 
-	local texture, itemCount, locked = GetContainerItemInfo(self.bagId, self.slotId)
+	local texture, itemCount, locked
+	if DB.isNewPatch then
+		local info = C_Container.GetContainerItemInfo(self.bagId, self.slotId)
+		texture = info and info.iconFileID
+		itemCount = info and info.stackCount
+		locked = info and info.isLocked
+	else
+		texture, itemCount, locked = GetContainerItemInfo(self.bagId, self.slotId)
+	end
 	if texture and not locked and itemCount and itemCount > C.db["Bags"]["SplitCount"] then
 		SplitContainerItem(self.bagId, self.slotId, C.db["Bags"]["SplitCount"])
 
@@ -619,8 +654,17 @@ end
 local function favouriteOnClick(self)
 	if not favouriteEnable then return end
 
-	local texture, _, _, quality, _, _, link, _, _, itemID = GetContainerItemInfo(self.bagId, self.slotId)
-	if texture and quality > LE_ITEM_QUALITY_POOR then
+	local texture, quality, link, itemID
+	if DB.isNewPatch then
+		local info = C_Container.GetContainerItemInfo(self.bagId, self.slotId)
+		texture = info and info.iconFileID
+		quality = info and info.quality
+		link = info and info.hyperlink
+		itemID = info and info.itemID
+	else
+		texture, _, _, quality, _, _, link, _, _, itemID = GetContainerItemInfo(self.bagId, self.slotId)
+	end
+	if texture and quality > Enum.ItemQuality.Poor then
 		ClearCursor()
 		module.selectItemID = itemID
 		module.CustomMenu[1].text = link
@@ -679,7 +723,14 @@ end
 local function customJunkOnClick(self)
 	if not customJunkEnable then return end
 
-	local texture, _, _, _, _, _, _, _, _, itemID = GetContainerItemInfo(self.bagId, self.slotId)
+	local texture, itemID
+	if DB.isNewPatch then
+		local info = C_Container.GetContainerItemInfo(self.bagId, self.slotId)
+		texture = info and info.iconFileID
+		itemID = info and info.itemID
+	else
+		texture, _, _, _, _, _, _, _, _, itemID = GetContainerItemInfo(self.bagId, self.slotId)
+	end
 	local price = select(11, GetItemInfo(itemID))
 	if texture and price > 0 then
 		if NDuiADB["CustomJunkList"][itemID] then
@@ -727,8 +778,15 @@ end
 local function deleteButtonOnClick(self)
 	if not deleteEnable then return end
 
-	local texture, _, _, quality = GetContainerItemInfo(self.bagId, self.slotId)
-	if IsControlKeyDown() and IsAltKeyDown() and texture and (quality < LE_ITEM_QUALITY_RARE or quality == LE_ITEM_QUALITY_HEIRLOOM) then
+	local texture, quality
+	if DB.isNewPatch then
+		local info = C_Container.GetContainerItemInfo(self.bagId, self.slotId)
+		texture = info and info.iconFileID
+		quality = info and info.quality
+	else
+		texture, _, _, quality = GetContainerItemInfo(self.bagId, self.slotId)
+	end
+	if IsControlKeyDown() and IsAltKeyDown() and texture and (quality < Enum.ItemQuality.Rare or quality == Enum.ItemQuality.Heirloom) then
 		PickupContainerItem(self.bagId, self.slotId)
 		DeleteCursorItem()
 	end
@@ -789,19 +847,20 @@ function module:OnLogin()
 	end
 
 	function Backpack:OnInit()
-		AddNewContainer("Bag", 15, "Junk", filters.bagsJunk)
+		AddNewContainer("Bag", 1, "BagReagent", filters.onlyBagReagent)
+		AddNewContainer("Bag", 16, "Junk", filters.bagsJunk)
 		for i = 1, 5 do
-			AddNewContainer("Bag", i, "BagCustom"..i, filters["bagCustom"..i])
+			AddNewContainer("Bag", i+1, "BagCustom"..i, filters["bagCustom"..i])
 		end
-		AddNewContainer("Bag", 8, "EquipSet", filters.bagEquipSet)
-		AddNewContainer("Bag", 6, "AzeriteItem", filters.bagAzeriteItem)
-		AddNewContainer("Bag", 7, "Equipment", filters.bagEquipment)
-		AddNewContainer("Bag", 9, "BagCollection", filters.bagCollection)
-		AddNewContainer("Bag", 13, "Consumable", filters.bagConsumable)
-		AddNewContainer("Bag", 10, "BagGoods", filters.bagGoods)
-		AddNewContainer("Bag", 14, "BagQuest", filters.bagQuest)
-		AddNewContainer("Bag", 11, "BagAnima", filters.bagAnima)
-		AddNewContainer("Bag", 12, "BagRelic", filters.bagRelic)
+		AddNewContainer("Bag", 9, "EquipSet", filters.bagEquipSet)
+		AddNewContainer("Bag", 7, "AzeriteItem", filters.bagAzeriteItem)
+		AddNewContainer("Bag", 8, "Equipment", filters.bagEquipment)
+		AddNewContainer("Bag", 10, "BagCollection", filters.bagCollection)
+		AddNewContainer("Bag", 14, "Consumable", filters.bagConsumable)
+		AddNewContainer("Bag", 11, "BagGoods", filters.bagGoods)
+		AddNewContainer("Bag", 15, "BagQuest", filters.bagQuest)
+		AddNewContainer("Bag", 12, "BagAnima", filters.bagAnima)
+		AddNewContainer("Bag", 13, "BagRelic", filters.bagRelic)
 
 		f.main = MyContainer:New("Bag", {Bags = "bags", BagType = "Bag"})
 		f.main.__anchor = {"BOTTOMRIGHT", -50, 100}
@@ -866,7 +925,7 @@ function module:OnLogin()
 	MyButton:Scaffold("Default")
 
 	function MyButton:OnCreate()
-		self:SetNormalTexture("")
+		self:SetNormalTexture(DB.blankTex)
 		self:SetPushedTexture(DB.blankTex)
 		self:SetHighlightTexture(DB.bdTex)
 		self:GetHighlightTexture():SetVertexColor(1, 1, 1, .25)
@@ -933,6 +992,7 @@ function module:OnLogin()
 		[8] = {.8, .8, .8, .25},	-- 铭文包
 		[9] = {.4, .6, 1, .25},		-- 工具箱
 		[10] = {.8, 0, 0, .25},		-- 烹饪包
+		[11] = {.2, .8, .2, .25},	-- 材料包
 	}
 
 	local function isItemNeedsLevel(item)
@@ -974,7 +1034,7 @@ function module:OnLogin()
 
 	function MyButton:OnUpdateButton(item)
 		if self.JunkIcon then
-			if (MerchantFrame:IsShown() or customJunkEnable) and (item.quality == LE_ITEM_QUALITY_POOR or NDuiADB["CustomJunkList"][item.id]) and item.hasPrice then
+			if (MerchantFrame:IsShown() or customJunkEnable) and (item.quality == Enum.ItemQuality.Poor or NDuiADB["CustomJunkList"][item.id]) and item.hasPrice then
 				self.JunkIcon:Show()
 			else
 				self.JunkIcon:Hide()
@@ -1154,6 +1214,8 @@ function module:OnLogin()
 			label = L["KorthiaRelic"]
 		elseif strmatch(name, "Custom%d") then
 			label = GetCustomGroupTitle(settings.Index)
+		elseif name == "BagReagent" then
+			label = L["ReagentBag"]
 		end
 		if label then
 			self.label = B.CreateFS(self, 14, label, true, "TOPLEFT", 5, -8)
@@ -1252,7 +1314,7 @@ function module:OnLogin()
 			self:SetBackdropBorderColor(color.r, color.g, color.b)
 		end
 
-		if classID == LE_ITEM_CLASS_CONTAINER then
+		if classID == Enum.ItemClass.Container then
 			module.BagsType[self.bagId] = subClassID or 0
 		else
 			module.BagsType[self.bagId] = 0
@@ -1260,8 +1322,13 @@ function module:OnLogin()
 	end
 
 	-- Sort order
-	SetSortBagsRightToLeft(C.db["Bags"]["BagSortMode"] == 1)
-	SetInsertItemsLeftToRight(false)
+	if DB.isNewPatch then
+		C_Container.SetSortBagsRightToLeft(C.db["Bags"]["BagSortMode"] == 1)
+		C_Container.SetInsertItemsLeftToRight(false)
+	else
+		SetSortBagsRightToLeft(C.db["Bags"]["BagSortMode"] == 1)
+		SetInsertItemsLeftToRight(false)
+	end
 
 	-- Init
 	ToggleAllBags()

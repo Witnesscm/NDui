@@ -20,6 +20,8 @@ tinsert(C.defaultThemes, function()
 	B.Reskin(frame.SaveChangesButton)
 	B.ReskinDropDown(frame.LayoutDropdown.DropDownMenu)
 	reskinOptionCheck(frame.ShowGridCheckButton.Button)
+	reskinOptionCheck(frame.EnableSnapCheckButton.Button)
+	B.ReskinStepperSlider(frame.GridSpacingSlider.Slider, true)
 	if frame.Tutorial then
 		frame.Tutorial.Ring:Hide()
 	end
@@ -65,6 +67,13 @@ tinsert(C.defaultThemes, function()
 			if not dropdown.styled then
 				B.ReskinDropDown(dropdown.Dropdown.DropDownMenu)
 				dropdown.styled = true
+			end
+		end
+
+		for slider in self.pools:EnumerateActiveByTemplate("EditModeSettingSliderTemplate") do
+			if not slider.styled then
+				B.ReskinStepperSlider(slider.Slider, true)
+				slider.styled = true
 			end
 		end
 	end)

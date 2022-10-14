@@ -43,6 +43,8 @@ local _, ns = ...
 local B, C, L, DB = unpack(ns)
 local cargBags = ns.cargBags
 
+local GetContainerNumFreeSlots = DB.isNewPatch and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots
+
 local tagPool, tagEvents, object = {}, {}
 local function tagger(tag, ...) return object.tags[tag] and object.tags[tag](object, ...) or "" end
 
@@ -90,11 +92,21 @@ local function createIcon(icon, iconValues)
 	return ("|T%s:%s|t"):format(icon, iconValues)
 end
 
-
 -- Tags
 local function GetNumFreeSlots(name)
 	if name == "Bag" then
-		return CalculateTotalNumberOfFreeBagSlots()
+		if DB.isNewPatch then
+			local totalFree, freeSlots, bagFamily = 0
+			for i = 0, 4 do -- reagent bank excluded
+				freeSlots, bagFamily = GetContainerNumFreeSlots(i)
+				if bagFamily == 0 then
+					totalFree = totalFree + freeSlots
+				end
+			end
+			return totalFree
+		else
+			return CalculateTotalNumberOfFreeBagSlots()
+		end
 	elseif name == "Bank" then
 		local numFreeSlots = GetContainerNumFreeSlots(-1)
 		if DB.isNewPatch then

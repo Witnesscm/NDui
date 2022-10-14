@@ -43,9 +43,15 @@ tinsert(C.defaultThemes, function()
 		B.ReskinTab(_G["CharacterFrameTab"..i])
 	end
 
-	CharacterModelFrame:DisableDrawLayer("BACKGROUND")
-	CharacterModelFrame:DisableDrawLayer("BORDER")
-	CharacterModelFrame:DisableDrawLayer("OVERLAY")
+	if DB.isNewPatch then
+		CharacterModelScene:DisableDrawLayer("BACKGROUND")
+		CharacterModelScene:DisableDrawLayer("BORDER")
+		CharacterModelScene:DisableDrawLayer("OVERLAY")
+	else
+		CharacterModelFrame:DisableDrawLayer("BACKGROUND")
+		CharacterModelFrame:DisableDrawLayer("BORDER")
+		CharacterModelFrame:DisableDrawLayer("OVERLAY")
+	end
 
 	-- [[ Item buttons ]]
 
@@ -118,8 +124,8 @@ tinsert(C.defaultThemes, function()
 		B.ReskinIconBorder(slot.IconBorder)
 
 		local popout = slot.popoutButton
-		popout:SetNormalTexture("")
-		popout:SetHighlightTexture("")
+		popout:SetNormalTexture(DB.blankTex)
+		popout:SetHighlightTexture(DB.blankTex)
 
 		local arrow = popout:CreateTexture(nil, "OVERLAY")
 		arrow:SetSize(14, 14)

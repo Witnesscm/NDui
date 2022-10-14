@@ -10,6 +10,7 @@ local pairs, next, unpack = pairs, next, unpack
 local UnitGUID, IsItemInRange = UnitGUID, IsItemInRange
 local UnitFrame_OnEnter, UnitFrame_OnLeave = UnitFrame_OnEnter, UnitFrame_OnLeave
 local SpellGetVisibilityInfo, UnitAffectingCombat, SpellIsSelfBuff, SpellIsPriorityAura = SpellGetVisibilityInfo, UnitAffectingCombat, SpellIsSelfBuff, SpellIsPriorityAura
+local x1, x2, y1, y2 = unpack(DB.TexCoord)
 
 -- Custom colors
 oUF.colors.smooth = {1, 0, 0, .85, .8, .45, .1, .1, .1}
@@ -692,6 +693,7 @@ function UF:CreateCastBar(self)
 	cb:SetHeight(20)
 	cb:SetWidth(self:GetWidth() - 22)
 	B.CreateSB(cb, true, .3, .7, 1)
+	cb.castTicks = {}
 
 	if mystyle == "player" then
 		cb:SetFrameLevel(10)
@@ -724,7 +726,7 @@ function UF:CreateCastBar(self)
 		cb.Icon = cb:CreateTexture(nil, "ARTWORK")
 		cb.Icon:SetSize(cb:GetHeight(), cb:GetHeight())
 		cb.Icon:SetPoint("BOTTOMRIGHT", cb, "BOTTOMLEFT", -3, 0)
-		cb.Icon:SetTexCoord(unpack(DB.TexCoord))
+		cb.Icon:SetTexCoord(x1, x2, y1, y2)
 		B.SetBD(cb.Icon)
 	end
 
@@ -744,12 +746,6 @@ function UF:CreateCastBar(self)
 
 		UF:ToggleCastBarLatency(self)
 
-		if DB.isNewPatch then -- Evoker charge stage
-			local stage = B.CreateFS(cb, 22)
-			stage:ClearAllPoints()
-			stage:SetPoint("TOPLEFT", cb.Icon, -2, 2)
-			cb.stageString = stage
-		end
 	elseif mystyle == "nameplate" then
 		name:SetPoint("TOPLEFT", cb, "LEFT", 0, -1)
 		timer:SetPoint("TOPRIGHT", cb, "RIGHT", 0, -1)
@@ -775,6 +771,13 @@ function UF:CreateCastBar(self)
 		cb.spellTarget = spellTarget
 
 		self:RegisterEvent("UNIT_TARGET", updateSpellTarget)
+	end
+
+	if DB.isNewPatch then -- Evoker charge stage
+		local stage = B.CreateFS(cb, 22)
+		stage:ClearAllPoints()
+		stage:SetPoint("TOPLEFT", cb.Icon, -2, 2)
+		cb.stageString = stage
 	end
 
 	if mystyle == "nameplate" or mystyle == "boss" or mystyle == "arena" then
@@ -868,6 +871,12 @@ function UF:ReskinTimerTrakcer(self)
 end
 
 -- Auras Relevant
+function UF:UpdateIconTexCoord(width, height)
+	local ratio = height / width
+	local mult = (1 - ratio) / 2
+	self.icon:SetTexCoord(x1, x2, y1 + mult, y2 - mult)
+end
+
 function UF.PostCreateIcon(element, button)
 	local fontSize = element.fontSize or element.size*.6
 	local parentFrame = CreateFrame("Frame", nil, button)
@@ -889,7 +898,14 @@ function UF.PostCreateIcon(element, button)
 	button.stealable:SetAtlas("bags-newitem")
 	button:HookScript("OnMouseDown", AURA.RemoveSpellFromIgnoreList)
 
-	if element.disableCooldown then button.timer = B.CreateFS(button, 12, "") end
+	if element.disableCooldown then
+		hooksecurefunc(button, "SetSize", UF.UpdateIconTexCoord)
+		button.timer = B.CreateFS(button, fontSize, "")
+		button.timer:ClearAllPoints()
+		button.timer:SetPoint("LEFT", button, "TOPLEFT", -2, 0)
+		button.count:ClearAllPoints()
+		button.count:SetPoint("RIGHT", button, "BOTTOMRIGHT", 5, 0)
+	end
 end
 
 local filteredStyle = {
@@ -917,12 +933,10 @@ function UF.PostUpdateIcon(element, _, button, _, _, duration, expiration, debuf
 
 	local style = element.__owner.mystyle
 	if style == "nameplate" then
-		button:SetSize(element.size, element.size - 4)
+		button:SetSize(element.size, element.size * C.db["Nameplate"]["SizeRatio"])
 	else
 		button:SetSize(element.size, element.size)
 	end
-
-	B.SetFontSize(button.count, element.fontSize or element.size*.6)
 
 	if element.desaturateDebuff and button.isDebuff and filteredStyle[style] and not button.isPlayer then
 		button.icon:SetDesaturated(true)
@@ -1041,6 +1055,15 @@ function UF:UpdateAuraContainer(parent, element, maxAuras)
 	element.size = iconsPerRow and auraIconSize(width, iconsPerRow, element.spacing) or element.size
 	element:SetWidth(width)
 	element:SetHeight((element.size + element.spacing) * maxLines)
+
+	local fontSize = element.fontSize or element.size*.6
+	for i = 1, #element do
+		local button = element[i]
+		if button then
+			if button.timer then B.SetFontSize(button.timer, fontSize) end
+			if button.count then B.SetFontSize(button.count, fontSize) end
+		end
+	end
 end
 
 function UF:ConfigureAuras(element)
@@ -1174,10 +1197,12 @@ function UF:CreateAuras(self)
 		end
 		bu.numTotal = C.db["Nameplate"]["maxAuras"]
 		bu.size = C.db["Nameplate"]["AuraSize"]
+		bu.fontSize = C.db["Nameplate"]["FontSize"]
 		bu.showDebuffType = C.db["Nameplate"]["DebuffColor"]
 		bu.desaturateDebuff = C.db["Nameplate"]["Desaturate"]
 		bu.gap = false
 		bu.disableMouse = true
+		bu.disableCooldown = true
 		bu.CustomFilter = UF.CustomFilter
 	end
 
@@ -1721,7 +1746,7 @@ local scrolls = {}
 function UF:UpdateScrollingFont()
 	local fontSize = C.db["UFs"]["FCTFontSize"]
 	for _, scroll in pairs(scrolls) do
-		scroll:SetFont(DB.Font[1], fontSize, "OUTLINE")
+		B.SetFontSize(scroll, fontSize)
 		scroll:SetSize(10*fontSize, 10*fontSize)
 	end
 end

@@ -53,6 +53,7 @@ tinsert(C.defaultThemes, function()
 
 	B.CreateBDFrame(frame.Container, .25):SetInside()
 	B.Reskin(frame.Container.SettingsList.Header.DefaultsButton)
+	B.ReskinTrimScroll(frame.Container.SettingsList.ScrollBar, true)
 
 	local function ReskinDropDownArrow(button, direction)
 		button.NormalTexture:SetAlpha(0)
@@ -84,9 +85,23 @@ tinsert(C.defaultThemes, function()
 		ReskinDropDownArrow(option.IncrementButton, "right")
 	end
 
+	local function UpdateKeybindButtons(self)
+		if not self.bindingsPool then return end
+		for panel in self.bindingsPool:EnumerateActive() do
+			if not panel.styled then
+				B.Reskin(panel.Button1)
+				B.Reskin(panel.Button2)
+				if panel.CustomButton then B.Reskin(panel.CustomButton) end
+				panel.styled = true
+			end
+		end
+	end
+
 	local function UpdateHeaderExpand(self, expanded)
 		local atlas = expanded and "Soulbinds_Collection_CategoryHeader_Collapse" or "Soulbinds_Collection_CategoryHeader_Expand"
 		self.__texture:SetAtlas(atlas, true)
+
+		UpdateKeybindButtons(self)
 	end
 
 	local function forceSaturation(self)
@@ -147,18 +162,17 @@ tinsert(C.defaultThemes, function()
 				if child.PushToTalkKeybindButton then
 					B.Reskin(child.PushToTalkKeybindButton)
 				end
+				if child.SliderWithSteppers then
+					B.ReskinStepperSlider(child.SliderWithSteppers)
+				end
+				if child.Button1 and child.Button2 then
+					B.Reskin(child.Button1)
+					B.Reskin(child.Button2)
+				end
 
 				child.styled = true
 			end
 		end
-	end)
-
-	hooksecurefunc(KeyBindingFrameBindingTemplateMixin, "Init", function(self)
-		if self.styled then return end
-
-		B.Reskin(self.Button1)
-		B.Reskin(self.Button2)
-		self.styled = true
 	end)
 
 	local CUFPanels = {

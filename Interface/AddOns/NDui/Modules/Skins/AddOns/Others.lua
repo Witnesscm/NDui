@@ -43,6 +43,7 @@ function S:PostalSkin()
 	B.Reskin(PostalSelectOpenButton)
 	B.Reskin(PostalSelectReturnButton)
 	B.Reskin(PostalOpenAllButton)
+	B.Reskin(PostalForwardButton)
 	B.ReskinArrow(Postal_ModuleMenuButton, "down")
 	B.ReskinArrow(Postal_OpenAllMenuButton, "down")
 	B.ReskinArrow(Postal_BlackBookButton, "down")
@@ -54,6 +55,16 @@ function S:PostalSkin()
 	Postal_ModuleMenuButton:SetPoint("RIGHT", MailFrame.CloseButton, "LEFT", -2, 0)
 	Postal_OpenAllMenuButton:SetPoint("LEFT", PostalOpenAllButton, "RIGHT", 2, 0)
 	Postal_BlackBookButton:SetPoint("LEFT", SendMailNameEditBox, "RIGHT", 2, 0)
+
+	for i = 1, 16 do
+		local button = _G["Postal_QuickAttachButton"..i]
+		if button then
+			button:GetNormalTexture():SetAlpha(0)
+			button:GetPushedTexture():SetAlpha(0)
+			button:GetHighlightTexture():SetColorTexture(1, 1, 1, .25)
+			B.ReskinIcon(button.icon)
+		end
+	end
 end
 
 function S:SoulbindsTalents()
@@ -175,7 +186,7 @@ local function updateSoulshapeButtons(self)
 			B.ReskinIcon(bu.icon)
 			bu.selectedTexture:SetAlpha(0)
 			bu.background:SetTexture(nil)
-			bu:SetHighlightTexture("")
+			bu:SetHighlightTexture(DB.blankTex)
 
 			local critterIcon = bu.critterIcon
 			critterIcon:SetTexture("Interface\\ICONS\\Pet_Type_Critter")
@@ -294,9 +305,9 @@ function S:ERT()
 		local bg = B.SetBD(tab)
 		bg:SetInside(tab, 2, 2)
 
-		tab:SetNormalTexture("")
-		tab:SetPushedTexture("")
-		tab:SetDisabledTexture("")
+		tab:SetNormalTexture(DB.blankTex)
+		tab:SetPushedTexture(DB.blankTex)
+		tab:SetDisabledTexture(DB.blankTex)
 		local hl = tab:GetHighlightTexture()
 		hl:SetColorTexture(cr, cg, cb, .2)
 		hl:SetInside(bg)
@@ -456,7 +467,7 @@ function S:OtherSkins()
 	if not C.db["Skins"]["BlizzardSkins"] then return end
 
 	S:FriendGroups()
-	S:PostalSkin()
+	C_Timer.After(1, S.PostalSkin)
 	S:SoulbindsTalents()
 	S:MRT_Skin()
 	S:SoulshapeJournal()
