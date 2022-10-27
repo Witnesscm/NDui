@@ -1,6 +1,18 @@
 local _, ns = ...
 local B, C, L, DB = unpack(ns)
 
+local function reskinTalentFrameDialog(dialog)
+	B.StripTextures(dialog)
+	B.SetBD(dialog)
+	if dialog.AcceptButton then B.Reskin(dialog.AcceptButton) end
+	if dialog.CancelButton then B.Reskin(dialog.CancelButton) end
+	if dialog.DeleteButton then B.Reskin(dialog.DeleteButton) end
+
+	B.ReskinEditBox(dialog.NameControl.EditBox)
+	dialog.NameControl.EditBox.__bg:SetPoint("TOPLEFT", -5, -10)
+	dialog.NameControl.EditBox.__bg:SetPoint("BOTTOMRIGHT", 5, 10)
+end
+
 C.themes["Blizzard_ClassTalentUI"] = function()
 	local frame = ClassTalentFrame
 
@@ -21,6 +33,19 @@ C.themes["Blizzard_ClassTalentUI"] = function()
 		for specContentFrame in self.SpecContentFramePool:EnumerateActive() do
 			if not specContentFrame.styled then
 				B.Reskin(specContentFrame.ActivateButton)
+
+				local role = GetSpecializationRole(specContentFrame.specIndex)
+				if role then
+					B.ReskinSmallRole(specContentFrame.RoleIcon, role)
+				end
+
+				if specContentFrame.SpellButtonPool then
+					for button in specContentFrame.SpellButtonPool:EnumerateActive() do
+						button.Ring:Hide()
+						B.ReskinIcon(button.Icon)
+					end
+				end
+
 				specContentFrame.styled = true
 			end
 		end
@@ -28,37 +53,19 @@ C.themes["Blizzard_ClassTalentUI"] = function()
 
 	local dialog = ClassTalentLoadoutImportDialog
 	if dialog then
-		B.StripTextures(dialog)
-		B.SetBD(dialog)
-		B.Reskin(dialog.AcceptButton)
-		B.Reskin(dialog.CancelButton)
-
+		reskinTalentFrameDialog(dialog)
 		B.StripTextures(dialog.ImportControl.InputContainer)
 		B.CreateBDFrame(dialog.ImportControl.InputContainer, .25)
-		B.ReskinEditBox(dialog.NameControl.EditBox)
-		dialog.NameControl.EditBox.__bg:SetPoint("TOPLEFT", -5, -10)
-		dialog.NameControl.EditBox.__bg:SetPoint("BOTTOMRIGHT", 5, 10)
 	end
 
 	local dialog = ClassTalentLoadoutCreateDialog
 	if dialog then
-		B.StripTextures(dialog)
-		B.SetBD(dialog)
-		B.Reskin(dialog.AcceptButton)
-		B.Reskin(dialog.CancelButton)
-
-		B.ReskinEditBox(dialog.NameControl.EditBox)
-		dialog.NameControl.EditBox.__bg:SetPoint("TOPLEFT", -5, -10)
-		dialog.NameControl.EditBox.__bg:SetPoint("BOTTOMRIGHT", 5, 10)
+		reskinTalentFrameDialog(dialog)
 	end
 
 	local dialog = ClassTalentLoadoutEditDialog
 	if dialog then
-		B.StripTextures(dialog)
-		B.SetBD(dialog)
-		B.Reskin(dialog.AcceptButton)
-		B.Reskin(dialog.DeleteButton)
-		B.Reskin(dialog.CancelButton)
+		reskinTalentFrameDialog(dialog)
 
 		local editbox = dialog.LoadoutName
 		if editbox then
