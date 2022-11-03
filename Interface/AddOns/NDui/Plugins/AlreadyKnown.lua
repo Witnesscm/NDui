@@ -39,13 +39,48 @@ local function IsAlreadyKnown(link, index)
 		if not name then return end
 
 		if itemClassID == Enum.ItemClass.Battlepet and index then
+			if DB.isBeta then
+
+			local data = C_TooltipInfo.GetGuildBankItem(GetCurrentGuildBankTab(), index)
+			if data then
+				local argVal = data.args and data.args[2]
+				if argVal.field == "battlePetSpeciesID" then
+					return isPetCollected(argVal.intVal)
+				end
+			end
+
+			else
+
 			local speciesID = B.ScanTip:SetGuildBankItem(GetCurrentGuildBankTab(), index)
 			return isPetCollected(speciesID)
+
+			end
 		elseif TT.ConduitData[linkID] and TT.ConduitData[linkID] >= level then
 			return true
 		else
 			if knowns[link] then return true end
 			if not knowables[itemClassID] then return end
+
+			if DB.isBeta then
+
+			local data = C_TooltipInfo.GetHyperlink(link, nil, nil, true)
+			if data then
+				for i = 1, #data.lines do
+					local lineData = data.lines[i]
+					local argVal = lineData and lineData.args
+					if argVal then
+						local text = argVal[2] and argVal[2].stringVal
+						if text then
+							if strfind(text, COLLECTED) or text == ITEM_SPELL_KNOWN then
+								knowns[link] = true
+								return true
+							end
+						end
+					end
+				end
+			end
+
+			else
 
 			B.ScanTip:SetOwner(UIParent, "ANCHOR_NONE")
 			B.ScanTip:SetHyperlink(link)
@@ -55,6 +90,8 @@ local function IsAlreadyKnown(link, index)
 					knowns[link] = true
 					return true
 				end
+			end
+
 			end
 		end
 	end
@@ -97,44 +134,6 @@ local function Hook_UpdateBuybackInfo()
 	end
 end
 hooksecurefunc("MerchantFrame_UpdateBuybackInfo", Hook_UpdateBuybackInfo)
-
-local function Hook_UpdateAuctionHouse(self)
-	local numResults = self.getNumEntries()
-
-	local buttons = HybridScrollFrame_GetButtons(self.ScrollFrame)
-	local buttonCount = #buttons
-	local offset = self:GetScrollOffset()
-	for i = 1, buttonCount do
-		local visible = i + offset <= numResults
-		local button = buttons[i]
-		if visible then
-			if button.rowData.itemKey.itemID then
-				local itemLink
-				if button.rowData.itemKey.itemID == 82800 then -- BattlePet
-					itemLink = format("|Hbattlepet:%d::::::|h[Dummy]|h", button.rowData.itemKey.battlePetSpeciesID)
-				else -- Normal item
-					itemLink = format("|Hitem:%d", button.rowData.itemKey.itemID)
-				end
-
-				if itemLink and IsAlreadyKnown(itemLink) then
-					-- Highlight
-					button.SelectedHighlight:Show()
-					button.SelectedHighlight:SetVertexColor(COLOR.r, COLOR.g, COLOR.b)
-					button.SelectedHighlight:SetAlpha(.25)
-					-- Icon
-					button.cells[2].Icon:SetVertexColor(COLOR.r, COLOR.g, COLOR.b)
-					button.cells[2].IconBorder:SetVertexColor(COLOR.r, COLOR.g, COLOR.b)
-				else
-					-- Highlight
-					button.SelectedHighlight:SetVertexColor(1, 1, 1)
-					-- Icon
-					button.cells[2].Icon:SetVertexColor(1, 1, 1)
-					button.cells[2].IconBorder:SetVertexColor(1, 1, 1)
-				end
-			end
-		end
-	end
-end
 
 local function Hook_UpdateAuctionItems(self)
 	for i = 1, self.ScrollTarget:GetNumChildren() do
@@ -203,11 +202,7 @@ local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
 f:SetScript("OnEvent", function(_, event, addon)
 	if addon == "Blizzard_AuctionHouseUI" then
-		if DB.isNewPatch then
-			hooksecurefunc(AuctionHouseFrame.BrowseResultsFrame.ItemList.ScrollBox, "Update", Hook_UpdateAuctionItems)
-		else
-			hooksecurefunc(AuctionHouseFrame.BrowseResultsFrame.ItemList, "RefreshScrollFrame", Hook_UpdateAuctionHouse)
-		end
+		hooksecurefunc(AuctionHouseFrame.BrowseResultsFrame.ItemList.ScrollBox, "Update", Hook_UpdateAuctionItems)
 		hookCount = hookCount + 1
 	elseif addon == "Blizzard_GuildBankUI" then
 		hooksecurefunc(GuildBankFrame, "Update", GuildBankFrame_Update)

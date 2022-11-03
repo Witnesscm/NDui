@@ -58,7 +58,6 @@ function M:OnLogin()
 	M:UpdateScreenShot()
 	M:UpdateFasterLoot()
 	M:TradeTargetInfo()
-	M:MoveQuestTracker()
 	M:BlockStrangerInvite()
 	M:ToggleBossBanner()
 	M:ToggleBossEmote()
@@ -71,7 +70,6 @@ function M:OnLogin()
 	M:EnhancedPicker()
 	M:UpdateMaxZoomLevel()
 	M:MoveBlizzFrames()
-	M:SpellBookFix()
 
 	-- Unregister talent event
 	if PlayerTalentFrame then
@@ -81,6 +79,15 @@ function M:OnLogin()
 			PlayerTalentFrame:UnregisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
 		end)
 	end
+
+	-- Always show altpower value
+	hooksecurefunc("UnitPowerBarAlt_SetUp", function(self)
+		local statusFrame = self.statusFrame
+		if statusFrame.enabled then
+			statusFrame:Show()
+			statusFrame.Hide = statusFrame.Show
+		end
+	end)
 
 	-- Auto chatBubbles
 	if NDuiADB["AutoBubbles"] then
@@ -269,30 +276,6 @@ function M:MoveTicketStatusFrame()
 	end)
 end
 
--- Reanchor ObjectiveTracker
-function M:MoveQuestTracker()
-	if DB.isNewPatch then return end
-
-	local frame = CreateFrame("Frame", "NDuiQuestMover", UIParent)
-	frame:SetSize(240, 50)
-	B.Mover(frame, L["QuestTracker"], "QuestTracker", {"TOPRIGHT", Minimap, "BOTTOMRIGHT", -70, -55})
-
-	local tracker = ObjectiveTrackerFrame
-	tracker:ClearAllPoints()
-	tracker:SetPoint("TOPRIGHT", frame)
-	tracker:SetHeight(GetScreenHeight()*.65)
-	tracker:SetClampedToScreen(false)
-	tracker:SetMovable(true)
-	if tracker:IsMovable() then tracker:SetUserPlaced(true) end
-
-	hooksecurefunc(tracker, "SetPoint", function(self, _, parent)
-		if parent ~= frame then
-			self:ClearAllPoints()
-			self:SetPoint("TOPRIGHT", frame)
-		end
-	end)
-end
-
 -- Achievement screenshot
 function M:ScreenShotOnEvent()
 	M.ScreenShotFrame.delay = 1
@@ -434,42 +417,6 @@ do
 	end
 	B:RegisterEvent("ARCHAEOLOGY_SURVEY_CAST", updateArcTitle)
 	B:RegisterEvent("ARCHAEOLOGY_FIND_COMPLETE", updateArcTitle)
-end
-
--- Drag AltPowerbar
-do
-	local mover = CreateFrame("Frame", "NDuiAltBarMover", PlayerPowerBarAlt)
-	mover:SetPoint("CENTER", UIParent, 0, -200)
-	mover:SetSize(20, 20)
-	B.CreateMF(PlayerPowerBarAlt, mover)
-
-	hooksecurefunc(PlayerPowerBarAlt, "SetPoint", function(_, _, parent)
-		if parent ~= mover then
-			PlayerPowerBarAlt:ClearAllPoints()
-			PlayerPowerBarAlt:SetPoint("CENTER", mover)
-		end
-	end)
-
-	hooksecurefunc("UnitPowerBarAlt_SetUp", function(self)
-		local statusFrame = self.statusFrame
-		if statusFrame.enabled then
-			statusFrame:Show()
-			statusFrame.Hide = statusFrame.Show
-		end
-	end)
-
-	local altPowerInfo = {
-		text = L["Drag AltBar Tip"],
-		buttonStyle = HelpTip.ButtonStyle.GotIt,
-		targetPoint = HelpTip.Point.RightEdgeCenter,
-		onAcknowledgeCallback = B.HelpInfoAcknowledge,
-		callbackArg = "AltPower",
-	}
-	PlayerPowerBarAlt:HookScript("OnEnter", function(self)
-		if not NDuiADB["Help"]["AltPower"] then
-			HelpTip:Show(self, altPowerInfo)
-		end
-	end)
 end
 
 -- ALT+RightClick to buy a stack
@@ -908,44 +855,4 @@ end
 -- Move and save blizz frames
 function M:MoveBlizzFrames()
 	--B:BlizzFrameMover(CharacterFrame)
-end
-
--- SpellBook fix in 46157
-function M:SpellBookFix()
-	if not DB.isBeta then return end
-
-	local function replaceOnEnter(self)
-		local slot = SpellBook_GetSpellBookSlot(self)
-		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-	
-		if InClickBindingMode() and not self.canClickBind then
-			GameTooltip:AddLine(CLICK_BINDING_NOT_AVAILABLE, RED_FONT_COLOR.r, RED_FONT_COLOR.g, RED_FONT_COLOR.b)
-			GameTooltip:Show()
-			return
-		end
-	
-		GameTooltip:SetSpellBookItem(slot, SpellBookFrame.bookType)
-		self.UpdateTooltip = nil
-	
-		if self.SpellHighlightTexture and self.SpellHighlightTexture:IsShown() then
-			GameTooltip:AddLine(SPELLBOOK_SPELL_NOT_ON_ACTION_BAR, LIGHTBLUE_FONT_COLOR.r, LIGHTBLUE_FONT_COLOR.g, LIGHTBLUE_FONT_COLOR.b)
-		end
-		GameTooltip:Show()
-	end
-
-	local function handleSpellButton(button)
-		button.OnEnter = replaceOnEnter
-		button:SetScript("OnEnter", replaceOnEnter)
-	end
-
-	for i = 1, SPELLS_PER_PAGE do
-		handleSpellButton(_G["SpellButton"..i])
-	end
-
-	local professions = {"PrimaryProfession1", "PrimaryProfession2", "SecondaryProfession1", "SecondaryProfession2", "SecondaryProfession3"}
-	for _, button in pairs(professions) do
-		local bu = _G[button]
-		handleSpellButton(bu.SpellButton1)
-		handleSpellButton(bu.SpellButton2)
-	end
 end

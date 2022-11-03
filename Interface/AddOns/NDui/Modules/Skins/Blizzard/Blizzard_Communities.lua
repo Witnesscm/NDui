@@ -229,8 +229,15 @@ C.themes["Blizzard_Communities"] = function()
 		B.StripTextures(dialog)
 		B.SetBD(dialog)
 		B.ReskinDropDown(dialog.CommunitiesListDropDownMenu)
-		B.Reskin(dialog.OkayButton)
-		B.Reskin(dialog.CancelButton)
+		if dialog.OkayButton then -- isBeta
+			B.Reskin(dialog.OkayButton)
+			B.Reskin(dialog.CancelButton)
+		end
+		if dialog.Selector then
+			B.StripTextures(dialog.Selector)
+			B.Reskin(dialog.Selector.OkayButton)
+			B.Reskin(dialog.Selector.CancelButton)
+		end
 		B.ReskinCheck(dialog.ScrollFrame.Child.QuickJoinButton)
 		dialog.ScrollFrame.Child.QuickJoinButton:SetSize(25, 25)
 		B.Reskin(dialog.ScrollFrame.Child.AllButton)
@@ -399,34 +406,36 @@ C.themes["Blizzard_Communities"] = function()
 		local dialog = CommunitiesAvatarPickerDialog
 		B.StripTextures(dialog)
 		B.SetBD(dialog)
-		B.Reskin(dialog.OkayButton)
-		B.Reskin(dialog.CancelButton)
+		if dialog.OkayButton then -- isBeta
+			B.Reskin(dialog.OkayButton)
+			B.Reskin(dialog.CancelButton)
+		end
+		B.ReskinTrimScroll(CommunitiesAvatarPickerDialog.ScrollBar)
+		if dialog.Selector then
+			B.StripTextures(dialog.Selector)
+			B.Reskin(dialog.Selector.OkayButton)
+			B.Reskin(dialog.Selector.CancelButton)
+		end
 
-		if DB.isNewPatch then
-			-- todo
-			B.ReskinTrimScroll(CommunitiesAvatarPickerDialog.ScrollBar)
-		else
-			B.ReskinScroll(CommunitiesAvatarPickerDialogScrollBar)
+		-- todo, blizzard still buggy atm
+		--[=[hooksecurefunc(CommunitiesAvatarPickerDialog.ScrollFrame, "Refresh", function(self)
+			for i = 1, 5 do
+				for j = 1, 6 do
+					local avatarButton = self.avatarButtons[i][j]
+					if avatarButton:IsShown() and not avatarButton.bg then
+						avatarButton.bg = B.ReskinIcon(avatarButton.Icon)
+						avatarButton.Selected:SetTexture("")
+						avatarButton:GetHighlightTexture():SetColorTexture(1, 1, 1, .25)
+					end
 
-			hooksecurefunc(CommunitiesAvatarPickerDialog.ScrollFrame, "Refresh", function(self)
-				for i = 1, 5 do
-					for j = 1, 6 do
-						local avatarButton = self.avatarButtons[i][j]
-						if avatarButton:IsShown() and not avatarButton.bg then
-							avatarButton.bg = B.ReskinIcon(avatarButton.Icon)
-							avatarButton.Selected:SetTexture("")
-							avatarButton:GetHighlightTexture():SetColorTexture(1, 1, 1, .25)
-						end
-	
-						if avatarButton.Selected:IsShown() then
-							avatarButton.bg:SetBackdropBorderColor(r, g, b)
-						else
-							avatarButton.bg:SetBackdropBorderColor(0, 0, 0)
-						end
+					if avatarButton.Selected:IsShown() then
+						avatarButton.bg:SetBackdropBorderColor(r, g, b)
+					else
+						avatarButton.bg:SetBackdropBorderColor(0, 0, 0)
 					end
 				end
-			end)
-		end
+			end
+		end)]=]
 	end
 
 	hooksecurefunc(CommunitiesFrame.MemberList, "RefreshListDisplay", function(self)
