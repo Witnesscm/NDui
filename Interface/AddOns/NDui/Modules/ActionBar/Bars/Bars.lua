@@ -95,6 +95,7 @@ function Bar:UpdateActionSize(name)
 	end
 end
 
+local directions = {"UP", "DOWN", "LEFT", "RIGHT"}
 function Bar:UpdateButtonConfig(i)
 	if not self.buttonConfig then
 		self.buttonConfig = {
@@ -108,7 +109,7 @@ function Bar:UpdateButtonConfig(i)
 	end
 	self.buttonConfig.clickOnDown = true
 	self.buttonConfig.showGrid = C.db["Actionbar"]["Grid"]
-	self.buttonConfig.flyoutDirection = "UP"
+	self.buttonConfig.flyoutDirection = directions[C.db["Actionbar"]["Bar"..i.."Flyout"]]
 
 	local hotkey = self.buttonConfig.text.hotkey
 	hotkey.font.font = DB.Font[1]
@@ -241,7 +242,7 @@ function Bar:CreateBars()
 			child:SetSize(1, 1)
 			child.mover = B.Mover(child, L["Actionbar"].."3R", "Bar3R", {"LEFT", _G.NDui_ActionBar1, "TOPRIGHT", margin, -padding/2})
 			frame.child = child
-		
+
 			Bar.movers[mIndex] = frame.mover
 			Bar.movers[mIndex+1] = child.mover
 			mIndex = mIndex + 2
@@ -265,7 +266,7 @@ function Bar:CreateBars()
 			tinsert(Bar.buttons, button)
 		end
 
-		frame.visibility = i == 1 and"[petbattle] hide; show" or "[petbattle][overridebar][vehicleui][possessbar,@vehicle,exists][shapeshift] hide; show"
+		frame.visibility = index == 1 and "[petbattle] hide; show" or "[petbattle][overridebar][vehicleui][possessbar,@vehicle,exists][shapeshift] hide; show"
 
 		frame:SetAttribute("_onstate-page", [[
 			self:SetAttribute("state", newstate)
