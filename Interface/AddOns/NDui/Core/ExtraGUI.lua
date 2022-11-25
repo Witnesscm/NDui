@@ -1799,7 +1799,20 @@ function G:SetupActionBar(parent)
 		["Bar7"] = {34, 1, 12, 12, 12},
 		["Bar8"] = {34, 1, 12, 12, 12},
 	}
+	local function toggleBar(self)
+		C.db["Actionbar"][self.__value] = self:GetChecked()
+		Bar:UpdateVisibility()
+	end
 	local function createOptionGroup(parent, title, offset, value, color)
+		if value ~= "BarPet" then
+			local box = B.CreateCheckBox(parent)
+			box:SetPoint("TOPLEFT", parent, 30, offset + 6)
+			box:SetChecked(C.db["Actionbar"][value])
+			box.__value = value
+			box:SetScript("OnClick", toggleBar)
+			B.AddTooltip(box, "ANCHOR_RIGHT", L["ToggleActionbarTip"], "info", true)
+		end
+
 		color = color or ""
 		local data = defaultValues[value]
 		local function updateBarScale()
@@ -1807,9 +1820,11 @@ function G:SetupActionBar(parent)
 		end
 		createOptionTitle(parent, title, offset)
 		createOptionSlider(parent, L["ButtonSize"], 20, 80, data[1], offset-60, value.."Size", updateBarScale, "Actionbar")
-		createOptionSlider(parent, color..L["MaxButtons"], data[2], data[3], data[4], offset-130, value.."Num", updateBarScale, "Actionbar")
-		createOptionSlider(parent, L["ButtonsPerRow"], 1, data[3], data[5], offset-200, value.."PerRow", updateBarScale, "Actionbar")
-		createOptionSlider(parent, L["ButtonFontSize"], 8, 20, 12, offset-270, value.."Font", updateBarScale, "Actionbar")
+		createOptionSlider(parent, L["ButtonsPerRow"], 1, data[3], data[5], offset-130, value.."PerRow", updateBarScale, "Actionbar")
+		createOptionSlider(parent, L["ButtonFontSize"], 8, 20, 12, offset-200, value.."Font", updateBarScale, "Actionbar")
+		if value ~= "BarPet" then
+			createOptionSlider(parent, color..L["MaxButtons"], data[2], data[3], data[4], offset-270, value.."Num", updateBarScale, "Actionbar")
+		end
 	end
 
 	createOptionGroup(scroll.child, L["Actionbar"].."1", -10, "Bar1")
@@ -1927,10 +1942,10 @@ function G:SetupActionbarStyle(parent) -- todo: add bar 678
 	local Bar = B:GetModule("Actionbar")
 
 	local styleString = {
-		[1] = "NAB:34:12:12:12:34:12:12:12:32:12:0:12:32:12:12:1:32:12:12:1:26:12:10:10:30:12:10:0B24:0B60:-271B26:271B26:-1BR336:-35BR336:0B100:-202B100",
-		[2] = "NAB:34:12:12:12:34:12:12:12:34:12:12:12:32:12:12:1:32:12:12:1:26:12:10:10:30:12:10:0B24:0B60:0B96:271B26:-1BR336:-35BR336:0B134:-200B138",
-		[3] = "NAB:34:12:12:12:34:12:12:12:34:12:12:6:32:12:12:1:32:12:12:1:26:12:10:10:30:12:10:-108B24:-108B60:216B24:271B26:-1TR-336:-35TR-336:0B98:-310B100",
-		[4] = "NAB:34:12:12:12:34:12:12:12:32:12:12:6:32:12:12:6:32:12:12:1:26:12:10:10:30:12:10:0B24:0B60:536BL26:271B26:-536BR26:-1TR-336:0B100:-202B100",
+		[1] = "NAB:34:12:12:12:34:12:12:12:32:12:0:12:32:12:12:1:32:12:12:1:34:12:12:12:34:12:12:12:34:12:12:12:26:12:10:30:12:10:0B24:0B60:-271B26:271B26:-1BR336:-35BR336:0B522:0T-482:0T-442:0B98:-202B100",
+		[2] = "NAB:34:12:12:12:34:12:12:12:34:12:12:12:32:12:12:6:32:12:12:1:26:12:10:10:30:12:10:12:34:12:12:12:26:12:10:30:12:10:0B24:0B60:0B96:271B26:-1BR336:-35BR336:0B522:0T-482:0T-442:0B134:-202B100",
+		[3] = "NAB:34:12:12:12:34:12:12:12:34:12:12:6:32:12:12:1:32:12:12:1:26:12:10:10:30:12:10:12:34:12:12:12:26:12:10:30:12:10:-108B24:-108B60:216B24:163B26:-1BR336:-35BR336:0B522:0T-482:0T-442:0B98:-310B100",
+		[4] = "NAB:34:12:12:12:34:12:12:12:32:12:12:6:32:12:12:6:32:12:12:1:26:12:10:10:30:12:10:12:34:12:12:12:26:12:10:30:12:10:0B24:0B60:536BL26:271B26:-536BR26:-1TR-336:0B522:0T-482:0T-442:0B98:-202B100",
 	}
 	local styleName = {
 		[1] = _G.DEFAULT,

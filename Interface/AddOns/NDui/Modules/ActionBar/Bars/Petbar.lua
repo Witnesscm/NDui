@@ -4,7 +4,6 @@ local Bar = B:GetModule("Actionbar")
 
 local _G = _G
 local tinsert = tinsert
-local cfg = C.Bars.petbar
 local margin = C.Bars.margin
 
 local function hasPetActionHighlightMark(index)
@@ -88,11 +87,7 @@ function Bar:CreatePetbar()
 
 	local frame = CreateFrame("Frame", "NDui_ActionBarPet", UIParent, "SecureHandlerStateTemplate")
 	frame.mover = B.Mover(frame, L["Pet Actionbar"], "PetBar", {"BOTTOM", _G.NDui_ActionBar2, "TOP", 0, margin})
-	Bar.movers[7] = frame.mover
-
-	PetActionBar:SetParent(frame)
-	PetActionBar:EnableMouse(false)
-	PetActionBar:UnregisterAllEvents()
+	Bar.movers[10] = frame.mover
 
 	for i = 1, num do
 		local button = _G["PetActionButton"..i]
@@ -104,10 +99,6 @@ function Bar:CreatePetbar()
 
 	frame.frameVisibility = "[petbattle][overridebar][vehicleui][possessbar,@vehicle,exists][shapeshift] hide; [pet] show; hide"
 	RegisterStateDriver(frame, "visibility", frame.frameVisibility)
-
-	if cfg.fader then
-		Bar.CreateButtonFrameFader(frame, buttonList, cfg.fader)
-	end
 
 	-- Fix pet bar updating
 	Bar:PetBarOnEvent()
