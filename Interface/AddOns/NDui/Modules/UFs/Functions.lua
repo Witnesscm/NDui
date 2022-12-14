@@ -970,9 +970,11 @@ function UF.PostUpdateButton(element, button, unit, data)
 	end
 end
 
-function UF.AurasPreUpdate(element)
+function UF.AurasPreUpdate(element, _, isFullUpdate)
+	if not isFullUpdate then return end
 	element.bolsterStacks = 0
 	element.bolsterInstanceID = nil
+	element.hasTheDot = nil
 end
 
 function UF.PostUpdateGapButton(_, _, button)
