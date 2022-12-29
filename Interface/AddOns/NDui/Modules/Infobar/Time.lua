@@ -5,7 +5,7 @@ if not C.Infobar.Time then return end
 local module = B:GetModule("Infobar")
 local info = module:RegisterInfobar("Time", C.Infobar.TimePos)
 local time, date = time, date
-local strfind, format, floor = strfind, format, floor
+local strfind, format, floor, strmatch = strfind, format, floor, strmatch
 local mod, tonumber, pairs, ipairs = mod, tonumber, pairs, ipairs
 local IsShiftKeyDown = IsShiftKeyDown
 local C_Map_GetMapInfo = C_Map.GetMapInfo
@@ -28,6 +28,8 @@ local GetNumSavedInstances, GetSavedInstanceInfo = GetNumSavedInstances, GetSave
 local IsQuestFlaggedCompleted = C_QuestLog.IsQuestFlaggedCompleted
 local C_TaskQuest_GetThreatQuests = C_TaskQuest.GetThreatQuests
 local C_TaskQuest_GetQuestInfoByQuestID = C_TaskQuest.GetQuestInfoByQuestID
+local C_AreaPoiInfo_GetAreaPOIInfo = C_AreaPoiInfo.GetAreaPOIInfo
+local C_AreaPoiInfo_GetAreaPOIForMap = C_AreaPoiInfo.GetAreaPOIForMap
 
 local function updateTimerFormat(color, hour, minute)
 	if GetCVarBool("timeMgrUseMilitaryTime") then
@@ -184,6 +186,32 @@ local function GetNzothThreatName(questID)
 	return name
 end
 
+local huntAreaToMapID = { -- 狩猎区域ID转换为地图ID
+	[7342] = 2023, -- 欧恩哈拉平原
+	[7343] = 2022, -- 觉醒海岸
+	[7344] = 2025, -- 索德拉苏斯
+	[7345] = 2024, -- 碧蓝林海
+}
+
+local stormOrders = {2022,2025,2024,2023}
+
+local atlasCache = {}
+local function GetElementalType(element) -- 获取入侵类型图标
+	local str = atlasCache[element]
+	if not str then
+		local info = C_Texture.GetAtlasInfo("ElementalStorm-Lesser-"..element)
+		if info then
+			str = B:GetTextureStrByAtlas(info, 16, 16)
+			atlasCache[element] = str
+		end
+	end
+	return str
+end
+
+local function GetFormattedTimeLeft(timeLeft)
+	return format("%.2d:%.2d", timeLeft/60, timeLeft%60)
+end
+
 local title
 local function addTitle(text)
 	if not title then
@@ -196,6 +224,23 @@ end
 info.onShiftDown = function()
 	if info.entered then
 		info:onEnter()
+	end
+end
+
+local function GetCurrentFeastTime()
+	local prepareRemain = C_AreaPoiInfo_GetAreaPOISecondsLeft(7219)
+	if prepareRemain then -- 准备盛宴，15分钟
+		return prepareRemain + time(), 1 -- 开始时间=剩余准备时间+现在时间
+	end
+
+	local cookingRemain = C_AreaPoiInfo_GetAreaPOISecondsLeft(7218)
+	if cookingRemain then -- 盛宴进行中，15分钟
+		return time() - (15*60 - cookingRemain), 2 -- 开始时间=现在时间-盛宴已进行时长
+	end
+
+	local soupRemain = C_AreaPoiInfo_GetAreaPOISecondsLeft(7220)
+	if soupRemain then -- 盛宴结束，喝汤1小时
+		return time() - (60*60 - soupRemain) - 15*60, 3 -- 开始时间=现在时间-盛宴已结束时长-盛宴进行时长
 	end
 end
 
@@ -249,7 +294,6 @@ info.onEnter = function(self)
 
 	-- Quests
 	title = false
-
 	for _, v in pairs(questlist) do
 		if v.name and IsQuestFlaggedCompleted(v.id) then
 			if v.name == L["Timewarped"] and isTimeWalker and checkTexture(v.texture) or v.name ~= L["Timewarped"] then
@@ -257,6 +301,59 @@ info.onEnter = function(self)
 				GameTooltip:AddDoubleLine(v.name, QUEST_COMPLETE, 1,1,1, 1,0,0)
 			end
 		end
+	end
+
+	-- Elemental threats
+	title = false
+	local poiCache = {}
+	for _, mapID in next, stormOrders do
+		local areaPoiIDs = C_AreaPoiInfo_GetAreaPOIForMap(mapID)
+		for _, areaPoiID in next, areaPoiIDs do
+			local poiInfo = C_AreaPoiInfo_GetAreaPOIInfo(mapID, areaPoiID)
+			local elementType = poiInfo and poiInfo.atlasName and strmatch(poiInfo.atlasName, "ElementalStorm%-Lesser%-(.+)")
+			if elementType and not poiCache[areaPoiID] then
+				poiCache[areaPoiID] = true
+				addTitle(poiInfo.name)
+				local mapInfo = C_Map_GetMapInfo(mapID)
+				local timeLeft = C_AreaPoiInfo_GetAreaPOISecondsLeft(areaPoiID) or 0
+				timeLeft = timeLeft/60
+				if timeLeft < 60 then r,g,b = 1,0,0 else r,g,b = 0,1,0 end
+				GameTooltip:AddDoubleLine(mapInfo.name..GetElementalType(elementType), GetFormattedTimeLeft(timeLeft), 1,1,1, r,g,b)
+				--print("["..areaPoiID.."] = "..mapID)
+			end
+		end
+	end
+
+	-- Grand hunts
+	title = false
+	for areaPoiID, mapID in pairs(huntAreaToMapID) do
+		local poiInfo = C_AreaPoiInfo_GetAreaPOIInfo(1978, areaPoiID) -- Dragon isles
+		if poiInfo then
+			addTitle(poiInfo.name)
+			local mapInfo = C_Map_GetMapInfo(mapID)
+			local timeLeft = C_AreaPoiInfo_GetAreaPOISecondsLeft(areaPoiID) or 0
+			timeLeft = timeLeft/60
+			if timeLeft < 60 then r,g,b = 1,0,0 else r,g,b = 0,1,0 end
+			GameTooltip:AddDoubleLine(mapInfo.name, GetFormattedTimeLeft(timeLeft), 1,1,1, r,g,b)
+			break
+		end
+	end
+
+	-- Community feast
+	title = false
+	if NDuiADB["FeastTime"] ~= 0 then
+		local currentTime = time()
+		local duration = 12600 -- 3.5hrs
+		local elapsed = mod(currentTime - NDuiADB["FeastTime"], duration)
+		local nextTime = duration - elapsed + currentTime
+
+		addTitle(L["CommunityFeast"])
+		if IsQuestFlaggedCompleted(70893) then
+			GameTooltip:AddDoubleLine((select(2, GetItemInfo(200095))), QUEST_COMPLETE, 1,1,1, 1,0,0)
+		end
+		if currentTime - (nextTime-duration) < 900 then r,g,b = 0,1,0 else r,g,b = .6,.6,.6 end -- green text if progressing
+		GameTooltip:AddDoubleLine(date("%m/%d %H:%M", nextTime-duration*2), date("%m/%d %H:%M", nextTime-duration), .6,.6,.6, r,g,b)
+		GameTooltip:AddDoubleLine(date("%m/%d %H:%M", nextTime), date("%m/%d %H:%M", nextTime+duration), 1,1,1, 1,1,1)
 	end
 
 	if IsShiftKeyDown() then
@@ -296,7 +393,7 @@ info.onEnter = function(self)
 			if timeLeft then
 				timeLeft = timeLeft/60
 				if timeLeft < 60 then r,g,b = 1,0,0 else r,g,b = 0,1,0 end
-				GameTooltip:AddDoubleLine(L["Current Invasion"]..zoneName, format("%.2d:%.2d", timeLeft/60, timeLeft%60), 1,1,1, r,g,b)
+				GameTooltip:AddDoubleLine(L["Current Invasion"]..zoneName, GetFormattedTimeLeft(timeLeft), 1,1,1, r,g,b)
 			end
 			local nextLocation = GetNextLocation(nextTime, index)
 			GameTooltip:AddDoubleLine(L["Next Invasion"]..nextLocation, date("%m/%d %H:%M", nextTime), 1,1,1, 1,1,1)
@@ -337,3 +434,18 @@ info.onMouseUp = function(_, btn)
 		ToggleCalendar()
 	end
 end
+
+-- Refresh feast time when questlog update
+local lastCheck = 0
+local function refreshFeastTime()
+	local currentTime = GetTime()
+	if currentTime - lastCheck < 60 then return end
+	lastCheck = currentTime
+
+	local currentFeast = GetCurrentFeastTime()
+	if currentFeast then
+		NDuiADB["FeastTime"] = currentFeast
+	end
+end
+B:RegisterEvent("PLAYER_ENTERING_WORLD", refreshFeastTime)
+B:RegisterEvent("QUEST_LOG_UPDATE", refreshFeastTime)
