@@ -27,7 +27,9 @@ local list = {
 		{AuraID = 160007, UnitID = "player"},	-- 上升气流（双头龙）
 		{AuraID = 260249, UnitID = "player"},	-- 掠食者
 		{AuraID = 231390, UnitID = "player", Combat = true},	-- 开拓者
-		{AuraID = 164273, UnitID = "player", Combat = true},	-- 独来独往
+		{AuraID = 164273, UnitID = "player", Combat = true, Value = true},	-- 独来独往
+		{AuraID = 260242, UnitID = "player"},	-- 弹无虚发
+		{AuraID = 342076, UnitID = "player"},	-- 行云流水
 	},
 	["Target Aura"] = {		-- 目标光环组
 		{AuraID = 3355, UnitID = "target", Caster = "player"},		-- 冰冻陷阱
@@ -71,7 +73,7 @@ local list = {
 		{AuraID = 190515, UnitID = "player"},	-- 适者生存
 		{AuraID = 193534, UnitID = "player"},	-- 稳固集中
 		{AuraID = 194594, UnitID = "player", Flash = true},	-- 荷枪实弹
-		{AuraID = 118455, UnitID = "pet"},		-- 野兽瞬劈斩
+		{AuraID = 118455, UnitID = "pet", Flash = true}, -- 野兽瞬劈斩
 		{AuraID = 207094, UnitID = "pet"},		-- 泰坦之雷
 		{AuraID = 217200, UnitID = "pet"},		-- 凶猛狂暴
 		{AuraID = 272790, UnitID = "pet"},		-- 狂暴
@@ -92,7 +94,6 @@ local list = {
 		{AuraID = 235712, UnitID = "player", Combat = true},	-- 回转稳定，橙手
 		{AuraID = 264735, UnitID = "player"},	-- 优胜劣汰
 		{AuraID = 281195, UnitID = "player"},	-- 优胜劣汰
-		{AuraID = 260242, UnitID = "player"},	-- 弹无虚发
 		{AuraID = 260395, UnitID = "player"},	-- 致命射击
 		{AuraID = 269502, UnitID = "player"},	-- 致命射击
 		{AuraID = 281036, UnitID = "player"},	-- 凶暴野兽
@@ -105,15 +106,15 @@ local list = {
 		{AuraID = 288613, UnitID = "player"},	-- 百发百中
 		{AuraID = 274447, UnitID = "player"},	-- 千里之目
 		{AuraID = 260243, UnitID = "player"},	-- 乱射
-		{AuraID = 342076, UnitID = "player"},	-- 行云流水
 		{AuraID = 336892, UnitID = "player", Flash = true},	-- 无懈警戒之秘
 		{AuraID = 388035, UnitID = "player"},	-- 巨熊之韧
 		{AuraID = 392956, UnitID = "player"},	-- 巨熊之韧
 		{AuraID = 388045, UnitID = "player", Flash = true},	-- 警戒
-		{AuraID = 388998, UnitID = "player"},	-- 碎刀片
+		{AuraID = 378770, UnitID = "player", Flash = true},	-- 夺命打击
 
-		{AuraID = 363760, UnitID = "player", Flash = true},	-- 杀戮狂乱，兽王4T
-		{AuraID = 363805, UnitID = "player", Flash = true},	-- 疯狂掷弹兵，生存2T
+		{AuraID = 394366, UnitID = "player"},	-- 密迹寻踪，射击2T
+		{AuraID = 394384, UnitID = "player", Flash = true},	-- 集中瞄准，射击4T
+		{AuraID = 394388, UnitID = "player", Flash = true},	-- 狂野弹幕，生存4T
 	},
 	["Focus Aura"] = {		-- 焦点光环组
 		{AuraID = 3355, UnitID = "focus", Caster = "player"},	-- 冰冻陷阱

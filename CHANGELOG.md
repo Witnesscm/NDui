@@ -1,21 +1,18 @@
 # NDui
 
-## [7.3.0](https://github.com/siweia/NDui/tree/7.3.0) (2023-2-9)
+## [7.5.0](https://github.com/siweia/NDui/tree/7.5.0) (2023-3-5)
 
-- Update auras.
-- Fix anchor for minimap mail and order icon.
+- Update auras and nameplate filter.
 - Update default skins.
-- Add skin for addon KrowiAchievementFilter.
-- Update skins for Skada and Details.
-- Remove old patch compatibility.
-- Fix world map scaling.
-- Update junk selling, ignore uncollected transmog trash.
-- Update actionbar presets.
-- Fix anchor for petbar hotkeys.
-- Update quest button ignore list.
-- Fix empty string for guide promote on unit popup menu.
-- Update bag search and filter.
-- Notification for dragon glyphs collection.
-- Update infobar time module.
-- Fix tooltip statusbar visibility.
-- Holding key shift+click on guild news can copy guild member's name.
+- Update actionbar cooldown.
+- Update nameplate bolster consolidate.
+- Update minimap border visibility.
+- Update anchor for minimap elements.
+- Hide raiderIO guild best info if ndui's enabled.
+- Update default settings.
+- Fix LFG listing error.
+- Update broken spell black list.
+- Fix action button error when on vehicle.
+- Show default expbar if actionbar disabled.
+- Increase minimap volume control frame level.
+- Update nameplate target indicator.

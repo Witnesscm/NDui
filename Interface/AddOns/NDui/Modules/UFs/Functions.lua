@@ -1021,6 +1021,9 @@ function UF.CustomFilter(element, unit, data)
 	local name, debuffType, isStealable, spellID, nameplateShowAll = data.name, data.dispelName, data.isStealable, data.spellId, data.nameplateShowAll
 
 	if style == "nameplate" or style == "boss" or style == "arena" then
+		if name and spellID == 209859 then -- pass all bolster
+			return true
+		end
 		if element.__owner.plateType == "NameOnly" then
 			return UF.NameplateWhite[spellID]
 		elseif UF.NameplateBlack[spellID] then

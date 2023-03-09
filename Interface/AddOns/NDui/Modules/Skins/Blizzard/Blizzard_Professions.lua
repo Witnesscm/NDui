@@ -159,8 +159,6 @@ local function reskinOutputButtons(self)
 
 		local itemContainer = child.ItemContainer
 		if itemContainer then
-			itemContainer.Item.IconBorder:SetAlpha(0)
-
 			local itemBG = itemContainer.bg
 			if itemBG then
 				if itemContainer.CritFrame:IsShown() then
@@ -252,12 +250,17 @@ C.themes["Blizzard_Professions"] = function()
 	B.Reskin(specPage.ApplyButton)
 	if DB.isNewPatch then
 		B.Reskin(specPage.ViewTreeButton)
+		B.Reskin(specPage.BackToFullTreeButton)
+		B.Reskin(specPage.ViewPreviewButton)
 		B.Reskin(specPage.BackToPreviewButton)
 	end
+	specPage.TopDivider:Hide()
+	specPage.VerticalDivider:Hide()
+	specPage.PanelFooter:Hide()
 	B.StripTextures(specPage.TreeView)
 	specPage.TreeView.Background:Hide()
-	B.CreateBDFrame(specPage.TreeView, .25):SetInside()
-	specPage.PanelFooter:Hide()
+	local treeViewBG = B.CreateBDFrame(specPage.TreeView, .25)
+	treeViewBG:SetInside()
 
 	hooksecurefunc(specPage, "UpdateTabs", function(self)
 		for tab in self.tabsPool:EnumerateActive() do
@@ -270,12 +273,13 @@ C.themes["Blizzard_Professions"] = function()
 
 	local view = specPage.DetailedView
 	B.StripTextures(view)
-	B.CreateBDFrame(view, .25):SetInside()
+	local detailedViewBG = B.CreateBDFrame(view, .25)
+	detailedViewBG:SetInside()
 	B.Reskin(view.UnlockPathButton)
 	B.Reskin(view.SpendPointsButton)
 	B.ReskinIcon(view.UnspentPoints.Icon)
 
-	-- todo: specPage.TreePreview, isNewPatch
+	treeViewBG:SetPoint("BOTTOMRIGHT", detailedViewBG, "BOTTOMLEFT", -3, 0)
 
 	-- log
 	reskinOutputLog(craftingPage.CraftingOutputLog)
@@ -334,6 +338,8 @@ C.themes["Blizzard_Professions"] = function()
 
 	local orderView = frame.OrdersPage.OrderView
 	B.Reskin(orderView.CreateButton)
+	B.Reskin(orderView.StartRecraftButton)
+	B.Reskin(orderView.StopRecraftButton)
 	B.Reskin(orderView.CompleteOrderButton)
 	reskinOutputLog(orderView.CraftingOutputLog)
 	reskinRankBar(orderView.RankBar)
@@ -342,7 +348,9 @@ C.themes["Blizzard_Professions"] = function()
 	B.StripTextures(orderInfo)
 	B.CreateBDFrame(orderInfo, .25):SetInside()
 	B.Reskin(orderInfo.BackButton)
-	B.Reskin(orderInfo.IgnoreButton)
+	if not DB.isNewPatch then
+		B.Reskin(orderInfo.IgnoreButton)
+	end
 	B.Reskin(orderInfo.StartOrderButton)
 	B.Reskin(orderInfo.DeclineOrderButton)
 	B.Reskin(orderInfo.ReleaseOrderButton)

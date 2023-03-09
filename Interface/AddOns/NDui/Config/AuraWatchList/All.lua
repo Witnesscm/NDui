@@ -52,11 +52,14 @@ local list = {
 		{AuraID = 20572, UnitID = "player"},	-- 血性狂怒 兽人
 		{AuraID = 33697, UnitID = "player"},	-- 血性狂怒 兽人
 		{AuraID = 292463, UnitID = "player"},	-- 帕库之拥 赞达拉
-		-- 隐形药水
-		{AuraID = 307195, UnitID = "player"},	-- 隐秘精魂药水
+		-- 药水
+		{AuraID = 371124, UnitID = "player"},	-- 沉静西风药水
+		{AuraID = 371024, UnitID = "player"},	-- 元素强能药水
 		-- 10.0 饰品
 		{AuraID = 381476, UnitID = "player"},	-- 爆发烈焰
 		{AuraID = 383941, UnitID = "player"},	-- 崩坏之力
+		{AuraID = 383781, UnitID = "player"},	-- 谜题盒
+		{AuraID = 214980, UnitID = "player", Flash = true},	-- 切割漩涡
 		-- 盟约，TODO: 部分已被整合进天赋，待整理
 		{AuraID = 331937, UnitID = "player", Flash = true},	-- 沉醉
 		{AuraID = 354053, UnitID = "player", Flash = true, Text = L["Crit"]}, -- 致命缺陷，暴击
@@ -186,9 +189,14 @@ local list = {
 		{AuraID = 153692, UnitID = "player", Flash = true},	-- 死疽沥青，影月墓地
 		{AuraID = 400474, UnitID = "player"},	-- 能量湍流，阻击战
 		{AuraID = 397911, UnitID = "player"},	-- 毁灭之触，青龙寺
-		{AuraID = 397798, UnitID = "player"},	-- 腐蚀漩涡，青龙寺
+		{AuraID = 397797, UnitID = "player"},	-- 腐蚀漩涡，青龙寺
+		{AuraID = 397799, UnitID = "player", Flash = true},	-- 腐蚀漩涡，青龙寺
 		{AuraID = 381862, UnitID = "player", Flash = true},	-- 地狱火之核，红玉
 		{AuraID = 376760, UnitID = "player"},	-- 狂风之力，学院
+		{AuraID = 391977, UnitID = "player"},	-- 涌动超载，学院
+		{AuraID = 386181, UnitID = "player"},	-- 法力炸弹，学院
+		{AuraID = 197996, UnitID = "player"},	-- 烙印，英灵殿
+		{AuraID = 203963, UnitID = "player"},	-- 风暴之眼，英灵殿
 	},
 	["Warning"] = { -- 目标重要光环组
 		{AuraID = 355596, UnitID = "target", Flash = true},	-- 橙弓，哀痛箭
@@ -203,6 +211,15 @@ local list = {
 		{AuraID = 372988, UnitID = "target", Value = true},	-- 寒冰壁垒，红玉
 		{AuraID = 391050, UnitID = "target", Value = true},	-- 暴风骤雨之盾，红玉
 		{AuraID = 384686, UnitID = "target", Flash = true},	-- 能量涌动，狙击战
+		{AuraID = 376781, UnitID = "target", Flash = true},	-- 火焰风暴，学院
+		{AuraID = 113315, UnitID = "target", Stack = 7, Flash = true},	-- 强烈，青龙寺
+		{AuraID = 113309, UnitID = "target", Flash = true},	-- 至高能量，青龙寺
+		{AuraID = 117665, UnitID = "target", Flash = true},	-- 凡尘之羁，青龙寺
+		-- 团本
+		{AuraID = 374779, UnitID = "target", Flash = true},	-- 原始屏障，恐怖图腾
+		{AuraID = 382530, UnitID = "target", Value = true},	-- 涌动，莱萨杰斯
+		{AuraID = 388691, UnitID = "target", Value = true},	-- 风暴喷涌，莱萨杰斯
+		{AuraID = 396734, UnitID = "target", Flash = true},	-- 风暴遮罩，莱萨杰斯
 		-- PVP
 		{AuraID = 498, UnitID = "target"},		-- 圣佑术
 		{AuraID = 642, UnitID = "target"},		-- 圣盾术

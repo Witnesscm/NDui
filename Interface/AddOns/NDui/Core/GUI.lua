@@ -403,14 +403,14 @@ G.DefaultSettings = {
 		ColoredFocus = false,
 		FocusColor = {r=1, g=.8, b=0},
 		CastbarGlow = true,
-		CastTarget = false,
+		CastTarget = true,
 		Interruptor = true,
 		FriendPlate = false,
 		EnemyThru = false,
 		FriendlyThru = false,
 		BlockDBM = true,
 		DispellMode = 1,
-		UnitTargeted = false,
+		UnitTargeted = true,
 		ColorByDot = false,
 		DotColor = {r=1, g=.5, b=.2},
 		DotSpells = {},
@@ -1114,7 +1114,7 @@ local NewTag = "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0|t"
 G.HealthValues = {DISABLE, L["ShowHealthDefault"], L["ShowHealthCurMax"], L["ShowHealthCurrent"], L["ShowHealthPercent"], L["ShowHealthLoss"], L["ShowHealthLossPercent"]}
 
 G.TabList = {
-	NewTag..L["Actionbar"],
+	L["Actionbar"],
 	L["Bags"],
 	L["Unitframes"],
 	L["RaidFrame"],
@@ -1133,7 +1133,7 @@ G.TabList = {
 
 G.OptionList = { -- type, key, value, name, horizon, doubleline
 	[1] = {
-		{1, "Actionbar", "Enable", NewTag..HeaderTag..L["Enable Actionbar"], nil, setupActionBar},
+		{1, "Actionbar", "Enable", HeaderTag..L["Enable Actionbar"], nil, setupActionBar},
 		{},--blank
 		{1, "Actionbar", "MicroMenu", L["Micromenu"], nil, nil, nil, L["MicroMenuTip"]},
 		{1, "Actionbar", "ShowStance", L["ShowStanceBar"], true, setupStanceBar},
@@ -1285,7 +1285,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{},--blank
 		{1, "Nameplate", "CVarOnlyNames", L["CVarOnlyNames"], nil, nil, updatePlateCVars, L["CVarOnlyNamesTip"]},
 		{1, "Nameplate", "CVarShowNPCs", L["CVarShowNPCs"].."*", nil, nil, updatePlateCVars, L["CVarShowNPCsTip"]},
-		{3, "Nameplate", "VerticalSpacing", L["NP VerticalSpacing"].."*", true, {.5, 1.5, .1}, updatePlateCVars},
+		{3, "Nameplate", "VerticalSpacing", L["NP VerticalSpacing"].."*", true, {.5, 2.5, .1}, updatePlateCVars},
 		{3, "Nameplate", "MinScale", L["Nameplate MinScale"].."*", nil, {.5, 1, .1}, updatePlateCVars},
 		{3, "Nameplate", "MinAlpha", L["Nameplate MinAlpha"].."*", true, {.3, 1, .1}, updatePlateCVars},
 	},
