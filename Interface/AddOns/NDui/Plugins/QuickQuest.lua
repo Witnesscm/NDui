@@ -41,6 +41,7 @@ local function setupCheckButton()
 	mono:SetPoint("TOPLEFT", 0, 25)
 	mono:SetSize(26, 26)
 	B.ReskinCheck(mono)
+	mono:SetFrameLevel(999)
 	mono.text = B.CreateFS(mono, 14, L["AutoQuest"], false, "LEFT", 25, 0)
 	mono:SetChecked(C.db["Misc"]["AutoQuest"])
 	mono:SetScript("OnClick", function(self)
@@ -448,6 +449,7 @@ local function AttemptAutoComplete(event)
 			elseif popUpType == "COMPLETE" then
 				ShowQuestComplete(questID)
 			end
+			RemoveAutoQuestPopUp(questID) -- needs review, taint?
 		end
 	end
 
