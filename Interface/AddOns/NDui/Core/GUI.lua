@@ -6,6 +6,7 @@ local unpack, strfind, gsub = unpack, strfind, gsub
 local tonumber, pairs, ipairs, next, type, tinsert = tonumber, pairs, ipairs, next, type, tinsert
 local cr, cg, cb = DB.r, DB.g, DB.b
 local guiTab, guiPage, f = {}, {}
+local GetAddOnMetadata = GetAddOnMetadata or C_AddOns.GetAddOnMetadata -- isPatch10_1
 
 -- Default Settings
 G.DefaultSettings = {
@@ -124,6 +125,7 @@ G.DefaultSettings = {
 		FilterEquipSet = false,
 		FilterAnima = false,
 		FilterRelic = false,
+		FilterStone = true,
 	},
 	Auras = {
 		Reminder = true,
@@ -592,7 +594,6 @@ G.AccountSettings = {
 	RaidDebuffsBlack = {},
 	NameplateWhite = {},
 	NameplateBlack = {},
-	FeastTime = 0,
 	IgnoreNotes = {},
 }
 
