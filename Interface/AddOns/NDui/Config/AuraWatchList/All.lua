@@ -208,6 +208,14 @@ local list = {
 		{AuraID = 386181, UnitID = "player"},	-- 法力炸弹，学院
 		{AuraID = 197996, UnitID = "player"},	-- 烙印，英灵殿
 		{AuraID = 203963, UnitID = "player"},	-- 风暴之眼，英灵殿
+		-- S2
+		{AuraID = 369337, UnitID = "player", Flash = true},	-- 困难地形，奥达曼
+		{AuraID = 269838, UnitID = "player", Flash = true},	-- 邪恶污染，孢林
+		{AuraID = 273226, UnitID = "player"},	-- 腐烂孢子，孢林
+		{AuraID = 259718, UnitID = "player"},	-- 颠覆，孢林
+		{AuraID = 274507, UnitID = "player"},	-- 湿滑肥皂，自由镇
+
+		{AuraID = 405340, UnitID = "player", Flash = true},	-- 虚无之拥，萨卡雷斯
 	},
 	["Warning"] = { -- 目标重要光环组
 		{AuraID = 355596, UnitID = "target", Flash = true},	-- 橙弓，哀痛箭
@@ -227,12 +235,19 @@ local list = {
 		{AuraID = 113315, UnitID = "target", Stack = 7, Flash = true},	-- 强烈，青龙寺
 		{AuraID = 113309, UnitID = "target", Flash = true},	-- 至高能量，青龙寺
 		{AuraID = 117665, UnitID = "target", Flash = true},	-- 凡尘之羁，青龙寺
+		-- S2
+		{AuraID = 257458, UnitID = "target"},	-- 自由镇尾王易伤
+		{AuraID = 372600, UnitID = "target"},	-- 严酷，奥达曼
+		{AuraID = 369725, UnitID = "target"},	-- 震颤，奥达曼
 		-- 团本
 		{AuraID = 374779, UnitID = "target", Flash = true},	-- 原始屏障，恐怖图腾
 		{AuraID = 382530, UnitID = "target", Value = true},	-- 涌动，莱萨杰斯
 		{AuraID = 388691, UnitID = "target", Value = true},	-- 风暴喷涌，莱萨杰斯
 		{AuraID = 396734, UnitID = "target", Flash = true},	-- 风暴遮罩，莱萨杰斯
 		{AuraID = 388431, UnitID = "target", Flash = true},	-- 毁灭帷幕，莱萨杰斯
+
+		{AuraID = 403284, UnitID = "target", Flash = true},	-- 虚空增效，萨卡雷斯
+		{AuraID = 410654, UnitID = "target", Flash = true},	-- 虚空增效，萨卡雷斯
 		-- PVP
 		{AuraID = 498, UnitID = "target"},		-- 圣佑术
 		{AuraID = 642, UnitID = "target"},		-- 圣盾术
