@@ -142,6 +142,8 @@ function module:SkinChat()
 
 	self.oldAlpha = self.oldAlpha or 0 -- fix blizz error
 
+	self:HookScript("OnMouseWheel", module.QuickMouseScroll)
+
 	self.styled = true
 end
 
@@ -250,7 +252,6 @@ function module:QuickMouseScroll(dir)
 		end
 	end
 end
-hooksecurefunc("FloatingChatFrame_OnMouseScroll", module.QuickMouseScroll) -- TODO: broken in 10.1
 
 -- Autoinvite by whisper
 local whisperList = {}

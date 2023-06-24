@@ -1,16 +1,13 @@
 # NDui
 
-## [7.8.1](https://github.com/siweia/NDui/tree/7.8.1) (2023-5-7)
+## [7.10.0](https://github.com/siweia/NDui/tree/7.10.0) (2023-6-24)
 
+- Updates for 10.1.5.
 - Update default skins.
-- Add skin for ManuscriptsJournal.
-- Update skin for KrowiAchievementFilter.
-- Fix error with addon PGFinder.
-- Update buff frame with private auras.
-- Update auras
-- Update stancebar.
-- Enable default addon collector if minimap recycle bin disabled.
-- Update oUF.
-- Remove explosives relevant features.
-- Remove compatibility code for 10.0.7.
-- Fix role counts in groups filter.
+- Update buff frame timer.
+- Update auras and nameplate filter.
+- Fix chat frame quick scrolling.
+- New tier charges on infobar.
+- Update friends infobar game icon texture.
+- Updates for PremadeGroupsFilter 4.0.
+- Option to modify nameplate raid target indicator.

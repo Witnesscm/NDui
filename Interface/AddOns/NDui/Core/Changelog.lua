@@ -5,17 +5,16 @@ if DB.Client ~= "zhCN" then return end
 local strsplit, pairs = string.split, pairs
 
 local hx = {
+	"更新支持10.1.5；",
 	"界面美化更新；",
-	"添加ManuscriptsJournal的美化；",
-	"更新KrowiAchievementFilter的美化；",
-	"修复使用PGFinder插件时预创建增强的报错；",
-	"buff框体更新，添加私有光环分组；",
-	"技能监控更新；",
-	"姿态动作条调整；",
-	"自带的小地图回收功能仅在关闭小地图回收站时生效；",
-	"oUF更新；",
-	"移除易爆相关功能；",
-	"移除对10.1以前版本的兼容。",
+	"Buff框体调整；",
+	"更新部分技能监控；",
+	"更新姓名板法术过滤；",
+	"修正聊天框体的快速滚动；",
+	"套装转化的货币监控更新；",
+	"信息条好友信息模块更新；",
+	"更新适配PGF4.0；",
+	"添加选项以调整姓名板团队标记位置。",
 }
 
 local f

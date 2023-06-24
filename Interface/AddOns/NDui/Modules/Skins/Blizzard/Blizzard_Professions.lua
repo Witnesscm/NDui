@@ -3,19 +3,29 @@ local B, C, L, DB = unpack(ns)
 
 local flyoutFrame
 
+local function reskinFlyoutButton(button)
+	if not button.styled then
+		button.bg = B.ReskinIcon(button.icon)
+		button:SetNormalTexture(0)
+		button:SetPushedTexture(0)
+		button:GetHighlightTexture():SetColorTexture(1, 1, 1, .25)
+		B.ReskinIconBorder(button.IconBorder, true)
+
+		button.styled = true
+	end
+end
+
 local function refreshFlyoutButtons(self)
 	for i = 1, self.ScrollTarget:GetNumChildren() do
 		local button = select(i, self.ScrollTarget:GetChildren())
-		if button.IconBorder and not button.styled then
-			button.bg = B.ReskinIcon(button.icon)
-			button:SetNormalTexture(0)
-			button:SetPushedTexture(0)
-			button:GetHighlightTexture():SetColorTexture(1, 1, 1, .25)
-			B.ReskinIconBorder(button.IconBorder, true)
-
-			button.styled = true
+		if button.IconBorder then
+			reskinFlyoutButton(button)
 		end
 	end
+end
+
+local function resetFrameStrata(frame)
+	frame.bg:SetFrameStrata("LOW")
 end
 
 local function reskinProfessionsFlyout(_, parent)
@@ -27,10 +37,12 @@ local function reskinProfessionsFlyout(_, parent)
 			flyoutFrame = child
 
 			B.StripTextures(flyoutFrame)
-			B.SetBD(flyoutFrame):SetFrameLevel(2)
+			flyoutFrame.bg = B.SetBD(flyoutFrame)
+			hooksecurefunc(flyoutFrame, "SetParent", resetFrameStrata)
 			B.ReskinCheck(flyoutFrame.HideUnownedCheckBox)
 			flyoutFrame.HideUnownedCheckBox.bg:SetInside(nil, 6, 6)
 			B.ReskinTrimScroll(flyoutFrame.ScrollBar)
+			reskinFlyoutButton(flyoutFrame.UndoItem)
 			hooksecurefunc(flyoutFrame.ScrollBox, "Update", refreshFlyoutButtons)
 
 			break
@@ -38,22 +50,26 @@ local function reskinProfessionsFlyout(_, parent)
 	end
 end
 
+local function resetButton(button)
+	button:SetNormalTexture(0)
+	button:SetPushedTexture(0)
+	local hl = button:GetHighlightTexture()
+	hl:SetColorTexture(1, 1, 1, .25)
+	hl:SetInside(button.bg)
+end
+
 local function reskinSlotButton(button)
 	if button and not button.styled then
 		button.bg = B.ReskinIcon(button.Icon)
 		B.ReskinIconBorder(button.IconBorder, true)
-		local hl = button:GetHighlightTexture()
-		hl:SetColorTexture(1, 1, 1, .25)
-		hl:SetInside(button.bg)
 		if button.SlotBackground then
 			button.SlotBackground:Hide()
 		end
+		resetButton(button)
+		hooksecurefunc(button, "Update", resetButton)
 
 		button.styled = true
 	end
-
-	button:SetNormalTexture(0)
-	button:SetPushedTexture(0)
 end
 
 local function reskinArrowInput(box)
@@ -364,4 +380,15 @@ C.themes["Blizzard_Professions"] = function()
 
 	B.StripTextures(orderDetails.FulfillmentForm.NoteEditBox)
 	B.CreateBDFrame(orderDetails.FulfillmentForm.NoteEditBox, .25)
+
+	-- InspectRecipeFrame
+	local inspectFrame = InspectRecipeFrame
+	if inspectFrame then
+		B.ReskinPortraitFrame(inspectFrame)
+
+		local form = inspectFrame.SchematicForm
+		reskinProfessionForm(form)
+		form.MinimalBackground:SetAlpha(0)
+		B.CreateBDFrame(form, .25):SetInside()
+	end
 end
