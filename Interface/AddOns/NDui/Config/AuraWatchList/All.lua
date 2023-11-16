@@ -75,6 +75,8 @@ local list = {
 		{AuraID = 408835, UnitID = "player", Flash = true},	-- 沸腾怒火
 		{AuraID = 408770, UnitID = "player", Stack = 55},	-- 灵感闪光
 		{AuraID = 410232, UnitID = "player", Value = true},	-- 孢子披风
+		{AuraID = 423611, UnitID = "player"},	-- 灵魂燃烧
+		{AuraID = 429262, UnitID = "player"},	-- 水润滋养
 		-- 盟约，TODO: 部分已被整合进天赋，待整理
 		{AuraID = 331937, UnitID = "player", Flash = true},	-- 沉醉
 		{AuraID = 354053, UnitID = "player", Flash = true, Text = L["Crit"]}, -- 致命缺陷，暴击
@@ -232,6 +234,8 @@ local list = {
 		{AuraID = 414496, UnitID = "player", Flash = true},	-- 时间线加速，永恒黎明
 		{AuraID = 406543, UnitID = "player", Flash = true},	-- 窃取时间，永恒黎明
 		{AuraID = 410908, UnitID = "player", Flash = true},	-- 永恒新星，永恒黎明
+		{AuraID = 401420, UnitID = "player", Flash = true},	-- 永恒新星，黄沙重踏
+		{AuraID = 404141, UnitID = "player", Flash = true},	-- 永恒新星，时光凋零
 		{AuraID = 407406, UnitID = "player", Flash = true},	-- 腐蚀，萨卡雷斯
 
 		{AuraID = 405340, UnitID = "player", Flash = true},	-- 虚无之拥，萨卡雷斯

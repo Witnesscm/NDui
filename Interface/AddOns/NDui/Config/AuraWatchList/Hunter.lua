@@ -31,7 +31,7 @@ local list = {
 		{AuraID = 260242, UnitID = "player"},	-- 弹无虚发
 		{AuraID = 342076, UnitID = "player"},	-- 行云流水
 		{AuraID = 389020, UnitID = "player"},	-- 子弹风暴
-		{AuraID = 424571, UnitID = "player", Disabled = not DB.isNewPatch},	-- 风行者的指引
+		{AuraID = 424571, UnitID = "player"},	-- 风行者的指引
 	},
 	["Target Aura"] = {		-- 目标光环组
 		{AuraID = 3355, UnitID = "target", Caster = "player"},		-- 冰冻陷阱
@@ -77,7 +77,7 @@ local list = {
 		{AuraID = 190515, UnitID = "player"},	-- 适者生存
 		{AuraID = 193534, UnitID = "player"},	-- 稳固集中
 		{AuraID = 194594, UnitID = "player", Flash = true},	-- 荷枪实弹
-		{AuraID = 118455, UnitID = "pet", Flash = true}, -- 野兽瞬劈斩
+		{AuraID = 118455, UnitID = "pet", Flash = true, Text = "AoE"}, -- 野兽瞬劈斩
 		{AuraID = 207094, UnitID = "pet"},		-- 泰坦之雷
 		{AuraID = 217200, UnitID = "pet"},		-- 凶猛狂暴
 		{AuraID = 272790, UnitID = "pet"},		-- 狂暴
@@ -114,6 +114,7 @@ local list = {
 		{AuraID = 388035, UnitID = "player"},	-- 巨熊之韧
 		{AuraID = 392956, UnitID = "player"},	-- 巨熊之韧
 		{AuraID = 407405, UnitID = "player"},	-- 弦之韵律
+		{AuraID = 359844, UnitID = "player"},	-- 荒野的召唤
 		{AuraID = 388045, UnitID = "player", Flash = true},	-- 警戒
 		{AuraID = 378770, UnitID = "player", Flash = true},	-- 夺命打击
 		{AuraID = 378747, UnitID = "player", Flash = true},	-- 凶暴兽群
