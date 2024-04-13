@@ -100,7 +100,9 @@ local questlist = {
 	{name = L["Timewarped"], id = 64710, texture = 1467047},	-- Legion
 	{name = GetSpellInfo(388945), id = 70866},	-- SoDK
 	{name = "", id = 70906, itemID = 200468},	-- Grand hunt
-	{name = "", id = 70893, itemID = 200095},	-- Community feast
+	{name = "", id = 70893, questName = true},	-- Community feast
+	{name = "", id = 79226, questName = true},	-- The big dig
+	{name = "", id = 78319, questName = true},	-- The superbloom
 }
 
 local lesserVisions = {58151, 58155, 58156, 58167, 58168}
@@ -327,7 +329,7 @@ info.onEnter = function(self)
 		if v.name and IsQuestFlaggedCompleted(v.id) then
 			if v.name == L["Timewarped"] and isTimeWalker and checkTexture(v.texture) or v.name ~= L["Timewarped"] then
 				addTitle(QUESTS_LABEL)
-				GameTooltip:AddDoubleLine(v.itemID and GetItemLink(v.itemID) or v.name, QUEST_COMPLETE, 1,1,1, 1,0,0)
+				GameTooltip:AddDoubleLine((v.itemID and GetItemLink(v.itemID)) or (v.questName and QuestUtils_GetQuestName(v.id)) or v.name, QUEST_COMPLETE, 1,1,1, 1,0,0)
 			end
 		end
 	end
@@ -454,6 +456,10 @@ info.onMouseUp = function(_, btn)
 			B:TogglePanel(WeeklyRewardsFrame)
 		else
 			ToggleFrame(WeeklyRewardsFrame)
+		end
+		local dialog = WeeklyRewardExpirationWarningDialog
+		if dialog and dialog:IsShown() then
+			dialog:Hide()
 		end
 	else
 		--if InCombatLockdown() then UIErrorsFrame:AddMessage(DB.InfoColor..ERR_NOT_IN_COMBAT) return end -- fix by LibShowUIPanel

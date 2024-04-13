@@ -1038,11 +1038,9 @@ do
 
 	-- WowTrimScrollBar
 	function B:ReskinTrimScroll()
-		local minimal = self:GetWidth() < 10
-
 		B.StripTextures(self)
-		reskinScrollArrow(self.Back, "up", minimal)
-		reskinScrollArrow(self.Forward, "down", minimal)
+		reskinScrollArrow(self.Back, "up", true)
+		reskinScrollArrow(self.Forward, "down", true)
 		if self.Track then
 			self.Track:DisableDrawLayer("ARTWORK")
 		end
@@ -1053,10 +1051,6 @@ do
 			thumb:DisableDrawLayer("BACKGROUND")
 			thumb.bg = B.CreateBDFrame(thumb, .25)
 			thumb.bg:SetBackdropColor(cr, cg, cb, .25)
-			if not minimal then
-				thumb.bg:SetPoint("TOPLEFT", 4, -1)
-				thumb.bg:SetPoint("BOTTOMRIGHT", -4, 1)
-			end
 
 			thumb:HookScript("OnEnter", Thumb_OnEnter)
 			thumb:HookScript("OnLeave", Thumb_OnLeave)
@@ -1719,7 +1713,7 @@ do
 
 	local function cancelPicker()
 		local swatch = ColorPickerFrame.__swatch
-		local r, g, b = ColorPicker_GetPreviousValues()
+		local r, g, b = ColorPickerFrame:GetPreviousValues()
 		swatch.tex:SetVertexColor(r, g, b)
 		swatch.color.r, swatch.color.g, swatch.color.b = r, g, b
 	end
@@ -1727,10 +1721,10 @@ do
 	local function openColorPicker(self)
 		local r, g, b = self.color.r, self.color.g, self.color.b
 		ColorPickerFrame.__swatch = self
-		ColorPickerFrame.func = updatePicker
+		ColorPickerFrame.swatchFunc = updatePicker
 		ColorPickerFrame.previousValues = {r = r, g = g, b = b}
 		ColorPickerFrame.cancelFunc = cancelPicker
-		ColorPickerFrame:SetColorRGB(r, g, b)
+		ColorPickerFrame.Content.ColorPicker:SetColorRGB(r, g, b)
 		ColorPickerFrame:Show()
 	end
 
@@ -1745,7 +1739,7 @@ do
 	local function resetColorPicker(swatch)
 		local defaultColor = swatch.__default
 		if defaultColor then
-			ColorPickerFrame:SetColorRGB(defaultColor.r, defaultColor.g, defaultColor.b)
+			ColorPickerFrame.Content.ColorPicker:SetColorRGB(defaultColor.r, defaultColor.g, defaultColor.b)
 		end
 	end
 

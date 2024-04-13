@@ -221,6 +221,8 @@ C.themes["Blizzard_ProfessionsCustomerOrders"] = function()
 		reskinContainer(qualityDialog["Container"..i])
 	end
 
+	B.Reskin(frame.Form.OrderRecipientDisplay.SocialDropdownButton)
+
 	-- Orders
 	B.Reskin(frame.MyOrdersPage.RefreshButton)
 	frame.MyOrdersPage.RefreshButton.__bg:SetInside(nil, 3, 3)
@@ -232,4 +234,9 @@ C.themes["Blizzard_ProfessionsCustomerOrders"] = function()
 	hooksecurefunc(frame.MyOrdersPage.OrderList.ScrollBox, "Update", function(self)
 		self:ForEachFrame(reskinOrderIcon)
 	end)
+
+	-- Item flyout
+	if OpenProfessionsItemFlyout then
+		hooksecurefunc("OpenProfessionsItemFlyout", B.ReskinProfessionsFlyout)
+	end
 end

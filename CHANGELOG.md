@@ -1,7 +1,5 @@
 # NDui
 
-## [7.14.2](https://github.com/siweia/NDui/tree/7.14.2) (2023-11-16)
+## [7.18.3](https://github.com/siweia/NDui/tree/7.18.3) (2024-4-13)
 
-- Update actionbar.
-- Update libs.
-- Several skins updated.
+- Update skins for 10.2.7.
