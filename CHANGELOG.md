@@ -1,5 +1,10 @@
 # NDui
 
-## [7.18.3](https://github.com/siweia/NDui/tree/7.18.3) (2024-4-13)
+## [7.19.1](https://github.com/siweia/NDui/tree/7.19.1) (2024-5-8)
 
-- Update skins for 10.2.7.
+- Fix skin for Krowi_AchievementFilter.
+- Update tier sets in tooltip.
+- Update infobar for cata players.
+- Update default skins.
+- Update aura and nameplate filter.
+- Update oUF.
