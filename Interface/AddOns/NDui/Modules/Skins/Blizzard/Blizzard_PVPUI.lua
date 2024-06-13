@@ -107,7 +107,11 @@ C.themes["Blizzard_PVPUI"] = function()
 	HonorFrame.Inset:Hide()
 	ReskinPvPFrame(HonorFrame)
 	B.Reskin(HonorFrame.QueueButton)
-	B.ReskinDropDown(HonorFrameTypeDropDown)
+	if DB.isWW then
+		B.ReskinDropDown(HonorFrameTypeDropdown)
+	else
+		B.ReskinDropDown(HonorFrameTypeDropDown)
+	end
 	B.ReskinTrimScroll(HonorFrame.SpecificScrollBar)
 
 	hooksecurefunc(HonorFrame.SpecificScrollBox, "Update", function(self)
@@ -201,7 +205,7 @@ C.themes["Blizzard_PVPUI"] = function()
 		if not rewardTexture and itemRewards then
 			local reward = itemRewards[1]
 			if reward then
-				_, _, rewardQuaility, _, _, _, _, _, _, rewardTexture = GetItemInfo(reward.id)
+				_, _, rewardQuaility, _, _, _, _, _, _, rewardTexture = C_Item.GetItemInfo(reward.id)
 			end
 		end
 

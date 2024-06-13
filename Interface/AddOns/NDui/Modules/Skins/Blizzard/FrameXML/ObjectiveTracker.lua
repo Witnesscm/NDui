@@ -28,6 +28,7 @@ local function reskinQuestIcon(button)
 end
 
 local function reskinQuestIcons(_, block)
+	reskinQuestIcon(block.ItemButton) -- isWW
 	reskinQuestIcon(block.itemButton)
 	reskinQuestIcon(block.groupFinderButton)
 
@@ -104,15 +105,21 @@ local function reskinTimerBar(_, _, line)
 end
 
 local function updateMinimizeButton(button, collapsed)
+	button = button.MinimizeButton or button -- isWW
 	button.__texture:DoCollapse(collapsed)
 end
 
-local function reskinMinimizeButton(button)
+local function reskinMinimizeButton(button, header)
 	B.ReskinCollapse(button)
 	button:GetNormalTexture():SetAlpha(0)
 	button:GetPushedTexture():SetAlpha(0)
 	button.__texture:DoCollapse(false)
-	hooksecurefunc(button, "SetCollapsed", updateMinimizeButton)
+	if button.SetCollapsed then
+		hooksecurefunc(button, "SetCollapsed", updateMinimizeButton)
+	end
+	if DB.isWW then
+		hooksecurefunc(header, "SetCollapsed", updateMinimizeButton)
+	end
 end
 
 local function GetMawBuffsAnchor(frame)
@@ -169,7 +176,100 @@ local function ReskinMawBuffsContainer(container)
 end
 
 tinsert(C.defaultThemes, function()
-	if IsAddOnLoaded("!KalielsTracker") then return end
+	if C_AddOns.IsAddOnLoaded("!KalielsTracker") then return end
+
+	-- Reskin Headers
+	local headers
+	if DB.isWW then
+		headers = {
+			ObjectiveTrackerFrame,
+			ScenarioObjectiveTracker,
+			UIWidgetObjectiveTracker,
+			CampaignQuestObjectiveTracker,	
+			QuestObjectiveTracker,
+			AdventureObjectiveTracker,
+			AchievementObjectiveTracker,
+			MonthlyActivitiesObjectiveTracker,
+			ProfessionsRecipeTracker,
+			BonusObjectiveTracker,
+			WorldQuestObjectiveTracker,
+		}
+		for _, frame in pairs(headers) do
+			reskinHeader(frame.Header)
+		end
+
+		-- Minimize Button
+		local mainMinimize = ObjectiveTrackerFrame.Header.MinimizeButton
+		reskinMinimizeButton(mainMinimize, ObjectiveTrackerFrame.Header)
+		mainMinimize.bg:SetBackdropBorderColor(1, .8, 0, .5)
+
+		-- Handle blocks
+		hooksecurefunc(ScenarioObjectiveTracker.StageBlock, "UpdateStageBlock", function(block)
+			block.NormalBG:SetTexture("")
+			if not block.bg then
+				block.bg = B.SetBD(block.GlowTexture, nil, 4, -2, -4, 2)
+			end
+		end)
+	else
+		headers = {
+			ObjectiveTrackerBlocksFrame.QuestHeader,
+			ObjectiveTrackerBlocksFrame.AchievementHeader,
+			ObjectiveTrackerBlocksFrame.ScenarioHeader,
+			ObjectiveTrackerBlocksFrame.CampaignQuestHeader,
+			ObjectiveTrackerBlocksFrame.ProfessionHeader,
+			BONUS_OBJECTIVE_TRACKER_MODULE.Header,
+			WORLD_QUEST_TRACKER_MODULE.Header,
+			MONTHLY_ACTIVITIES_TRACKER_MODULE.Header,
+			ADVENTURE_TRACKER_MODULE.Header,
+			ObjectiveTrackerFrame.BlocksFrame.UIWidgetsHeader,
+		}
+		for _, header in pairs(headers) do
+			reskinHeader(header)
+		end
+
+		-- Minimize Button
+		local mainMinimize = ObjectiveTrackerFrame.HeaderMenu.MinimizeButton
+		reskinMinimizeButton(mainMinimize)
+		mainMinimize.bg:SetBackdropBorderColor(1, .8, 0, .5)
+	
+		for _, header in pairs(headers) do
+			local minimize = header.MinimizeButton
+			if minimize then
+				reskinMinimizeButton(minimize)
+			end
+		end
+	end
+
+	if DB.isWW then -- TODO
+		--[[
+		SCENARIO_TRACKER_MODULE = ScenarioObjectiveTracker
+		UI_WIDGET_TRACKER_MODULE = UIWidgetObjectiveTracker
+		CAMPAIGN_QUEST_TRACKER_MODULE = CampaignQuestObjectiveTracker
+		QUEST_TRACKER_MODULE = QuestObjectiveTracker
+		ADVENTURE_TRACKER_MODULE = AdventureObjectiveTracker
+		ACHIEVEMENT_TRACKER_MODULE = AchievementObjectiveTracker
+		MONTHLY_ACTIVITIES_TRACKER_MODULE = MonthlyActivitiesObjectiveTracker
+		PROFESSION_RECIPE_TRACKER_MODULE = ProfessionsRecipeTracker
+		BONUS_OBJECTIVE_TRACKER_MODULE = BonusObjectiveTracker
+		WORLD_QUEST_TRACKER_MODULE = WorldQuestObjectiveTracker
+		]]
+		local trackers = {
+			ScenarioObjectiveTracker,
+			UIWidgetObjectiveTracker,
+			CampaignQuestObjectiveTracker,	
+			QuestObjectiveTracker,
+			AdventureObjectiveTracker,
+			AchievementObjectiveTracker,
+			MonthlyActivitiesObjectiveTracker,
+			ProfessionsRecipeTracker,
+			BonusObjectiveTracker,
+			WorldQuestObjectiveTracker,
+		}
+		for _, tracker in pairs(trackers) do
+			hooksecurefunc(tracker, "AddBlock", reskinQuestIcons)
+		end
+		return
+	end
 
 	-- QuestIcons
 	hooksecurefunc(QUEST_TRACKER_MODULE, "SetBlockHeader", reskinQuestIcons)
@@ -272,33 +372,4 @@ tinsert(C.defaultThemes, function()
 
 	-- Maw buffs container
 	ReskinMawBuffsContainer(ScenarioBlocksFrame.MawBuffsBlock.Container)
-
-	-- Reskin Headers
-	local headers = {
-		ObjectiveTrackerBlocksFrame.QuestHeader,
-		ObjectiveTrackerBlocksFrame.AchievementHeader,
-		ObjectiveTrackerBlocksFrame.ScenarioHeader,
-		ObjectiveTrackerBlocksFrame.CampaignQuestHeader,
-		ObjectiveTrackerBlocksFrame.ProfessionHeader,
-		BONUS_OBJECTIVE_TRACKER_MODULE.Header,
-		WORLD_QUEST_TRACKER_MODULE.Header,
-		MONTHLY_ACTIVITIES_TRACKER_MODULE.Header,
-		ADVENTURE_TRACKER_MODULE.Header,
-		ObjectiveTrackerFrame.BlocksFrame.UIWidgetsHeader,
-	}
-	for _, header in pairs(headers) do
-		reskinHeader(header)
-	end
-
-	-- Minimize Button
-	local mainMinimize = ObjectiveTrackerFrame.HeaderMenu.MinimizeButton
-	reskinMinimizeButton(mainMinimize)
-	mainMinimize.bg:SetBackdropBorderColor(1, .8, 0, .5)
-
-	for _, header in pairs(headers) do
-		local minimize = header.MinimizeButton
-		if minimize then
-			reskinMinimizeButton(minimize)
-		end
-	end
 end)
