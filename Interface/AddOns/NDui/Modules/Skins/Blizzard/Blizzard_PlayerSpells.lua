@@ -125,6 +125,23 @@ C.themes["Blizzard_PlayerSpells"] = function()
 		end
 	end
 
+	local dialog = HeroTalentsSelectionDialog
+	if dialog then
+		B.StripTextures(dialog)
+		B.SetBD(dialog)
+		B.ReskinClose(dialog.CloseButton)
+
+		hooksecurefunc(dialog, "ShowDialog", function(self)
+			for specFrame in self.SpecContentFramePool:EnumerateActive() do
+				if not specFrame.styled then
+					B.Reskin(specFrame.ActivateButton)
+					B.Reskin(specFrame.ApplyChangesButton)
+					specFrame.styled = true
+				end
+			end
+		end)
+	end
+
 	local spellBook = PlayerSpellsFrame.SpellBookFrame
 	if spellBook then
 		spellBook.BookBGLeft:SetAlpha(.5)
