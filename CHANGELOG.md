@@ -1,6 +1,7 @@
 # NDui
 
-## [7.20.4](https://github.com/siweia/NDui/tree/7.20.4) (2024-6-15)
+## [7.21.1](https://github.com/siweia/NDui/tree/7.21.1) (2024-7-18)
 
-- More updates for 11.0.
-- Fix copypasta.
+- Update LAB.
+- Several skins fixed for newest patch.
+- Fix default actionbar preset.
