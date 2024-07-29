@@ -479,7 +479,7 @@ G.DefaultSettings = {
 		FontScale = 1,
 	},
 	Tooltip = {
-		CombatHide = false,
+		HideInCombat = 1,
 		CursorMode = 1,
 		ItemQuality = false,
 		TipAnchor = 4,
@@ -1132,12 +1132,12 @@ G.TabList = {
 	L["RaidFrame"],
 	L["Nameplate"],
 	L["PlayerPlate"],
-	NewTag..L["Auras"],
+	L["Auras"],
 	L["Raid Tools"],
 	L["ChatFrame"],
 	L["Maps"],
 	L["Skins"],
-	L["Tooltip"],
+	NewTag..L["Tooltip"],
 	L["Misc"],
 	L["UI Settings"],
 	L["Profile"],
@@ -1441,8 +1441,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 	[12] = {
 		{3, "Tooltip", "Scale", L["Tooltip Scale"].."*", nil, {.5, 1.5, .1}},
 		{4, "Tooltip", "TipAnchor", L["TipAnchor"].."*", true, {L["TOPLEFT"], L["TOPRIGHT"], L["BOTTOMLEFT"], L["BOTTOMRIGHT"]}, nil, L["TipAnchorTip"]},
-		{1, "Tooltip", "CombatHide", L["Hide Tooltip"].."*"},
-		{1, "Tooltip", "ItemQuality", L["ShowItemQuality"].."*"},
+		{4, "Tooltip", "HideInCombat", NewTag..L["HideInCombat"].."*", nil, {DISABLE, "ALT", "SHIFT", "CTRL", ALWAYS}, nil, L["HideInCombatTip"]},
 		{4, "Tooltip", "CursorMode", L["Follow Cursor"].."*", true, {DISABLE, L["LEFT"], L["TOP"], L["RIGHT"]}},
 		{1, "Tooltip", "HideTitle", L["Hide Title"].."*"},
 		{1, "Tooltip", "HideRank", L["Hide Rank"].."*", true},
@@ -1453,7 +1452,8 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Tooltip", "LFDRole", L["Group Roles"].."*"},
 		{1, "Tooltip", "TargetBy", L["Show TargetedBy"].."*", true},
 		{1, "Tooltip", "MythicScore", L["MDScore"].."*", nil, nil, nil, L["MDScoreTip"]},
-		{1, "Tooltip", "HideAllID", "|cffff0000"..L["HideAllID"], true},
+		{1, "Tooltip", "ItemQuality", L["ShowItemQuality"].."*", true},
+		{1, "Tooltip", "HideAllID", "|cffff0000"..L["HideAllID"]},
 		{},--blank
 		{1, "Tooltip", "AzeriteArmor", HeaderTag..L["Show AzeriteArmor"]},
 		{1, "Tooltip", "OnlyArmorIcons", L["Armor icons only"].."*", true},
@@ -1944,34 +1944,7 @@ function G:OnLogin()
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION)
 	end
 
-	if DB.isWW then
-		hooksecurefunc(GameMenuFrame, "InitButtons", function(self)
-			self:AddButton(L["NDui Console"], toggleGUI)
-		end)
-		return
-	end
-
-	local gui = CreateFrame("Button", "GameMenuFrameNDui", GameMenuFrame, "GameMenuButtonTemplate, BackdropTemplate")
-	gui:SetText(L["NDui Console"])
-	gui:SetPoint("TOP", GameMenuButtonAddons, "BOTTOM", 0, -21)
-
-	GameMenuFrame:HookScript("OnShow", function(self)
-		GameMenuButtonLogout:SetPoint("TOP", gui, "BOTTOM", 0, -21)
-		self:SetHeight(self:GetHeight() + gui:GetHeight() + 22)
+	hooksecurefunc(GameMenuFrame, "InitButtons", function(self)
+		self:AddButton(L["NDui Console"], toggleGUI)
 	end)
-
-	gui:SetScript("OnClick", toggleGUI)
-
-	if C.db["Skins"]["BlizzardSkins"] then
-		if DB.isWW then
-			gui:DisableDrawLayer("BACKGROUND")
-			gui.bg = B.CreateBDFrame(gui, 0, true)
-			local hl = gui:GetHighlightTexture()
-			hl:SetColorTexture(cr, cg, cb, .25)
-			hl:SetInside(gui.bg)
-			gui.bg:SetInside(nil, 3, 3)
-		else
-			B.Reskin(gui)
-		end
-	end
 end
