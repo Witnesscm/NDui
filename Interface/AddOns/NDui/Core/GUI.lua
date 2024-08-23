@@ -374,7 +374,7 @@ G.DefaultSettings = {
 		CustomUnits = {},
 		ShowPowerUnits = true,
 		PowerUnits = {},
-		VerticalSpacing = .7,
+		VerticalSpacing = 1.1,
 		ShowPlayerPlate = false,
 		PPWidth = 175,
 		PPBarHeight = 5,
@@ -1958,6 +1958,17 @@ function G:OnLogin()
 	end
 
 	hooksecurefunc(GameMenuFrame, "InitButtons", function(self)
-		self:AddButton(L["NDui Console"], toggleGUI)
+		self:AddButton("|T"..DB.chatLogo..":12:24|t |cff0080ffNDui|r", toggleGUI)
+
+		for button in self.buttonPool:EnumerateActive() do
+			if not button.resized then
+				button:SetNormalFontObject("GameFontHighlight")
+				button:SetHighlightFontObject("GameFontHighlight")
+				button:SetDisabledFontObject("GameFontDisable")
+				button:SetSize(160, 27)
+
+				button.resized = true
+			end
+		end
 	end)
 end
