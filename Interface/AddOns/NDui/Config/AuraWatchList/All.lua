@@ -211,6 +211,7 @@ local list = {
 		{AuraID = 408556, UnitID = "player", Flash = true},	-- 缠绕
 		{AuraID = 408805, UnitID = "player", Flash = true},	-- 失衡
 		{AuraID = 409492, UnitID = "player", Flash = true},	-- 痛苦呼号
+		{AuraID = 462661, UnitID = "player", Flash = true},	-- 彼岸之赐, TWW S1
 		-- 5人
 		{AuraID = 395035, UnitID = "player", Flash = true},	-- 粉碎灵魂，阻击战
 		{AuraID = 386881, UnitID = "player"},	-- 冰霜炸弹，碧蓝魔馆
@@ -281,6 +282,7 @@ local list = {
 		-- 大米
 		{AuraID = 226510, UnitID = "target"},	-- 血池回血
 		{AuraID = 343502, UnitID = "target"},	-- 鼓舞光环
+		{AuraID = 462704, UnitID = "target"},	-- 碎裂精华，TWW S1
 		-- 5人
 		{AuraID = 372988, UnitID = "target", Value = true},	-- 寒冰壁垒，红玉
 		{AuraID = 391050, UnitID = "target", Value = true},	-- 暴风骤雨之盾，红玉

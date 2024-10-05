@@ -132,6 +132,7 @@ G.DefaultSettings = {
 		FilterAnima = false,
 		FilterStone = false,
 		FilterAOE = true,
+		FilterLower = true,
 	},
 	Auras = {
 		Reminder = true,
@@ -139,7 +140,6 @@ G.DefaultSettings = {
 		VerticalTotems = true,
 		TotemSize = 32,
 		ClassAuras = true,
-		MMT29X4 = false,
 		BuffFrame = true,
 		HideBlizBuff = false,
 		ReverseBuff = false,
@@ -317,6 +317,17 @@ G.DefaultSettings = {
 		BossDebuffType = 3,
 		BossBuffPerRow = 6,
 		BossDebuffPerRow = 6,
+
+		PlayerAuraDirec = 3,
+		PlayerAuraOffset = 10,
+		TargetAuraDirec = 1,
+		TargetAuraOffset = 10,
+		ToTAuraDirec = 1,
+		ToTAuraOffset = 10,
+		PetAuraDirec = 1,
+		PetAuraOffset = 10,
+		FocusAuraDirec = 1,
+		FocusAuraOffset = 10,
 	},
 	Chat = {
 		Sticky = false,
@@ -943,13 +954,6 @@ local function toggleGCDTicker()
 	B:GetModule("UnitFrames"):ToggleGCDTicker()
 end
 
-local function toggleFocusCalculation()
-	local A = B:GetModule("Auras")
-	if A.ToggleFocusCalculation then
-		A:ToggleFocusCalculation()
-	end
-end
-
 local function updateUFTextScale()
 	B:GetModule("UnitFrames"):UpdateTextScale()
 end
@@ -1319,7 +1323,6 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Nameplate", "PPPowerText", L["PlayerPlate PowerText"].."*", nil, nil, togglePlatePower},
 		{3, "Nameplate", "PPFadeoutAlpha", L["PlayerPlate FadeoutAlpha"].."*", true, {0, .5, .05}, togglePlateVisibility},
 		{1, "Nameplate", "PPGCDTicker", L["PlayerPlate GCDTicker"].."*", nil, nil, toggleGCDTicker},
-		{1, "Auras", "MMT29X4", L["MMT29X4"].."*", true, nil, toggleFocusCalculation, L["MMT29X4Tip"]},
 		{},--blank
 		{3, "Nameplate", "PPWidth", L["Width"].."*", false, {100, 500, 1}, refreshNameplates},
 		{3, "Nameplate", "PPBarHeight", L["PlayerPlate CPHeight"].."*", true, {2, 15, 1}, refreshNameplates},
