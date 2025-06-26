@@ -1732,7 +1732,7 @@ function AssistedCombat:SetHighlightFrameShown(button, shown)
 end
 
 function AssistedCombat:GetSpellForHighlight(button)
-	if button._state_action then
+	if button._state_type == "action" and button._state_action then
 		local actionType, id, subType = GetActionInfo(button._state_action)
 		if actionType == "macro" then
 			if subType == "spell" then
@@ -1765,6 +1765,8 @@ function AssistedCombat:UpdateState()
 end
 
 local function UpdateAssistedCombat(self)
+	if self._state_type ~= "action" then return end
+
 	local action = self._state_action
 	if action and C_ActionBar.IsAssistedCombatAction(action) then
 		AssistedCombat.AssistantButtons[self] = true
