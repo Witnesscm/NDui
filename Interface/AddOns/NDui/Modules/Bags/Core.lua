@@ -849,7 +849,7 @@ function module:UpdateAllBags()
 end
 
 function module:OpenBags()
-	OpenAllBags(true)
+	self.Bags:Toggle(true)
 end
 
 function module:CloseBags()
@@ -955,9 +955,8 @@ function module:OnLogin()
 	end
 
 	local initBagType
-	function Backpack:OnBankOpened()
-		BankFrame:Show()
-
+	function Backpack:OnBankOpened(bankType)
+		BankFrame.BankPanel:SetBankType(bankType)
 		if not initBagType then
 			module:UpdateBagSize()
 			initBagType = true
@@ -1405,10 +1404,6 @@ function module:OnLogin()
 			end
 		end
 	end
-
-	-- Fixes
-	BankFrame.GetRight = function() return f.bank:GetRight() end
-	BankFrameItemButton_Update = B.Dummy
 
 	local passedSystems = {
 		["TutorialReagentBag"] = true,
