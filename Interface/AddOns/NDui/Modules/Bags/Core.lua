@@ -957,6 +957,7 @@ function module:OnLogin()
 	local initBagType
 	function Backpack:OnBankOpened()
 		BankFrame:Show()
+		BankFrame.BankPanel:Show()
 
 		if not initBagType then
 			module:UpdateBagSize()
@@ -965,6 +966,7 @@ function module:OnLogin()
 	end
 
 	function Backpack:OnBankClosed()
+		BankFrame.BankPanel:Hide()
 		self:GetContainer("Bank"):Hide()
 		self:GetContainer("Account"):Hide()
 	end
