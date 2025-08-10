@@ -965,7 +965,6 @@ function module:OnLogin()
 	end
 
 	function Backpack:OnBankClosed()
-		BankFrame.BankPanel:Hide()
 		self:GetContainer("Bank"):Hide()
 		self:GetContainer("Account"):Hide()
 	end
