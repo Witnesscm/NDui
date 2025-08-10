@@ -1409,9 +1409,6 @@ function module:OnLogin()
 	end
 
 	-- Fixes
-	BankFrame.GetRight = function() return f.bank:GetRight() end
-	BankFrameItemButton_Update = B.Dummy
-
 	local passedSystems = {
 		["TutorialReagentBag"] = true,
 	}
