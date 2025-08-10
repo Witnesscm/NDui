@@ -956,7 +956,6 @@ function module:OnLogin()
 
 	local initBagType
 	function Backpack:OnBankOpened(bankType)
-		BankFrame.BankPanel:Show()
 		BankFrame.BankPanel:SetBankType(bankType)
 		if not initBagType then
 			module:UpdateBagSize()
