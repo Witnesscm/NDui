@@ -45,6 +45,7 @@ tinsert(C.defaultThemes, function()
 				local toggle = child.Toggle
 				if toggle then
 					B.ReskinCollapse(toggle)
+					toggle.__texture:DoCollapse(true)
 					toggle:GetPushedTexture():SetAlpha(0)
 					toggle.bg:SetPoint("TOPLEFT", 2, -4)
 				end
