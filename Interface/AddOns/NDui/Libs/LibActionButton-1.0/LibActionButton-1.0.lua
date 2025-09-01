@@ -2312,6 +2312,50 @@ function UpdateSpellHighlight(self)
 	end
 end
 
+function UpdateAssistedCombatRotationFrame(self)
+	if not (C_ActionBar and C_ActionBar.IsAssistedCombatAction) then return end
+	local show = self._state_type == "action" and C_ActionBar.IsAssistedCombatAction(self._state_action)
+	local assistedCombatRotationFrame = self.AssistedCombatRotationFrame
+	-- create frame if needed
+	if show and not assistedCombatRotationFrame then
+		assistedCombatRotationFrame = CreateFrame("Frame", nil, self, "ActionBarButtonAssistedCombatRotationTemplate")
+		assistedCombatRotationFrame.UpdateGlow = function() end
+		self.AssistedCombatRotationFrame = assistedCombatRotationFrame
+	end
+
+	if assistedCombatRotationFrame then
+		assistedCombatRotationFrame:UpdateState()
+	end
+end
+
+function UpdatedAssistedHighlightFrame(self)
+	if not AssistedCombatManager then return end
+	local spellID = AssistedCombatManager.lastNextCastSpellID
+	local shown = self.config.actionButtonUI and self.config.assistedHighlight and spellID and self:GetSpellId() == spellID
+
+	local highlightFrame = self.AssistedCombatHighlightFrame
+	if shown then
+		if not highlightFrame then
+			highlightFrame = CreateFrame("FRAME", nil, self, "ActionBarButtonAssistedCombatHighlightTemplate")
+			self.AssistedCombatHighlightFrame = highlightFrame
+			highlightFrame:SetPoint("CENTER")
+			-- increase frame level so that its above other overlays (eg. proc highlight)
+			highlightFrame:SetFrameLevel(self:GetFrameLevel() + 10)
+			-- have to do this to get a single frame of the flipbook instead of the whole texture
+			highlightFrame.Flipbook.Anim:Play()
+			highlightFrame.Flipbook.Anim:Stop()
+		end
+		highlightFrame:Show()
+		if AssistedCombatManager.affectingCombat then
+			highlightFrame.Flipbook.Anim:Play()
+		else
+			highlightFrame.Flipbook.Anim:Stop()
+		end
+	elseif highlightFrame then
+		highlightFrame:Hide()
+	end
+end
+
 -- Hook UpdateFlyout so we can use the blizzy templates
 if ActionButton_UpdateFlyout then
 	hooksecurefunc("ActionButton_UpdateFlyout", function(self, ...)
