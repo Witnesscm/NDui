@@ -133,6 +133,7 @@ G.DefaultSettings = {
 		FilterAOE = true,
 		FilterLower = true,
 		FilterLegacy = false,
+		FilterDecor = true,
 	},
 	Auras = {
 		Reminder = true,
@@ -432,7 +433,6 @@ G.DefaultSettings = {
 		FriendPlate = false,
 		EnemyThru = false,
 		FriendlyThru = false,
-		BlockDBM = true,
 		DispellMode = 1,
 		UnitTargeted = true,
 		ColorByDot = false,
@@ -614,7 +614,6 @@ G.AccountSettings = {
 	CornerSpells = {},
 	CustomTex = "",
 	MajorSpells = {},
-	SmoothAmount = .25,
 	AutoRecycle = true,
 	IgnoredButtons = "",
 	RaidBuffsWhite = {},
@@ -627,6 +626,7 @@ G.AccountSettings = {
 	AvadaIndex = {},
 	AvadaProfile = {},
 	AddOnProfiler = false,
+	SmoothBars = true,
 }
 
 -- Initial settings
@@ -1013,10 +1013,6 @@ local function toggleSwingBars()
 	B:GetModule("UnitFrames"):ToggleSwingBars()
 end
 
-local function updateSmoothingAmount()
-	B:SetSmoothingAmount(NDuiADB["SmoothAmount"])
-end
-
 local function updateAllHeaders()
 	B:GetModule("UnitFrames"):UpdateAllHeaders()
 end
@@ -1044,6 +1040,10 @@ end
 
 local function updateRaidAurasOptions()
 	B:GetModule("UnitFrames"):RaidAuras_UpdateOptions()
+end
+
+local function refreseExecuteRatio()
+	B:GetModule("UnitFrames"):UpdateExcutedCurve()
 end
 
 local function updateMinimapScale()
@@ -1124,6 +1124,15 @@ end
 local function updateSkinAlpha()
 	for _, frame in pairs(C.frames) do
 		frame:SetBackdropColor(0, 0, 0, C.db["Skins"]["SkinAlpha"])
+	end
+end
+
+local function toggleSmooth()
+	local UF = B:GetModule("UnitFrames")
+	if UF then
+		for bar in pairs(UF.smoothbars) do
+			UF:SmoothBar(bar)
+		end
 	end
 end
 
@@ -1300,7 +1309,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{3, "Nameplate", "AuraSize", L["Auras Size"].."*", true, {18, 60, 1}, refreshNameplates},
 		{},--blank
 		{4, "Nameplate", "TargetIndicator", L["TargetIndicator"].."*", nil, {DISABLE, L["TopArrow"], L["RightArrow"], L["TargetGlow"], L["TopNGlow"], L["RightNGlow"]}, refreshNameplates},
-		{3, "Nameplate", "ExecuteRatio", L["ExecuteRatio"].."*", true, {0, 90, 1}, nil, L["ExecuteRatioTip"]},
+		{3, "Nameplate", "ExecuteRatio", L["ExecuteRatio"].."*", true, {0, 90, 1}, refreseExecuteRatio, L["ExecuteRatioTip"]},
 		{1, "Nameplate", "FriendlyCC", L["Friendly CC"].."*"},
 		{1, "Nameplate", "HostileCC", L["Hostile CC"].."*", true},
 		{1, "Nameplate", "FriendlyThru", "|cffff0000"..L["Friendly ClickThru"].."*", nil, nil, updateClickThru, L["PlateClickThruTip"]},
@@ -1311,7 +1320,6 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Nameplate", "Interruptor", L["ShowInterruptor"].."*", true},
 		{1, "Nameplate", "QuestIndicator", L["QuestIndicator"]},
 		{1, "Nameplate", "AKSProgress", L["MythicProgress"], true},
-		{1, "Nameplate", "BlockDBM", L["BlockDBM"], nil, nil, nil, L["BlockDBMTip"]},
 		{},--blank
 		{1, "Nameplate", "ColoredTarget", HeaderTag..L["ColoredTarget"].."*", nil, nil, nil, L["ColoredTargetTip"]},
 		{1, "Nameplate", "ColoredFocus", HeaderTag..L["ColoredFocus"].."*", true, nil, nil, L["ColoredFocusTip"]},
@@ -1537,7 +1545,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{4, "ACCOUNT", "TexStyle", L["Texture Style"], false, {}},
 		{4, "ACCOUNT", "NumberFormat", L["Numberize"], true, {L["Number Type1"], L["Number Type2"], L["Number Type3"]}},
 		{2, "ACCOUNT", "CustomTex", L["CustomTex"], nil, nil, nil, L["CustomTexTip"]},
-		{3, "ACCOUNT", "SmoothAmount", L["SmoothAmount"].."*", true, {.1, 1, .05}, updateSmoothingAmount, L["SmoothAmountTip"]},
+		{1, "ACCOUNT", "SmoothBars", L["SmoothBars"], true, nil, toggleSmooth, L["SmoothBarsTip"]},
 	},
 	[15] = {
 	},

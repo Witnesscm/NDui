@@ -44,6 +44,7 @@ function UF:UpdatePlateCVars()
 end
 
 function UF:UpdateClickableSize()
+	if DB.isNewPatch then return end -- removed? needs review
 	if InCombatLockdown() then return end
 
 	local uiScale = NDuiADB["UIScale"]
@@ -55,10 +56,16 @@ function UF:UpdateClickableSize()
 end
 
 function UF:UpdatePlateClickThru()
+	if DB.isNewPatch then return end -- removed? needs review
 	if InCombatLockdown() then return end
 
 	C_NamePlate_SetNamePlateEnemyClickThrough(C.db["Nameplate"]["EnemyThru"])
 	C_NamePlate_SetNamePlateFriendlyClickThrough(C.db["Nameplate"]["FriendlyThru"])
+end
+
+function UF:UpdatePlateSize()
+	if InCombatLockdown() then return end
+	UF.NameplateDriver:SetSize(C.db["Nameplate"]["PlateWidth"], C.db["Nameplate"]["PlateHeight"])
 end
 
 function UF:SetupCVars()
@@ -76,30 +83,11 @@ function UF:SetupCVars()
 
 	SetCVar("nameplateShowSelf", 0)
 	SetCVar("nameplateResourceOnTarget", 0)
-	UF:UpdateClickableSize()
-	hooksecurefunc(NamePlateDriverFrame, "UpdateNamePlateOptions", UF.UpdateClickableSize)
+	UF:UpdatePlateSize()
+	hooksecurefunc(NamePlateDriverFrame, "UpdateNamePlateSize", UF.UpdatePlateSize)
 	UF:UpdatePlateClickThru()
 	-- fix blizz friendly plate visibility
 	SetCVar("nameplatePlayerMaxDistance", 60)
-end
-
-function UF:BlockAddons()
-	if not C.db["Nameplate"]["BlockDBM"] then return end
-	if not DBM or not DBM.Nameplate then return end
-
-	if DBM.Options then
-		DBM.Options.DontShowNameplateIcons = true
-		DBM.Options.DontShowNameplateIconsCD = true
-		DBM.Options.DontShowNameplateIconsCast = true
-	end
-
-	local function showAurasForDBM(_, _, _, spellID)
-		if not tonumber(spellID) then return end
-		if not C.WhiteList[spellID] then
-			C.WhiteList[spellID] = true
-		end
-	end
-	hooksecurefunc(DBM.Nameplate, "Show", showAurasForDBM)
 end
 
 -- Elements
@@ -179,6 +167,16 @@ function UF:CheckThreatStatus(unit)
 end
 
 -- Update unit color
+local executedCurve = C_CurveUtil.CreateColorCurve()
+executedCurve:SetType(Enum.LuaCurveType.Step)
+
+function UF:UpdateExcutedCurve()
+	local executeRatio = C.db["Nameplate"]["ExecuteRatio"]
+	executedCurve:ClearPoints()
+	executedCurve:AddPoint(executeRatio/100, CreateColor(1, 1, 1))
+	executedCurve:AddPoint(0, CreateColor(1, 0, 0))
+end
+
 function UF:UpdateColor(_, unit)
 	if not unit or self.unit ~= unit then return end
 
@@ -188,15 +186,15 @@ function UF:UpdateColor(_, unit)
 	local isCustomUnit = UF.CustomUnits[name] or UF.CustomUnits[npcID]
 	local isPlayer = self.isPlayer
 	local isFriendly = self.isFriendly
-	local isOffTank, status = UF:CheckThreatStatus(unit)
+	--local isOffTank, status = UF:CheckThreatStatus(unit)
+	local status = UnitThreatSituation("player", unit)
 	local customColor = C.db["Nameplate"]["CustomColor"]
 	local secureColor = C.db["Nameplate"]["SecureColor"]
 	local transColor = C.db["Nameplate"]["TransColor"]
 	local insecureColor = C.db["Nameplate"]["InsecureColor"]
 	local revertThreat = C.db["Nameplate"]["DPSRevertThreat"]
 	local offTankColor = C.db["Nameplate"]["OffTankColor"]
-	local executeRatio = C.db["Nameplate"]["ExecuteRatio"]
-	local healthPerc = UnitHealth(unit) / (UnitHealthMax(unit) + .0001) * 100
+	local healthPerc = UnitHealthPercent(unit, true, executedCurve)
 	local targetColor = C.db["Nameplate"]["TargetColor"]
 	local focusColor = C.db["Nameplate"]["FocusColor"]
 	local dotColor = C.db["Nameplate"]["DotColor"]
@@ -264,11 +262,7 @@ function UF:UpdateColor(_, unit)
 		end
 	end
 
-	if executeRatio > 0 and healthPerc <= executeRatio then
-		self.nameText:SetTextColor(1, 0, 0)
-	else
-		self.nameText:SetTextColor(1, 1, 1)
-	end
+	self.nameText:SetTextColor(healthPerc:GetRGB())
 end
 
 function UF:UpdateThreatColor(_, unit)
@@ -669,6 +663,7 @@ function UF:UpdateSpellInterruptor(...)
 end
 
 function UF:SpellInterruptor(self)
+	if DB.isNewPatch then return end
 	if not self.Castbar then return end
 	self:RegisterCombatEvent("SPELL_INTERRUPT", UF.UpdateSpellInterruptor)
 end
@@ -693,15 +688,14 @@ function UF:CreatePlates()
 	self.mystyle = "nameplate"
 	self:SetSize(C.db["Nameplate"]["PlateWidth"], C.db["Nameplate"]["PlateHeight"])
 	self:SetPoint("CENTER")
-	self:SetScale(NDuiADB["UIScale"])
+	--self:SetScale(NDuiADB["UIScale"])
 
 	local health = CreateFrame("StatusBar", nil, self)
 	health:SetAllPoints()
 	health:SetStatusBarTexture(DB.normTex)
+	UF:SmoothBar(health)
 	self.backdrop = B.SetBD(health)
 	self.backdrop.__shadow = nil
-	B:SmoothBar(health)
-
 	self.Health = health
 	self.Health.UpdateColor = UF.UpdateColor
 
@@ -725,7 +719,7 @@ function UF:CreatePlates()
 	self.powerText = B.CreateFS(self, 22)
 	self.powerText:ClearAllPoints()
 	self.powerText:SetPoint("TOP", self.Castbar, "BOTTOM", 0, -4)
-	self:Tag(self.powerText, "[nppp]")
+	self:Tag(self.powerText, "[perpp]")
 
 	local title = B.CreateFS(self, C.db["Nameplate"]["NameOnlyTitleSize"])
 	title:ClearAllPoints()
@@ -820,7 +814,7 @@ function UF:UpdateNameplateSize()
 		self:Tag(self.nameText, UF.PlateNameTags[nameType])
 		self.__tagIndex = nameType
 
-		self:SetSize(plateWidth, plateHeight)
+		UF:UpdatePlateSize()
 		B.SetFontSize(self.tarName, nameTextSize+4)
 		self.Castbar.Icon:SetSize(iconSize, iconSize)
 		self.Castbar.glowFrame:SetSize(iconSize+8, iconSize+8)
@@ -1005,7 +999,9 @@ function UF:OnUnitTargetChanged()
 			local memberTarget = member.."target"
 			if not UnitIsDeadOrGhost(member) and UnitExists(memberTarget) then
 				local unitGUID = UnitGUID(memberTarget)
-				targetedList[unitGUID] = (targetedList[unitGUID] or 0) + 1
+				if not issecretvalue(unitGUID) then
+					targetedList[unitGUID] = (targetedList[unitGUID] or 0) + 1
+				end
 			end
 		end
 	end
@@ -1034,48 +1030,58 @@ function UF:RefreshPlateByEvents()
 	end
 end
 
-function UF:PostUpdatePlates(event, unit)
+local function onTargetChanged(self, event, unit)
 	if not self then return end
 
-	if event == "NAME_PLATE_UNIT_ADDED" then
-		self.unitName = UnitName(unit)
-		self.unitGUID = UnitGUID(unit)
-		self.isPlayer = UnitIsPlayer(unit)
-		self.npcID = B.GetNPCID(self.unitGUID)
-		self.widgetsOnly = UnitNameplateShowsWidgetsOnly(unit)
+	UF.UpdateUnitPower(self)
+	UF.UpdateTargetChange(self)
+	UF.UpdateQuestUnit(self, event, unit)
+	UF.UpdateUnitClassify(self, unit)
+	UF.UpdateDungeonProgress(self, unit)
+	UF:UpdateTargetClassPower()
 
-		local blizzPlate = self:GetParent().UnitFrame
-		if blizzPlate then
-			self.widgetContainer = blizzPlate.WidgetContainer
-			if self.widgetContainer then
-				--self.widgetContainer:SetParent(self)
-				self.widgetContainer:SetScale(1/NDuiADB["UIScale"])
-			end
+	self.tarName:SetShown(C.ShowTargetNPCs[self.npcID])
+end
 
-			self.softTargetFrame = blizzPlate.SoftTargetFrame
-			if self.softTargetFrame then
-				--self.softTargetFrame:SetParent(self)
-				self.softTargetFrame:SetScale(1/NDuiADB["UIScale"])
-			end
+function UF:OnNameplateAdded(event, unit)
+	if not self then return end
+
+	local name = UnitName(unit)
+	self.unitName = not issecretvalue(name) and name or nil
+	local guid = UnitGUID(unit)
+	self.unitGUID = not issecretvalue(guid) and guid or nil
+	self.isPlayer = UnitIsPlayer(unit)
+	self.npcID = B.GetNPCID(self.unitGUID)
+	self.widgetsOnly = UnitNameplateShowsWidgetsOnly(unit)
+
+	local blizzPlate = self:GetParent().UnitFrame
+	if blizzPlate then
+		self.widgetContainer = blizzPlate.WidgetContainer
+		if self.widgetContainer then
+			--self.widgetContainer:SetParent(self)
+			self.widgetContainer:SetScale(1/NDuiADB["UIScale"])
 		end
 
-		UF.RefreshPlateType(self, unit)
-	elseif event == "NAME_PLATE_UNIT_REMOVED" then
-		self.npcID = nil
-		self.tarBy:SetText("")
-		self.tarByTex:Hide()
+		self.softTargetFrame = blizzPlate.SoftTargetFrame
+		if self.softTargetFrame then
+			--self.softTargetFrame:SetParent(self)
+			self.softTargetFrame:SetScale(1/NDuiADB["UIScale"])
+		end
 	end
 
-	if event ~= "NAME_PLATE_UNIT_REMOVED" then
-		UF.UpdateUnitPower(self)
-		UF.UpdateTargetChange(self)
-		UF.UpdateQuestUnit(self, event, unit)
-		UF.UpdateUnitClassify(self, unit)
-		UF.UpdateDungeonProgress(self, unit)
-		UF:UpdateTargetClassPower()
+	UF.RefreshPlateType(self, unit)
+	onTargetChanged(self, event, unit)
+end
 
-		self.tarName:SetShown(C.ShowTargetNPCs[self.npcID])
-	end
+function UF:OnNameplateRemoved(event, unit)
+	if not self then return end
+	self.npcID = nil
+	self.tarBy:SetText("")
+	self.tarByTex:Hide()
+end
+
+function UF:OnTargetChanged(event, unit)
+	onTargetChanged(self, event, unit)
 end
 
 -- Player Nameplate
@@ -1148,11 +1154,12 @@ function UF:CreatePlayerPlate()
 	self:SetSize(C.db["Nameplate"]["PPWidth"], healthHeight + powerHeight + C.mult)
 
 	UF:CreateHealthBar(self)
+	self.Health.bg:SetVertexColor(0, 0, 0, .7)
 	UF:CreatePowerBar(self)
 	UF:CreatePrediction(self)
 	UF:CreateClassPower(self)
 	UF:StaggerBar(self)
-	UF:AvadaKedavra(self)
+	--UF:AvadaKedavra(self)
 
 	local textFrame = CreateFrame("Frame", nil, self.Power)
 	textFrame:SetAllPoints()

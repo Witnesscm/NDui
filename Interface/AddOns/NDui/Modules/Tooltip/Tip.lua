@@ -15,7 +15,7 @@ local UnitIsConnected, UnitIsDeadOrGhost, UnitIsAFK, UnitIsDND, UnitReaction = U
 local InCombatLockdown, IsShiftKeyDown = InCombatLockdown, IsShiftKeyDown
 local GetCreatureDifficultyColor, UnitCreatureType, UnitClassification = GetCreatureDifficultyColor, UnitCreatureType, UnitClassification
 local UnitIsWildBattlePet, UnitIsBattlePetCompanion, UnitBattlePetLevel = UnitIsWildBattlePet, UnitIsBattlePetCompanion, UnitBattlePetLevel
-local UnitIsPlayer, UnitName, UnitPVPName, UnitClass, UnitRace, UnitLevel = UnitIsPlayer, UnitName, UnitPVPName, UnitClass, UnitRace, UnitLevel
+local UnitIsPlayer, UnitName, UnitPVPName, UnitRace, UnitLevel = UnitIsPlayer, UnitName, UnitPVPName, UnitRace, UnitLevel
 local GetRaidTargetIndex, UnitGroupRolesAssigned, GetGuildInfo, IsInGuild = GetRaidTargetIndex, UnitGroupRolesAssigned, GetGuildInfo, IsInGuild
 local C_PetBattles_GetNumAuras, C_PetBattles_GetAuraInfo = C_PetBattles.GetNumAuras, C_PetBattles.GetAuraInfo
 local C_ChallengeMode_GetDungeonScoreRarityColor = C_ChallengeMode.GetDungeonScoreRarityColor
@@ -34,7 +34,7 @@ local specPrefix = "|cffFFCC00"..SPECIALIZATION..": "..DB.InfoColor
 
 function TT:GetUnit()
 	local data = self:GetTooltipData()
-	local guid = data and data.guid
+	local guid = data and not issecretvalue(data.guid) and data.guid
 	local unit = guid and UnitTokenFromGUID(guid)
 	return unit, guid
 end
@@ -57,6 +57,8 @@ function TT:UpdateFactionLine(lineData)
 	local unitCreature = unit and UnitCreatureType(unit)
 
 	local linetext = lineData.leftText
+	if issecretvalue(linetext) then return end
+
 	if linetext == PVP then
 		return true
 	elseif FACTION_COLORS[linetext] then
@@ -84,6 +86,7 @@ function TT:GetLevelLine()
 end
 
 function TT:GetTarget(unit)
+	if issecretvalue(UnitIsUnit(unit, "player")) then return "" end
 	if UnitIsUnit(unit, "player") then
 		return format("|cffff0000%s|r", ">"..strupper(YOU).."<")
 	else
@@ -311,10 +314,14 @@ function TT:RefreshStatusBar(value)
 	local unit = self.guid and UnitTokenFromGUID(self.guid)
 	local unitHealthMax = unit and UnitHealthMax(unit)
 	if unitHealthMax and unitHealthMax ~= 0 then
-		self.text:SetText(B.Numb(value*unitHealthMax).." | "..B.Numb(unitHealthMax))
+		if not DB.isNewPatch then -- secret value
+			self.text:SetText(B.Numb(value*unitHealthMax).." | "..B.Numb(unitHealthMax))
+		end
 		self:SetStatusBarColor(B.UnitColor(unit))
 	else
-		self.text:SetFormattedText("%d%%", value*100)
+		if not DB.isNewPatch then -- secret value
+			self.text:SetFormattedText("%d%%", value*100)
+		end
 	end
 end
 
@@ -477,7 +484,7 @@ function TT:FixRecipeItemNameWidth()
 	local name = self:GetName()
 	for i = 1, self:NumLines() do
 		local line = _G[name.."TextLeft"..i]
-		if line and line:GetHeight() > 40 then
+		if line and not issecretvalue(line:GetWidth()) and line:GetHeight() > 40 then
 			line:SetWidth(line:GetWidth() + 2)
 		end
 	end
@@ -503,8 +510,8 @@ end
 function TT:OnLogin()
 	GameTooltip:HookScript("OnTooltipCleared", TT.OnTooltipCleared)
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, TT.OnTooltipSetUnit)
-	hooksecurefunc(GameTooltip.StatusBar, "SetValue", TT.RefreshStatusBar)
-	TooltipDataProcessor.AddLinePreCall(Enum.TooltipDataLineType.None, TT.UpdateFactionLine)
+	--hooksecurefunc(GameTooltip.StatusBar, "SetValue", TT.RefreshStatusBar)
+	--TooltipDataProcessor.AddLinePreCall(Enum.TooltipDataLineType.None, TT.UpdateFactionLine)
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, TT.FixRecipeItemNameWidth)
 
 	hooksecurefunc("GameTooltip_ShowStatusBar", TT.GameTooltip_ShowStatusBar)

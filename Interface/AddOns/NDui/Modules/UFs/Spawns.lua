@@ -205,12 +205,12 @@ end
 
 -- Spawns
 local function GetPartyVisibility()
-	local visibility = "[group:party,nogroup:raid] show;hide"
+	local visibility = "custom [group:party,nogroup:raid]show;hide"
 	if C.db["UFs"]["SmartRaid"] then
-		visibility = "[@raid6,noexists,group] show;hide"
+		visibility = "custom [@raid6,noexists,group]show;hide"
 	end
 	if C.db["UFs"]["ShowSolo"] then
-		visibility = "[nogroup] show;"..visibility
+		visibility = "custom [nogroup]show;"..visibility
 	end
 	return visibility
 end
@@ -219,15 +219,15 @@ local function GetRaidVisibility()
 	local visibility
 	if C.db["UFs"]["PartyFrame"] then
 		if C.db["UFs"]["SmartRaid"] then
-			visibility = "[@raid6,exists] show;hide"
+			visibility = "custom [@raid6,exists]show;hide"
 		else
-			visibility = "[group:raid] show;hide"
+			visibility = "custom [group:raid]show;hide"
 		end
 	else
 		if C.db["UFs"]["ShowSolo"] then
-			visibility = "show"
+			visibility = "custom show"
 		else
-			visibility = "[group] show;hide"
+			visibility = "custom [group]show;hide"
 		end
 	end
 	return visibility
@@ -237,21 +237,21 @@ local function GetPartyPetVisibility()
 	local visibility
 	if C.db["UFs"]["PartyPetVsby"] == 1 then
 		if C.db["UFs"]["SmartRaid"] then
-			visibility = "[@raid6,noexists,group] show;hide"
+			visibility = "custom [@raid6,noexists,group]show;hide"
 		else
-			visibility = "[group:party,nogroup:raid] show;hide"
+			visibility = "custom [group:party,nogroup:raid]show;hide"
 		end
 	elseif C.db["UFs"]["PartyPetVsby"] == 2 then
 		if C.db["UFs"]["SmartRaid"] then
-			visibility = "[@raid6,exists] show;hide"
+			visibility = "custom [@raid6,exists]show;hide"
 		else
-			visibility = "[group:raid] show;hide"
+			visibility = "custom [group:raid]show;hide"
 		end
 	elseif C.db["UFs"]["PartyPetVsby"] == 3 then
-		visibility = "[group] show;hide"
+		visibility = "custom [group]show;hide"
 	end
 	if C.db["UFs"]["ShowSolo"] then
-		visibility = "[nogroup] show;"..visibility
+		visibility = "custom [nogroup]show;"..visibility
 	end
 	return visibility
 end
@@ -261,14 +261,18 @@ function UF:UpdateAllHeaders()
 
 	for _, header in pairs(UF.headers) do
 		if header.groupType == "party" then
-			RegisterStateDriver(header, "visibility", GetPartyVisibility())
+			--RegisterStateDriver(header, "visibility", GetPartyVisibility())
+			header:SetVisibility(GetPartyVisibility())
 		elseif header.groupType == "pet" then
-			RegisterStateDriver(header, "visibility", GetPartyPetVisibility())
+			--RegisterStateDriver(header, "visibility", GetPartyPetVisibility())
+			header:SetVisibility(GetPartyPetVisibility())
 		elseif header.groupType == "raid" then
 			if header.__disabled then
-				RegisterStateDriver(header, "visibility", "hide")
+				--RegisterStateDriver(header, "visibility", "hide")
+				header:SetVisibility("custom hide")
 			else
-				RegisterStateDriver(header, "visibility", GetRaidVisibility())
+				--RegisterStateDriver(header, "visibility", GetRaidVisibility())
+				header:SetVisibility(GetRaidVisibility())
 			end
 		end
 	end
@@ -312,8 +316,14 @@ UF.RaidDirections = {
 
 function UF:OnLogin()
 	if C.db["Nameplate"]["Enable"] then
+		oUF:RegisterStyle("Nameplates", UF.CreatePlates)
+		oUF:SetActiveStyle("Nameplates")
+		UF.NameplateDriver = oUF:SpawnNamePlates("oUF_NPs")
+		UF.NameplateDriver:SetTargetCallback(UF.OnTargetChanged)
+		UF.NameplateDriver:SetAddedCallback(UF.OnNameplateAdded)
+		UF.NameplateDriver:SetRemovedCallback(UF.OnNameplateRemoved)
+
 		UF:SetupCVars()
-		UF:BlockAddons()
 		UF:CreateUnitTable()
 		UF:CreatePowerUnitTable()
 		UF:UpdateGroupRoles()
@@ -321,10 +331,7 @@ function UF:OnLogin()
 		UF:RefreshPlateByEvents()
 		UF:RefreshMajorSpells()
 		UF:RefreshNameplateFilters()
-
-		oUF:RegisterStyle("Nameplates", UF.CreatePlates)
-		oUF:SetActiveStyle("Nameplates")
-		oUF:SpawnNamePlates("oUF_NPs", UF.PostUpdatePlates)
+		UF:UpdateExcutedCurve()
 	end
 
 	do -- a playerplate-like PlayerFrame
@@ -446,7 +453,7 @@ function UF:OnLogin()
 			oUF:SetActiveStyle("Party")
 
 			local function CreatePartyHeader(name, width, height)
-				local group = oUF:SpawnHeader(name, nil, nil,
+				local group = oUF:SpawnHeader(name, nil,
 				"showPlayer", true,
 				"showSolo", true,
 				"showParty", true,
@@ -473,7 +480,8 @@ function UF:OnLogin()
 					party = CreatePartyHeader("oUF_Party", partyWidth, partyFrameHeight)
 					party.groupType = "party"
 					tinsert(UF.headers, party)
-					RegisterStateDriver(party, "visibility", GetPartyVisibility())
+					--RegisterStateDriver(party, "visibility", GetPartyVisibility())
+					party:SetVisibility(GetPartyVisibility())
 					partyMover = B.Mover(party, L["PartyFrame"], "PartyFrame", {"LEFT", UIParent, 350, 0})
 				end
 
@@ -500,7 +508,7 @@ function UF:OnLogin()
 				oUF:SetActiveStyle("PartyPet")
 
 				local function CreatePetGroup(name, width, height)
-					local group = oUF:SpawnHeader(name, "SecureGroupPetHeaderTemplate", nil,
+					local group = oUF:SpawnHeader(name, "SecureGroupPetHeaderTemplate",
 					"showPlayer", true,
 					"showSolo", true,
 					"showParty", true,
@@ -525,7 +533,8 @@ function UF:OnLogin()
 						partyPet = CreatePetGroup("oUF_PartyPet", petWidth, petFrameHeight)
 						partyPet.groupType = "pet"
 						tinsert(UF.headers, partyPet)
-						RegisterStateDriver(partyPet, "visibility", GetPartyPetVisibility())
+						--RegisterStateDriver(partyPet, "visibility", GetPartyPetVisibility())
+						partypet:SetVisibility(GetPartyPetVisibility())
 						petMover = B.Mover(partyPet, L["PartyPetFrame"], "PartyPet", {"TOPLEFT", partyMover, "BOTTOMLEFT", 0, -5})
 					end
 					ResetHeaderPoints(partyPet)
@@ -561,7 +570,7 @@ function UF:OnLogin()
 			local sortData = UF.RaidDirections[C.db["UFs"]["SMRDirec"]]
 
 			local function CreateGroup(name)
-				local group = oUF:SpawnHeader(name, nil, nil,
+				local group = oUF:SpawnHeader(name, nil,
 				"showPlayer", true,
 				"showSolo", true,
 				"showParty", true,
@@ -581,7 +590,8 @@ function UF:OnLogin()
 			local group = CreateGroup("oUF_Raid")
 			group.groupType = "raid"
 			tinsert(UF.headers, group)
-			RegisterStateDriver(group, "visibility", GetRaidVisibility())
+			--RegisterStateDriver(group, "visibility", GetRaidVisibility())
+			group:SetVisibility(GetRaidVisibility())
 			raidMover = B.Mover(group, L["RaidFrame"], "RaidFrame", {"TOPLEFT", UIParent, 35, -50})
 			group:ClearAllPoints()
 			group:SetPoint(sortData.initAnchor, raidMover)
@@ -618,7 +628,7 @@ function UF:OnLogin()
 			oUF:SetActiveStyle("Raid")
 
 			local function CreateGroup(name, i, width, height)
-				local group = oUF:SpawnHeader(name, nil, nil,
+				local group = oUF:SpawnHeader(name, nil,
 				"showPlayer", true,
 				"showSolo", true,
 				"showParty", true,
@@ -703,8 +713,10 @@ function UF:OnLogin()
 						group.index = i
 						group.groupType = "raid"
 						tinsert(UF.headers, group)
-						RegisterStateDriver(group, "visibility", "show")
-						RegisterStateDriver(group, "visibility", GetRaidVisibility())
+						--RegisterStateDriver(group, "visibility", "show") -- isNewPatch, needs review
+						--RegisterStateDriver(group, "visibility", GetRaidVisibility())
+						group:SetVisibility("custom show")
+						group:SetVisibility(GetRaidVisibility())
 						CreateTeamIndex(group)
 
 						groups[i] = group
