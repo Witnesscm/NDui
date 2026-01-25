@@ -55,17 +55,11 @@ function UF:UpdateClickableSize()
 	C_NamePlate_SetNamePlateFriendlySize(helpWidth*uiScale, helpHeight*uiScale)
 end
 
-function UF:UpdatePlateClickThru()
-	if DB.isNewPatch then return end -- removed? needs review
-	if InCombatLockdown() then return end
-
-	C_NamePlate_SetNamePlateEnemyClickThrough(C.db["Nameplate"]["EnemyThru"])
-	C_NamePlate_SetNamePlateFriendlyClickThrough(C.db["Nameplate"]["FriendlyThru"])
-end
-
 function UF:UpdatePlateSize()
 	if InCombatLockdown() then return end
 	UF.NameplateDriver:SetSize(C.db["Nameplate"]["PlateWidth"], C.db["Nameplate"]["PlateHeight"])
+	UF.NameplateDriver.enemyNonInteractible = C.db["Nameplate"]["EnemyThru"]
+	UF.NameplateDriver.friendlyNonInteractible = C.db["Nameplate"]["FriendlyThru"]
 end
 
 function UF:SetupCVars()
@@ -85,7 +79,6 @@ function UF:SetupCVars()
 	SetCVar("nameplateResourceOnTarget", 0)
 	UF:UpdatePlateSize()
 	hooksecurefunc(NamePlateDriverFrame, "UpdateNamePlateSize", UF.UpdatePlateSize)
-	UF:UpdatePlateClickThru()
 	-- fix blizz friendly plate visibility
 	SetCVar("nameplatePlayerMaxDistance", 60)
 end
@@ -999,7 +992,7 @@ function UF:OnUnitTargetChanged()
 			local memberTarget = member.."target"
 			if not UnitIsDeadOrGhost(member) and UnitExists(memberTarget) then
 				local unitGUID = UnitGUID(memberTarget)
-				if not issecretvalue(unitGUID) then
+				if B:NotSecretValue(unitGUID) then
 					targetedList[unitGUID] = (targetedList[unitGUID] or 0) + 1
 				end
 			end
@@ -1047,9 +1040,9 @@ function UF:OnNameplateAdded(event, unit)
 	if not self then return end
 
 	local name = UnitName(unit)
-	self.unitName = not issecretvalue(name) and name or nil
+	self.unitName = B:NotSecretValue(name) and name or nil
 	local guid = UnitGUID(unit)
-	self.unitGUID = not issecretvalue(guid) and guid or nil
+	self.unitGUID = B:NotSecretValue(guid) and guid or nil
 	self.isPlayer = UnitIsPlayer(unit)
 	self.npcID = B.GetNPCID(self.unitGUID)
 	self.widgetsOnly = UnitNameplateShowsWidgetsOnly(unit)
