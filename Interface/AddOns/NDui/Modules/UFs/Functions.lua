@@ -694,21 +694,13 @@ local function updateSpellTarget(self, _, unit)
 	UF.PostCastUpdate(self.Castbar, unit)
 end
 
-function UF:ToggleCastBarLatency(frame)
-	frame = frame or _G.oUF_Player
-	if not frame then return end
-
-	if C.db["UFs"]["LagString"] then
-		frame:RegisterEvent("GLOBAL_MOUSE_UP", UF.OnCastSent, true) -- Fix quests with WorldFrame interaction
-		frame:RegisterEvent("GLOBAL_MOUSE_DOWN", UF.OnCastSent, true)
-		frame:RegisterEvent("CURRENT_SPELL_CAST_CHANGED", UF.OnCastSent, true)
-	else
-		frame:UnregisterEvent("GLOBAL_MOUSE_UP", UF.OnCastSent)
-		frame:UnregisterEvent("GLOBAL_MOUSE_DOWN", UF.OnCastSent)
-		frame:UnregisterEvent("CURRENT_SPELL_CAST_CHANGED", UF.OnCastSent)
-		if frame.Castbar then frame.Castbar.__sendTime = nil end
+function UF.UpdateNotInterruptBar(element)
+	if element.notInterruptBar then
+		element.notInterruptBar:SetAlphaFromBoolean(element.notInterruptible, 1, 0)
 	end
 end
+
+UF.notInterruptBars = {}
 
 function UF:CreateCastBar(self)
 	local mystyle = self.mystyle
@@ -763,14 +755,6 @@ function UF:CreateCastBar(self)
 		safeZone:SetPoint("BOTTOMRIGHT")
 		cb:SetFrameLevel(10)
 		cb.SafeZone = safeZone
-
-		local lagStr = B.CreateFS(cb, 10)
-		lagStr:ClearAllPoints()
-		lagStr:SetPoint("BOTTOM", cb, "TOP", 0, 2)
-		cb.LagString = lagStr
-
-		UF:ToggleCastBarLatency(self)
-
 	elseif mystyle == "nameplate" then
 		name:SetPoint("TOPLEFT", cb, "LEFT", 0, -1)
 		timer:SetPoint("TOPRIGHT", cb, "RIGHT", 0, -1)
@@ -798,6 +782,15 @@ function UF:CreateCastBar(self)
 		--self:RegisterEvent("UNIT_TARGET", updateSpellTarget)
 	end
 
+	local notInterruptBar = cb:CreateTexture(nil, "ARTWORK", nil, 2)
+	notInterruptBar:SetPoint("BOTTOMLEFT", cb)
+	notInterruptBar:SetPoint("TOPRIGHT", cb:GetStatusBarTexture(), "TOPRIGHT")
+	notInterruptBar:SetTexture(DB.normTex)
+	local color = C.db["UFs"]["NotInterruptColor"]
+	notInterruptBar:SetVertexColor(color.r, color.g, color.b)
+	cb.notInterruptBar = notInterruptBar
+	tinsert(UF.notInterruptBars, notInterruptBar)
+
 	local stage = B.CreateFS(cb, 22)
 	stage:ClearAllPoints()
 	stage:SetPoint("TOPLEFT", cb.Icon, -2, 2)
@@ -821,6 +814,10 @@ function UF:CreateCastBar(self)
 		cb.CreatePip = UF.CreatePip
 		cb.PostUpdatePips = UF.PostUpdatePips
 	end
+
+	cb.holdTime = 0.1
+	cb.PostCastStart = UF.UpdateNotInterruptBar
+	cb.PostCastInterruptible = UF.UpdateNotInterruptBar
 
 	self.Castbar = cb
 end
@@ -915,13 +912,14 @@ function UF.PostCreateButton(element, button)
 	button.HL:SetColorTexture(1, 1, 1, .25)
 	button.HL:SetAllPoints()
 
-	button.Overlay:SetTexture(nil)
+	button.Overlay:Hide()
+	button.Overlay = nil -- needs review
 	button.Stealable:SetAtlas("bags-newitem")
 	if AURA then
 		button:HookScript("OnMouseDown", AURA.RemoveSpellFromIgnoreList)
 	end
 
-	if element.disableCooldown then
+	if element.__owner.mystyle == "nameplate" then
 		hooksecurefunc(button, "SetSize", UF.UpdateIconTexCoord)
 		button.timer = B.CreateFS(button, fontSize, "")
 		button.timer:ClearAllPoints()
@@ -936,14 +934,6 @@ local filteredStyle = {
 	["nameplate"] = true,
 	["boss"] = true,
 	["arena"] = true,
-}
-
-UF.ReplacedSpellIcons = {
-	[368078] = 348567, -- 移速
-	[368079] = 348567, -- 移速
-	[368103] = 648208, -- 急速
-	[368243] = 237538, -- CD
-	[373785] = 236293, -- S4，大魔王伪装
 }
 
 local dispellType = {
@@ -963,30 +953,17 @@ function UF.PostUpdateButton(element, button, unit, data)
 		button:SetSize(element.size, element.size)
 	end
 
-	if element.desaturateDebuff and button.isHarmful and filteredStyle[style] and not data.isPlayerAura then
+	if element.desaturateDebuff and data.isHarmfulAura and filteredStyle[style] and not data.isPlayerAura then
 		button.Icon:SetDesaturated(true)
 	else
 		button.Icon:SetDesaturated(false)
 	end
 
-	if element.showDebuffType and button.isHarmful then
-		local color = oUF.colors.debuff[debuffType] or oUF.colors.debuff.none
-		button.iconbg:SetBackdropBorderColor(color[1], color[2], color[3])
+	if data.isHarmfulAura and element.showDebuffType then
+		local color = C_UnitAuras.GetAuraDispelTypeColor(unit, data.auraInstanceID, element.dispelColorCurve)
+		button.iconbg:SetBackdropBorderColor(color:GetRGB())
 	else
 		button.iconbg:SetBackdropBorderColor(0, 0, 0)
-	end
-
-	if element.alwaysShowStealable and dispellType[debuffType] and not UnitIsPlayer(unit) and (not button.isHarmful) then
-		button.Stealable:Show()
-	end
-
-	local newTexture = UF.ReplacedSpellIcons[button.spellID]
-	if newTexture then
-		button.Icon:SetTexture(newTexture)
-	end
-
-	if element.bolsterInstanceID and element.bolsterInstanceID == button.auraInstanceID then
-		button.Count:SetText(element.bolsterStacks)
 	end
 end
 
@@ -1009,40 +986,26 @@ function UF.PostUpdateGapButton(_, _, button)
 end
 
 function UF.CustomFilter(element, unit, data)
-	local style = element.__owner.mystyle
-	local name, debuffType, isStealable, spellID, nameplateShowAll = data.name, data.dispelName, data.isStealable, data.spellId, data.nameplateShowAll
-
-	if style == "nameplate" or style == "boss" or style == "arena" then
-		if element.__owner.plateType == "NameOnly" then
-			return UF.NameplateWhite[spellID]
-		elseif UF.NameplateBlack[spellID] then
-			return false
-		elseif (element.showStealableBuffs and isStealable or element.alwaysShowStealable and dispellType[debuffType]) and not UnitIsPlayer(unit) and (not data.isHarmful) then
-			return true
-		elseif UF.NameplateWhite[spellID] then
-			return true
-		else
-			local auraFilter = C.db["Nameplate"]["AuraFilter"]
-			return (auraFilter == 3 and nameplateShowAll) or (auraFilter ~= 1 and data.isPlayerAura)
-		end
+	if element.alwaysShowStealable and (not data.isHarmfulAura) and type(data.dispelName) ~= "nil" and (not UnitIsPlayer(unit)) then
+		return true
 	else
-		return (element.onlyShowPlayer and data.isPlayerAura) or (not element.onlyShowPlayer and name)
+		return element.onlyShowPlayer and data.isPlayerAura
 	end
 end
 
 function UF.UnitCustomFilter(element, _, data)
 	local value = element.__value
-	if data.isHarmful then
+	if data.isHarmfulAura then
 		if C.db["UFs"][value.."DebuffType"] == 2 then
-			return data.name
+			return true
 		elseif C.db["UFs"][value.."DebuffType"] == 3 then
 			return data.isPlayerAura
 		end
 	else
 		if C.db["UFs"][value.."BuffType"] == 2 then
-			return data.name
+			return true
 		elseif C.db["UFs"][value.."BuffType"] == 3 then
-			return data.isStealable
+			return type(data.dispelName) ~= "nil"
 		end
 	end
 end
@@ -1053,7 +1016,7 @@ end
 
 function UF:UpdateAuraContainer(parent, element, maxAuras)
 	local width = parent:GetWidth()
-	local iconsPerRow = element.iconsPerRow
+	local iconsPerRow = element.maxCols
 	local maxLines = iconsPerRow and B:Round(maxAuras/iconsPerRow) or 2
 	element.size = iconsPerRow and auraIconSize(width, iconsPerRow, element.spacing) or element.size
 	element:SetWidth(width)
@@ -1073,7 +1036,7 @@ function UF:ConfigureAuras(element)
 	local value = element.__value
 	element.numBuffs = C.db["UFs"][value.."BuffType"] ~= 1 and C.db["UFs"][value.."NumBuff"] or 0
 	element.numDebuffs = C.db["UFs"][value.."DebuffType"] ~= 1 and C.db["UFs"][value.."NumDebuff"] or 0
-	element.iconsPerRow = C.db["UFs"][value.."AurasPerRow"]
+	element.maxCols = C.db["UFs"][value.."AurasPerRow"]
 	element.showDebuffType = C.db["UFs"]["DebuffColor"]
 	element.desaturateDebuff = C.db["UFs"]["Desaturate"]
 end
@@ -1093,7 +1056,7 @@ function UF:ConfigureBuffAndDebuff(element, isDebuff)
 	local value = element.__value
 	local vType = isDebuff and "Debuff" or "Buff"
 	element.num = C.db["UFs"][value..vType.."Type"] ~= 1 and C.db["UFs"][value.."Num"..vType] or 0
-	element.iconsPerRow = C.db["UFs"][value..vType.."PerRow"]
+	element.maxCols = C.db["UFs"][value..vType.."PerRow"]
 	element.showDebuffType = C.db["UFs"]["DebuffColor"]
 	element.desaturateDebuff = C.db["UFs"]["Desaturate"]
 end
@@ -1189,7 +1152,7 @@ function UF:CreateAuras(self)
 		bu.__value = auraUFs[mystyle]
 		UF:ConfigureAuras(bu)
 		UF:UpdateAuraDirection(self, bu)
-	--	bu.FilterAura = UF.UnitCustomFilter
+		bu.FilterAura = UF.UnitCustomFilter
 	elseif mystyle == "nameplate" then
 		bu.initialAnchor = "BOTTOMLEFT"
 		bu["growthY"] = "UP"
@@ -1199,14 +1162,15 @@ function UF:CreateAuras(self)
 			bu:SetPoint("BOTTOMLEFT", self.nameText, "TOPLEFT", 0, 5)
 		end
 		bu.numTotal = C.db["Nameplate"]["maxAuras"]
-		bu.size = C.db["Nameplate"]["AuraSize"]
+		bu.maxCols = C.db["Nameplate"]["AurasPerRow"]
 		bu.fontSize = C.db["Nameplate"]["FontSize"]
 		bu.showDebuffType = C.db["Nameplate"]["DebuffColor"]
 		bu.desaturateDebuff = C.db["Nameplate"]["Desaturate"]
 		bu.gap = false
 		bu.disableMouse = true
-		bu.disableCooldown = true
-	--	bu.FilterAura = UF.CustomFilter
+	--	bu.disableCooldown = true
+		bu.onlyShowPlayer = true
+		bu.FilterAura = UF.CustomFilter
 	--	bu.PostUpdateInfo = UF.AurasPostUpdateInfo
 	end
 
@@ -1230,7 +1194,7 @@ function UF:CreateBuffs(self)
 
 	bu.__value = "Boss"
 	UF:ConfigureBuffAndDebuff(bu)
---	bu.FilterAura = UF.UnitCustomFilter
+	bu.FilterAura = UF.UnitCustomFilter
 
 	UF:UpdateAuraContainer(self, bu, bu.num)
 	bu.showStealableBuffs = true
@@ -1252,7 +1216,7 @@ function UF:CreateDebuffs(self)
 	bu:SetPoint("TOPRIGHT", self, "TOPLEFT", -5, 0)
 	bu.__value = "Boss"
 	UF:ConfigureBuffAndDebuff(bu, true)
---	bu.FilterAura = UF.UnitCustomFilter
+	bu.FilterAura = UF.UnitCustomFilter
 
 	UF:UpdateAuraContainer(self, bu, bu.num)
 	bu.PostCreateButton = UF.PostCreateButton
@@ -1639,7 +1603,7 @@ function UF.PostUpdateAddPower(element, cur, max)
 			perc = format("%d%%", perc)
 			element:SetAlpha(1)
 		end]]
-		element.Text:SetText(cur)
+		element.Text:SetText(B.Numb(cur))
 	end
 end
 
@@ -1690,113 +1654,6 @@ function UF:ToggleAddPower()
 	elseif frame:IsElementEnabled("AdditionalPower") then
 		frame:DisableElement("AdditionalPower")
 	end
-end
-
-function UF:ToggleSwingBars()
-	local frame = _G.oUF_Player
-	if not frame then return end
-
-	if C.db["UFs"]["SwingBar"] then
-		if not frame:IsElementEnabled("Swing") then
-			frame:EnableElement("Swing")
-		end
-	elseif frame:IsElementEnabled("Swing") then
-		frame:DisableElement("Swing")
-	end
-end
-
-function UF:CreateSwing(self)
-	if DB.isNewPatch then return end
-
-	local width, height = C.db["UFs"]["SwingWidth"], C.db["UFs"]["SwingHeight"]
-
-	local bar = CreateFrame("Frame", nil, self)
-	bar:SetSize(width, height)
-	bar.mover = B.Mover(bar, L["UFs SwingBar"], "Swing", {"BOTTOM", UIParent, "BOTTOM", 0, 170})
-	bar:ClearAllPoints()
-	bar:SetPoint("CENTER", bar.mover)
-
-	local two = CreateFrame("StatusBar", nil, bar)
-	two:Hide()
-	two:SetAllPoints()
-	B.CreateSB(two, true, .8, .8, .8)
-
-	local main = CreateFrame("StatusBar", nil, bar)
-	main:Hide()
-	main:SetAllPoints()
-	B.CreateSB(main, true, .8, .8, .8)
-
-	local off = CreateFrame("StatusBar", nil, bar)
-	off:Hide()
-	if C.db["UFs"]["OffOnTop"] then
-		off:SetPoint("BOTTOMLEFT", bar, "TOPLEFT", 0, 3)
-		off:SetPoint("BOTTOMRIGHT", bar, "TOPRIGHT", 0, 3)
-	else
-		off:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 0, -3)
-		off:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT", 0, -3)
-	end
-	off:SetHeight(height)
-	B.CreateSB(off, true, .8, .8, .8)
-
-	bar.Text = B.CreateFS(bar, 12, "")
-	bar.Text:SetShown(C.db["UFs"]["SwingTimer"])
-	bar.TextMH = B.CreateFS(main, 12, "")
-	bar.TextMH:SetShown(C.db["UFs"]["SwingTimer"])
-	bar.TextOH = B.CreateFS(off, 12, "")
-	bar.TextOH:SetShown(C.db["UFs"]["SwingTimer"])
-
-	self.Swing = bar
-	self.Swing.Twohand = two
-	self.Swing.Mainhand = main
-	self.Swing.Offhand = off
-	self.Swing.hideOoc = true
-end
-
-local scrolls = {}
-function UF:UpdateScrollingFont()
-	local fontSize = C.db["UFs"]["FCTFontSize"]
-	for _, scroll in pairs(scrolls) do
-		B.SetFontSize(scroll, fontSize)
-		scroll:SetSize(10*fontSize, 10*fontSize)
-	end
-end
-
-function UF:CreateFCT(self)
-	if DB.isNewPatch then return end
-
-	if not C.db["UFs"]["CombatText"] then return end
-
-	local parentFrame = CreateFrame("Frame", nil, UIParent)
-	local parentName = self:GetName()
-	local fcf = CreateFrame("Frame", parentName.."CombatTextFrame", parentFrame)
-	fcf:SetSize(32, 32)
-	if self.mystyle == "player" then
-		B.Mover(fcf, L["CombatText"], "PlayerCombatText", {"BOTTOM", self, "TOPLEFT", 0, 120})
-	else
-		B.Mover(fcf, L["CombatText"], "TargetCombatText", {"BOTTOM", self, "TOPRIGHT", 0, 120})
-	end
-
-	for i = 1, 36 do
-		fcf[i] = parentFrame:CreateFontString("$parentText", "OVERLAY")
-	end
-
-	local scrolling = CreateFrame("ScrollingMessageFrame", parentName.."CombatTextScrollingFrame", parentFrame)
-	scrolling:SetSpacing(3)
-	scrolling:SetMaxLines(20)
-	scrolling:SetFadeDuration(.2)
-	scrolling:SetTimeVisible(3)
-	scrolling:SetJustifyH("CENTER")
-	scrolling:SetPoint("BOTTOM", fcf)
-	fcf.Scrolling = scrolling
-	tinsert(scrolls, scrolling)
-
-	fcf.font = DB.Font[1]
-	fcf.fontFlags = DB.Font[3]
-	fcf.abbreviateNumbers = true
-	self.FloatingCombatFeedback = fcf
-
-	-- Default CombatText
-	SetCVar("enableFloatingCombatText", 0)
 end
 
 function UF:CreatePVPClassify(self)

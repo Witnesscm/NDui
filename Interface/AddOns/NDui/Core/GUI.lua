@@ -168,10 +168,6 @@ G.DefaultSettings = {
 		Arena = true,
 		Castbars = true,
 		AddPower = true,
-		SwingBar = false,
-		SwingWidth = 275,
-		SwingHeight = 3,
-		SwingTimer = false,
 		OffOnTop = false,
 		RaidFrame = true,
 		AutoRes = true,
@@ -196,13 +192,6 @@ G.DefaultSettings = {
 		RaidPowerHeight = 2,
 		RaidHPMode = 1,
 		AuraClickThru = false,
-		CombatText = true,
-		HotsDots = true,
-		AutoAttack = true,
-		FCTOverHealing = false,
-		FCTFontSize = 18,
-		PetCombatText = true,
-		ScrollingCT = false,
 		RaidClickSets = false,
 		TeamIndex = false,
 		ClassPower = true,
@@ -210,7 +199,6 @@ G.DefaultSettings = {
 		CPHeight = 5,
 		CPxOffset = 12,
 		CPyOffset = -2,
-		LagString = true,
 		RuneTimer = true,
 		RaidBuffIndicator = true,
 		PartyFrame = true,
@@ -250,7 +238,6 @@ G.DefaultSettings = {
 		PlayerAbsorb = false,
 		AutoBuffs = false,
 		ShowRoleMode = 1,
-		OverAbsorb = false,
 		PrivateSize = 22,
 		ReversePrivate = false,
 
@@ -383,10 +370,8 @@ G.DefaultSettings = {
 		Enable = true,
 		maxAuras = 5,
 		PlateAuras = true,
-		AuraSize = 28,
 		FontSize = 14,
 		SizeRatio = .5,
-		AuraFilter = 3,
 		FriendlyCC = false,
 		HostileCC = true,
 		TankMode = false,
@@ -433,7 +418,6 @@ G.DefaultSettings = {
 		FriendPlate = false,
 		EnemyThru = false,
 		FriendlyThru = false,
-		DispellMode = 1,
 		UnitTargeted = true,
 		ColorByDot = false,
 		DotColor = {r=1, g=.5, b=.2},
@@ -441,6 +425,8 @@ G.DefaultSettings = {
 		RaidTargetX = 0,
 		RaidTargetY = 3,
 		PlateRange = 45,
+		AurasPerRow = 6,
+		ShowDispel = true,
 
 		PlateWidth = 190,
 		PlateHeight = 8,
@@ -757,10 +743,6 @@ local function setupUFAuras()
 	G:SetupUFAuras(guiPage[3])
 end
 
-local function setupSwingBars()
-	G:SetupSwingBars(guiPage[3])
-end
-
 local function setupRaidFrame()
 	G:SetupRaidFrame(guiPage[4])
 end
@@ -877,6 +859,10 @@ local function updateEquipColor()
 			Bar.UpdateEquipItemColor(button)
 		end
 	end
+end
+
+local function updateCooldown()
+	SetCVar("countdownForCooldowns", C.db["Actionbar"]["Cooldown"] and 1 or 0)
 end
 
 local function updateReminder()
@@ -1005,14 +991,6 @@ local function updateRaidTextScale()
 	B:GetModule("UnitFrames"):UpdateRaidTextScale()
 end
 
-local function toggleCastBarLatency()
-	B:GetModule("UnitFrames"):ToggleCastBarLatency()
-end
-
-local function toggleSwingBars()
-	B:GetModule("UnitFrames"):ToggleSwingBars()
-end
-
 local function updateAllHeaders()
 	B:GetModule("UnitFrames"):UpdateAllHeaders()
 end
@@ -1032,10 +1010,6 @@ end
 
 local function refreshPlateByEvents()
 	B:GetModule("UnitFrames"):RefreshPlateByEvents()
-end
-
-local function updateScrollingFont()
-	B:GetModule("UnitFrames"):UpdateScrollingFont()
 end
 
 local function updateRaidAurasOptions()
@@ -1192,10 +1166,10 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Actionbar", "MicroMenu", L["Micromenu"], nil, setupMicroMenu, nil, L["MicroMenuTip"]},
 		{1, "Actionbar", "ShowStance", L["ShowStanceBar"], true, setupStanceBar},
 		{},--blank
-		{1, "Actionbar", "Cooldown", HeaderTag..L["Show Cooldown"]},
-		{1, "Actionbar", "OverrideWA", L["HideCooldownOnWA"].."*", true},
-		{3, "Actionbar", "MmssTH", L["MmssThreshold"].."*", nil, {60, 600, 1}, nil, L["MmssThresholdTip"]},
-		{3, "Actionbar", "TenthTH", L["TenthThreshold"].."*", true, {0, 60, 1}, nil, L["TenthThresholdTip"]},
+		{1, "Actionbar", "Cooldown", HeaderTag..L["Show Cooldown"], nil, nil, updateCooldown},
+		--{1, "Actionbar", "OverrideWA", L["HideCooldownOnWA"].."*", true},
+		--{3, "Actionbar", "MmssTH", L["MmssThreshold"].."*", nil, {60, 600, 1}, nil, L["MmssThresholdTip"]},
+		--{3, "Actionbar", "TenthTH", L["TenthThreshold"].."*", true, {0, 60, 1}, nil, L["TenthThresholdTip"]},
 		{},--blank
 		{1, "Actionbar", "KeyDown", L["KeyDown"].."*", nil, nil, updateHotkeys, L["KeyDownTip"]},
 		{1, "Actionbar", "ButtonLock", L["ButtonLock"].."*", true, nil, updateHotkeys, L["ButtonLockTip"]},
@@ -1205,8 +1179,8 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Actionbar", "Classcolor", L["ClassColor BG"].."*", true, nil, updateHotkeys},
 		{1, "Actionbar", "EquipColor", L["EquipColor"].."*", nil, nil, updateHotkeys},
 		{1, "Misc", "SendActionCD", HeaderTag..L["SendActionCD"].."*", nil, nil, nil, L["SendActionCDTip"]},
-		{4, "ACCOUNT", "GlowMode", L["GlowMode"].."*", true, {"Pixel", "Autocast", "Action Button", "Proc Glow"}},
 		{1, "Actionbar", "ShowGlow", L["ShowGlow"].."*", nil, nil, updateOverlays},
+		{4, "ACCOUNT", "GlowMode", L["GlowMode"].."*", true, {"Pixel", "Autocast", "Action Button", "Proc Glow"}},
 	},
 	[2] = {
 		{1, "Bags", "Enable", HeaderTag..L["Enable Bags"]},
@@ -1237,22 +1211,11 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "UFs", "CCName", L["ClassColor Name"].."*", true, nil, updateUFTextScale},
 		{1, "UFs", "PlayerAbsorb", L["PlayerAbsorb"].."*", nil, nil, togglePlayerAbsorb, L["PlayerAbsorbTip"]},
 		{1, "UFs", "AddPower", L["AddPower"].."*", true, nil, toggleAddPower, L["AddPowerTip"]},
-		{1, "UFs", "OverAbsorb", L["OverAbsorb"].."*", nil, nil, nil, L["OverAbsorbTip"]},
 		{3, "UFs", "UFTextScale", L["UFTextScale"].."*", nil, {.8, 1.5, .05}, updateUFTextScale},
 		{4, "UFs", "HealthColor", L["HealthColor"].."*", true, {L["Default Dark"], L["ClassColorHP"], L["GradientHP"], L["ClearHealth"], L["ClearClass"]}, updateUFTextScale},
 		{},--blank
 		{1, "UFs", "Castbars", HeaderTag..L["UFs Castbar"], nil, setupCastbar},
-		{1, "UFs", "LagString", L["Castbar LagString"].."*", true, nil, toggleCastBarLatency},
-		{1, "UFs", "SwingBar", L["UFs SwingBar"].."*", nil, setupSwingBars, toggleSwingBars},
 		{1, "UFs", "PetCB", L["PetCastbar"], true},
-		{},--blank
-		{1, "UFs", "CombatText", HeaderTag..L["UFs CombatText"]},
-		{1, "UFs", "ScrollingCT", L["ScrollingCT"].."*", true},
-		{1, "UFs", "AutoAttack", L["CombatText AutoAttack"].."*"},
-		{1, "UFs", "PetCombatText", L["CombatText ShowPets"].."*", true},
-		{1, "UFs", "HotsDots", L["CombatText HotsDots"].."*"},
-		{1, "UFs", "FCTOverHealing", L["CombatText OverHealing"].."*"},
-		{3, "UFs", "FCTFontSize", L["FCTFontSize"].."*", true, {12, 40, 1}, updateScrollingFont},
 	},
 	[4] = {
 		{1, "UFs", "RaidFrame", HeaderTag..L["UFs RaidFrame"], nil, setupRaidFrame, nil, L["RaidFrameTip"]},
@@ -1299,14 +1262,13 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{4, "Nameplate", "HealthType", L["HealthValueType"].."*", true, G.HealthValues, refreshNameplates, L["100PercentTip"]},
 		{},--blank
 		{1, "Nameplate", "PlateAuras", HeaderTag..L["PlateAuras"].."*", nil, setupNameplateFilter, refreshNameplates},
-		{4, "Nameplate", "DispellMode", L["Dispellable"].."*", nil, {L["Filter"], L["Always"], DISABLE}, refreshNameplates, L["DispellableTip"]},
-		{4, "Nameplate", "AuraFilter", L["NameplateAuraFilter"].."*", true, {L["BlackNWhite"], L["PlayerOnly"], L["IncludeCrowdControl"]}, refreshNameplates},
+		{1, "Nameplate", "ShowDispel", L["Dispellable"].."*", true, nil, refreshNameplates},
 		{1, "Nameplate", "Desaturate", L["DesaturateIcon"].."*", nil, nil, refreshNameplates, L["DesaturateIconTip"]},
 		{1, "Nameplate", "DebuffColor", L["DebuffColor"].."*", true, nil, refreshNameplates, L["DebuffColorTip"]},
 		{3, "Nameplate", "FontSize", L["AuraFontSize"].."*", nil, {10, 30, 1}, refreshNameplates},
 		{3, "Nameplate", "SizeRatio", L["SizeRatio"].."*", true, {.5, 1, .1}, refreshNameplates},
 		{3, "Nameplate", "maxAuras", L["Max Auras"].."*", false, {1, 20, 1}, refreshNameplates},
-		{3, "Nameplate", "AuraSize", L["Auras Size"].."*", true, {18, 60, 1}, refreshNameplates},
+		{3, "Nameplate", "AurasPerRow", L["IconsPerRow"].."*", true, {1, 20, 1}, refreshNameplates},
 		{},--blank
 		{4, "Nameplate", "TargetIndicator", L["TargetIndicator"].."*", nil, {DISABLE, L["TopArrow"], L["RightArrow"], L["TargetGlow"], L["TopNGlow"], L["RightNGlow"]}, refreshNameplates},
 		{3, "Nameplate", "ExecuteRatio", L["ExecuteRatio"].."*", true, {0, 90, 1}, refreseExecuteRatio, L["ExecuteRatioTip"]},

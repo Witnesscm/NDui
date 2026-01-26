@@ -31,13 +31,11 @@ local function CreatePlayerStyle(self)
 	UF:CreateIcons(self)
 	UF:CreateRestingIndicator(self)
 	UF:CreatePrediction(self)
-	UF:CreateFCT(self)
 	UF:CreateAddPower(self)
 	UF:CreateQuestSync(self)
 	UF:CreateClassPower(self)
 	UF:StaggerBar(self)
 	UF:CreateAuras(self)
-	UF:CreateSwing(self)
 
 	if C.db["UFs"]["Castbars"] then
 		UF:ReskinMirrorBars()
@@ -60,7 +58,6 @@ local function CreateTargetStyle(self)
 	UF:CreateRaidMark(self)
 	UF:CreateIcons(self)
 	UF:CreatePrediction(self)
-	UF:CreateFCT(self)
 	UF:CreateAuras(self)
 end
 
@@ -169,9 +166,9 @@ local function CreateRaidStyle(self)
 	UF:CreatePrediction(self)
 	UF:CreateClickSets(self)
 	UF:CreateThreatBorder(self)
-	if self.raidType ~= "simple" then
-		UF:CreateRaidAuras(self)
-	end
+	--if self.raidType ~= "simple" then
+	--	UF:CreateRaidAuras(self)
+	--end
 	UF:CreatePrivateAuras(self)
 end
 
@@ -416,11 +413,9 @@ function UF:OnLogin()
 		end
 
 		UF:ToggleAddPower()
-		UF:ToggleSwingBars()
 		UF:ToggleUFClassPower()
 		UF:UpdateTextScale()
 		UF:ToggleAllAuras()
-		UF:UpdateScrollingFont()
 		UF:TogglePortraits()
 		UF:CheckPowerBars()
 		UF:UpdateRaidInfo() -- RaidAuras
