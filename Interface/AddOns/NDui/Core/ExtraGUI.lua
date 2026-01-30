@@ -1440,11 +1440,8 @@ function G:SetupCastbar(parent)
 		if focusCB then
 			focusCB.mover:Hide()
 		end
-		if UF.notInterruptBars then
-			local color = C.db["UFs"]["NotInterruptColor"]
-			for _, bar in pairs(UF.notInterruptBars) do
-				bar:SetVertexColor(color.r, color.g, color.b)
-			end
+		if UF.UpdateCastBarColors then
+			UF:UpdateCastBarColors()
 		end
 	end)
 end
@@ -1935,13 +1932,13 @@ function G:SetupActionbarStyle(parent)
 		button1 = OKAY,
 		button2 = CANCEL,
 		OnShow = function(self)
-			self.button1:Disable()
+			self.ButtonContainer.Button1:Disable()
 		end,
 		OnAccept = function(self)
 			Bar:ImportActionbarStyle(self.EditBox:GetText())
 		end,
 		EditBoxOnTextChanged = function(self)
-			local button1 = self:GetParent().button1
+			local button1 = self:GetParent().ButtonContainer.Button1
 			local text = self:GetText()
 			local found = text and strfind(text, "^NAB:")
 			if found then

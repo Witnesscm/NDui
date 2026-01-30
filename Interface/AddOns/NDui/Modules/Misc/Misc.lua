@@ -61,7 +61,7 @@ function M:OnLogin()
 	M:EnhanceDressup()
 	M:FuckTrainSound()
 	M:JerryWay()
-	M:QuickMenuButton()
+	--M:QuickMenuButton()
 	M:BaudErrorFrameHelpTip()
 	M:EnhancedPicker()
 	M:UpdateMaxZoomLevel()
@@ -186,8 +186,6 @@ function M:VehicleSeatMover()
 			self:SetPoint("TOPLEFT", frame)
 		end
 	end)
-
-	VehicleSeatIndicator:KillEditMode()
 end
 
 -- Reanchor UIWidgets

@@ -231,7 +231,7 @@ UF.VariousTagIndex = {
 	[4] = "current",
 	[5] = "percent",
 	[6] = "loss",
-	[7] = "losspercent",
+	--[7] = "losspercent",
 }
 
 function UF:UpdateFrameHealthTag()
@@ -694,13 +694,33 @@ local function updateSpellTarget(self, _, unit)
 	UF.PostCastUpdate(self.Castbar, unit)
 end
 
-function UF.UpdateNotInterruptBar(element)
-	if element.notInterruptBar then
-		element.notInterruptBar:SetAlphaFromBoolean(element.notInterruptible, 1, 0)
+function UF:UpdateCastBarColors()
+	local castingColor = C.db["UFs"]["CastingColor"]
+	local ownCastColor = C.db["UFs"]["OwnCastColor"]
+	local notInterruptColor = C.db["UFs"]["NotInterruptColor"]
+
+	UF.CastingColor = UF.CastingColor or CreateColor(0, 0, 0)
+	UF.OwnCastColor = UF.OwnCastColor or CreateColor(0, 0, 0)
+	UF.NotInterruptColor = UF.NotInterruptColor or CreateColor(0, 0, 0)
+
+	UF.CastingColor:SetRGB(castingColor.r, castingColor.g, castingColor.b)
+	UF.OwnCastColor:SetRGB(ownCastColor.r, ownCastColor.g, ownCastColor.b)
+	UF.NotInterruptColor:SetRGB(notInterruptColor.r, notInterruptColor.g, notInterruptColor.b)
+end
+
+function UF:UpdateCastBarColor(unit)
+	if unit == "player" then
+		self:SetStatusBarColor(UF.OwnCastColor:GetRGB())
+	elseif not UnitIsUnit(unit, "player") then
+		self:GetStatusBarTexture():SetVertexColorFromBoolean(self.notInterruptible, UF.NotInterruptColor, UF.CastingColor)
+	else
+		self:SetStatusBarColor(UF.CastingColor:GetRGB())
 	end
 end
 
-UF.notInterruptBars = {}
+function UF:Castbar_FailedColor()
+	self:SetStatusBarColor(1, .1, 0)
+end
 
 function UF:CreateCastBar(self)
 	local mystyle = self.mystyle
@@ -768,7 +788,6 @@ function UF:CreateCastBar(self)
 		local iconSize = self:GetHeight()*2 + 5
 		cb.Icon:SetSize(iconSize, iconSize)
 		cb.Icon:SetPoint("BOTTOMRIGHT", cb, "BOTTOMLEFT", -5, 0)
-		cb.timeToHold = .5
 
 		cb.glowFrame = B.CreateGlowFrame(cb, iconSize)
 		cb.glowFrame:SetPoint("CENTER", cb.Icon)
@@ -781,15 +800,6 @@ function UF:CreateCastBar(self)
 
 		--self:RegisterEvent("UNIT_TARGET", updateSpellTarget)
 	end
-
-	local notInterruptBar = cb:CreateTexture(nil, "ARTWORK", nil, 2)
-	notInterruptBar:SetPoint("BOTTOMLEFT", cb)
-	notInterruptBar:SetPoint("TOPRIGHT", cb:GetStatusBarTexture(), "TOPRIGHT")
-	notInterruptBar:SetTexture(DB.normTex)
-	local color = C.db["UFs"]["NotInterruptColor"]
-	notInterruptBar:SetVertexColor(color.r, color.g, color.b)
-	cb.notInterruptBar = notInterruptBar
-	tinsert(UF.notInterruptBars, notInterruptBar)
 
 	local stage = B.CreateFS(cb, 22)
 	stage:ClearAllPoints()
@@ -815,9 +825,12 @@ function UF:CreateCastBar(self)
 		cb.PostUpdatePips = UF.PostUpdatePips
 	end
 
-	cb.holdTime = 0.1
-	cb.PostCastStart = UF.UpdateNotInterruptBar
-	cb.PostCastInterruptible = UF.UpdateNotInterruptBar
+	cb.timeToHold = .25
+	cb.PostCastStart = UF.UpdateCastBarColor
+	cb.PostCastInterruptible = UF.UpdateCastBarColor
+	cb.PostCastStop = UF.Castbar_FailedColor
+	cb.PostCastFail = UF.Castbar_FailedColor
+	cb.PostCastInterrupted = UF.Castbar_FailedColor
 
 	self.Castbar = cb
 end
@@ -1228,16 +1241,16 @@ end
 -- Class Powers
 function UF.PostUpdateClassPower(element, cur, max, diff, powerType, chargedPowerPoints)
 	if not cur or cur == 0 then
-		for i = 1, 7 do
+		for i = 1, 10 do
 			element[i].bg:Hide()
 		end
 
-		element.prevColor = nil
+	--	element.prevColor = nil
 	else
 		for i = 1, max do
 			element[i].bg:Show()
 		end
-
+--[[
 		element.thisColor = cur == max and 1 or 2
 		if not element.prevColor or element.prevColor ~= element.thisColor then
 			local color = oUF:CreateColor(1, 0, 0)
@@ -1248,19 +1261,19 @@ function UF.PostUpdateClassPower(element, cur, max, diff, powerType, chargedPowe
 				element[i]:SetStatusBarColor(color:GetRGB())
 			end
 			element.prevColor = element.thisColor
-		end
+		end]]
 	end
 
 	if diff then
 		for i = 1, max do
 			element[i]:SetWidth((element.__owner.ClassPowerBar:GetWidth() - (max-1)*C.margin)/max)
 		end
-		for i = max + 1, 7 do
+		for i = max + 1, 10 do
 			element[i].bg:Hide()
 		end
 	end
 
-	for i = 1, 7 do
+	for i = 1, 10 do
 		local bar = element[i]
 		if not bar.chargeStar then break end
 
@@ -1311,7 +1324,7 @@ function UF:CreateClassPower(self)
 	end
 
 	local isDK = DB.MyClass == "DEATHKNIGHT"
-	local maxBar = isDK and 6 or 7
+	local maxBar = isDK and 6 or 10
 	local bar = CreateFrame("Frame", "$parentClassPowerBar", self.Health)
 	bar:SetSize(barWidth, barHeight)
 	bar:SetPoint(unpack(barPoint))
@@ -1342,6 +1355,7 @@ function UF:CreateClassPower(self)
 		bars[i].bg:SetAllPoints(bars[i])
 		bars[i].bg:SetTexture(DB.normTex)
 		bars[i].bg:SetVertexColor(0, 0, 0, .7)
+		bars[i].bg:Hide()
 
 		if isDK then
 			bars[i].timer = B.CreateFS(bars[i], 13, "")

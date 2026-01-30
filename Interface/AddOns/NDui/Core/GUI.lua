@@ -329,7 +329,6 @@ G.DefaultSettings = {
 		Sticky = false,
 		Lock = true,
 		Invite = true,
-		Freedom = true,
 		Keyword = "raid",
 		Oldname = false,
 		GuildInvite = true,
@@ -613,6 +612,7 @@ G.AccountSettings = {
 	AvadaProfile = {},
 	AddOnProfiler = false,
 	SmoothBars = true,
+	MilitaryTime = true,
 }
 
 -- Initial settings
@@ -898,10 +898,6 @@ local function toggleChatBackground()
 	B:GetModule("Chat"):ToggleChatBackground()
 end
 
-local function toggleLanguageFilter()
-	B:GetModule("Chat"):ToggleLanguageFilter()
-end
-
 local function toggleEditBoxAnchor()
 	B:GetModule("Chat"):ToggleEditBoxAnchor()
 end
@@ -1110,6 +1106,10 @@ local function toggleSmooth()
 	end
 end
 
+local function updateTimeMode()
+	SetCVar("timeMgrUseMilitaryTime", NDuiADB["MilitaryTime"] and "1" or "0")
+end
+
 StaticPopupDialogs["RESET_DETAILS"] = {
 	text = L["Reset Details check"],
 	button1 = YES,
@@ -1133,7 +1133,7 @@ end
 -- Config
 local HeaderTag = "|cff00cc4c"
 local IsNew = "ISNEW"
-G.HealthValues = {DISABLE, L["ShowHealthDefault"], L["ShowHealthCurMax"], L["ShowHealthCurrent"], L["ShowHealthPercent"], L["ShowHealthLoss"], L["ShowHealthLossPercent"]}
+G.HealthValues = {DISABLE, L["ShowHealthDefault"], L["ShowHealthCurMax"], L["ShowHealthCurrent"], L["ShowHealthPercent"], L["ShowHealthLoss"], --[=[L["ShowHealthLossPercent"]]=]}
 
 local function AddNewTag(parent, anchor)
 	local tag = CreateFrame("Frame", nil, parent, "NewFeatureLabelTemplate")
@@ -1244,7 +1244,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "UFs", "AutoRes", HeaderTag..L["UFs AutoRes"], true},
 		{},--blank
 		{4, "UFs", "RaidHealthColor", L["HealthColor"].."*", nil, {L["Default Dark"], L["ClassColorHP"], L["GradientHP"], L["ClearHealth"], L["ClearClass"]}, updateRaidTextScale},
-		{4, "UFs", "RaidHPMode", L["HealthValueType"].."*", true, {DISABLE, L["ShowHealthPercent"], L["ShowHealthCurrent"], L["ShowHealthLoss"], L["ShowHealthLossPercent"], L["ShowHealthAbsorb"]}, updateRaidTextScale, L["100PercentTip"]},
+		{4, "UFs", "RaidHPMode", L["HealthValueType"].."*", true, {DISABLE, L["ShowHealthPercent"], L["ShowHealthCurrent"], L["ShowHealthLoss"], --[=[L["ShowHealthLossPercent"], L["ShowHealthAbsorb"]]=]}, updateRaidTextScale, L["100PercentTip"]},
 		{4, "UFs", "ShowRoleMode", L["ShowRoleMode"], nil, {ALL, DISABLE, L["HideDPSRole"]}},
 		{3, "UFs", "RaidTextScale", L["UFTextScale"].."*", true, {.8, 1.5, .05}, updateRaidTextScale},
 		{1, "UFs", "ShowSolo", L["ShowSolo"].."*", nil, nil, updateAllHeaders, L["ShowSoloTip"]},
@@ -1373,16 +1373,15 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{},--blank
 		{4, "ACCOUNT", "TimestampFormat", L["TimestampFormat"].."*", nil, {DISABLE, "03:27 PM", "03:27:32 PM", "15:27", "15:27:32"}},
 		{4, "Chat", "ChatBGType", L["ChatBGType"].."*", true, {DISABLE, L["Default Dark"], L["Gradient"]}, toggleChatBackground},
-		{1, "Chat", "Oldname", L["Default Channel"]},
+		--{1, "Chat", "Oldname", L["Default Channel"]},
+		{1, "Chat", "SysFont", L["SysFont"], nil, nil, nil, L["SysFontTip"]},
 		{1, "Chat", "Sticky", L["Chat Sticky"].."*", nil, nil, updateChatSticky},
 		{3, "Chat", "EditFont", L["EditFont"].."*", true, {10, 30, 1}, toggleEditBoxAnchor},
 		{1, "Chat", "Chatbar", L["ShowChatbar"]},
 		{1, "Chat", "WhisperColor", L["Differ WhisperColor"].."*", true},
 		{1, "Chat", "ChatItemLevel", L["ShowChatItemLevel"]},
-		{1, "Chat", "Freedom", L["Language Filter"].."*", true, nil, toggleLanguageFilter},
-		{1, "Chat", "WhisperSound", L["WhisperSound"].."*", nil, nil, nil, L["WhisperSoundTip"]},
 		{1, "Chat", "BottomBox", L["BottomBox"].."*", true, nil, toggleEditBoxAnchor},
-		{1, "Chat", "SysFont", L["SysFont"], nil, nil, nil, L["SysFontTip"]},
+		{1, "Chat", "WhisperSound", L["WhisperSound"].."*", nil, nil, nil, L["WhisperSoundTip"]},
 		{},--blank
 		{1, "Chat", "EnableFilter", HeaderTag..L["Enable Chatfilter"]},
 		{1, "Chat", "BlockAddonAlert", L["Block Addon Alert"], true},
@@ -1499,6 +1498,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{3, "ACCOUNT", "UIScale", L["Setup UIScale"], true, {.4, 1.15, .01}},
 		{},--blank
 		{1, "ACCOUNT", "DisableInfobars", "|cffff0000"..L["DisableInfobars"]},
+		{1, "ACCOUNT", "MilitaryTime", IsNew..TIMEMANAGER_24HOURMODE, true, nil, updateTimeMode},
 		{3, "Misc", "MaxAddOns", L["SysMaxAddOns"].."*", nil,  {1, 50, 1}, nil, L["SysMaxAddOnsTip"]},
 		{3, "Misc", "InfoSize", L["InfobarFontSize"].."*", true,  {10, 50, 1}, updateInfobarSize},
 		{2, "Misc", "InfoStrLeft", L["LeftInfobar"].."*", nil, nil, updateInfobarAnchor, L["InfobarStrTip"]},

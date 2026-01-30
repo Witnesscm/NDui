@@ -53,6 +53,7 @@ local formatSets = {
 }
 
 local function checkUnitGUID(unit)
+	if ShouldUnitIdentityBeSecret(unit) then return end
 	local guid = UnitGUID(unit)
 	return B:NotSecretValue(guid) and guid
 end
@@ -90,7 +91,7 @@ function TT:GetInspectInfo(...)
 		end
 	elseif self == "INSPECT_READY" then
 		local guid = ...
-		if guid == currentGUID then
+		if B:NotSecretValue(guid) and guid == currentGUID then
 			local level = TT:GetUnitItemLevel(currentUNIT)
 			cache[guid].level = level
 			cache[guid].getTime = GetTime()
@@ -114,7 +115,7 @@ function TT:SetupItemLevel(level)
 	for i = 2, GameTooltip:NumLines() do
 		local line = _G["GameTooltipTextLeft"..i]
 		local text = line:GetText()
-		if text and strfind(text, levelPrefix) then
+		if text and B:NotSecretValue(text) and strfind(text, levelPrefix) then
 			levelLine = line
 		end
 	end
