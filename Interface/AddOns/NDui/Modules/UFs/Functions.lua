@@ -690,38 +690,6 @@ local function createBarMover(bar, text, value, anchor)
 	bar.mover = mover
 end
 
-local function updateSpellTarget(self, _, unit)
-	UF.PostCastUpdate(self.Castbar, unit)
-end
-
-function UF:UpdateCastBarColors()
-	local castingColor = C.db["UFs"]["CastingColor"]
-	local ownCastColor = C.db["UFs"]["OwnCastColor"]
-	local notInterruptColor = C.db["UFs"]["NotInterruptColor"]
-
-	UF.CastingColor = UF.CastingColor or CreateColor(0, 0, 0)
-	UF.OwnCastColor = UF.OwnCastColor or CreateColor(0, 0, 0)
-	UF.NotInterruptColor = UF.NotInterruptColor or CreateColor(0, 0, 0)
-
-	UF.CastingColor:SetRGB(castingColor.r, castingColor.g, castingColor.b)
-	UF.OwnCastColor:SetRGB(ownCastColor.r, ownCastColor.g, ownCastColor.b)
-	UF.NotInterruptColor:SetRGB(notInterruptColor.r, notInterruptColor.g, notInterruptColor.b)
-end
-
-function UF:UpdateCastBarColor(unit)
-	if unit == "player" then
-		self:SetStatusBarColor(UF.OwnCastColor:GetRGB())
-	elseif not UnitIsUnit(unit, "player") then
-		self:GetStatusBarTexture():SetVertexColorFromBoolean(self.notInterruptible, UF.NotInterruptColor, UF.CastingColor)
-	else
-		self:SetStatusBarColor(UF.CastingColor:GetRGB())
-	end
-end
-
-function UF:Castbar_FailedColor()
-	self:SetStatusBarColor(1, .1, 0)
-end
-
 function UF:CreateCastBar(self)
 	local mystyle = self.mystyle
 	if mystyle ~= "nameplate" and not C.db["UFs"]["Castbars"] then return end
@@ -789,48 +757,29 @@ function UF:CreateCastBar(self)
 		cb.Icon:SetSize(iconSize, iconSize)
 		cb.Icon:SetPoint("BOTTOMRIGHT", cb, "BOTTOMLEFT", -5, 0)
 
-		cb.glowFrame = B.CreateGlowFrame(cb, iconSize)
-		cb.glowFrame:SetPoint("CENTER", cb.Icon)
-
 		local spellTarget = B.CreateFS(cb, C.db["Nameplate"]["NameTextSize"]+3)
 		spellTarget:ClearAllPoints()
 		spellTarget:SetJustifyH("LEFT")
 		spellTarget:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -2)
 		cb.spellTarget = spellTarget
 
-		--self:RegisterEvent("UNIT_TARGET", updateSpellTarget)
-	end
-
-	local stage = B.CreateFS(cb, 22)
-	stage:ClearAllPoints()
-	stage:SetPoint("TOPLEFT", cb.Icon, -2, 2)
-	cb.stageString = stage
-
-	if mystyle == "nameplate" or mystyle == "boss" or mystyle == "arena" then
-		cb.decimal = "%.1f"
-	else
-		cb.decimal = "%.2f"
+		local barGlow = cb:CreateTexture(nil, "ARTWORK", nil, 2)
+		barGlow:SetAllPoints()
+		barGlow:SetTexture(DB.barArrow)
+		barGlow:SetAlpha(0)
+		cb.barGlow = barGlow
 	end
 
 	cb.Time = timer
 	cb.Text = name
-	if not DB.isNewPatch then
-		cb.OnUpdate = UF.OnCastbarUpdate
-		cb.PostCastStart = UF.PostCastStart
-		cb.PostCastUpdate = UF.PostCastUpdate
-		cb.PostCastStop = UF.PostCastStop
-		cb.PostCastFail = UF.PostCastFailed
-		cb.PostCastInterruptible = UF.PostUpdateInterruptible
-		cb.CreatePip = UF.CreatePip
-		cb.PostUpdatePips = UF.PostUpdatePips
-	end
-
-	cb.timeToHold = .25
+	cb.timeToHold = .5
 	cb.PostCastStart = UF.UpdateCastBarColor
 	cb.PostCastInterruptible = UF.UpdateCastBarColor
 	cb.PostCastStop = UF.Castbar_FailedColor
 	cb.PostCastFail = UF.Castbar_FailedColor
 	cb.PostCastInterrupted = UF.Castbar_FailedColor
+	cb.CreatePip = UF.CreatePip
+	cb.PostUpdatePips = UF.PostUpdatePips
 
 	self.Castbar = cb
 end
@@ -915,6 +864,8 @@ function UF.PostCreateButton(element, button)
 	parentFrame:SetFrameLevel(button:GetFrameLevel() + 3)
 	button.Count = B.CreateFS(parentFrame, fontSize, "", false, "BOTTOMRIGHT", 6, -3)
 	button.Cooldown:SetReverse(true)
+	button.CooldownText = button.Cooldown:GetRegions()
+	button.CooldownText:SetFont(DB.Font[1], fontSize, DB.Font[3])
 	local needShadow = true
 	if element.__owner.mystyle == "raid" and not C.db["UFs"]["RaidBuffIndicator"] then
 		needShadow = false
@@ -1110,11 +1061,11 @@ function UF:ToggleUFAuras(frame, enable)
 	if enable then
 		if not frame:IsElementEnabled("Auras") then
 			frame:EnableElement("Auras")
+			frame.Auras:ForceUpdate()
 		end
 	else
 		if frame:IsElementEnabled("Auras") then
 			frame:DisableElement("Auras")
-			frame.Auras:ForceUpdate()
 		end
 	end
 end
@@ -1244,24 +1195,15 @@ function UF.PostUpdateClassPower(element, cur, max, diff, powerType, chargedPowe
 		for i = 1, 10 do
 			element[i].bg:Hide()
 		end
-
-	--	element.prevColor = nil
 	else
 		for i = 1, max do
 			element[i].bg:Show()
 		end
---[[
-		element.thisColor = cur == max and 1 or 2
-		if not element.prevColor or element.prevColor ~= element.thisColor then
-			local color = oUF:CreateColor(1, 0, 0)
-			if element.thisColor == 2 then
-				color = element.__owner.colors.power[powerType]
-			end
-			for i = 1, #element do
-				element[i]:SetStatusBarColor(color:GetRGB())
-			end
-			element.prevColor = element.thisColor
-		end]]
+	end
+
+	local isMax = cur == max
+	for i = 1, #element do
+		element[i].cover:SetShown(isMax)
 	end
 
 	if diff then
@@ -1325,7 +1267,7 @@ function UF:CreateClassPower(self)
 
 	local isDK = DB.MyClass == "DEATHKNIGHT"
 	local maxBar = isDK and 6 or 10
-	local bar = CreateFrame("Frame", "$parentClassPowerBar", self.Health)
+	local bar = CreateFrame("Frame", "$parentClassPowerBar", self)
 	bar:SetSize(barWidth, barHeight)
 	bar:SetPoint(unpack(barPoint))
 
@@ -1344,18 +1286,23 @@ function UF:CreateClassPower(self)
 		bars[i]:SetWidth((barWidth - (maxBar-1)*C.margin) / maxBar)
 		bars[i]:SetStatusBarTexture(DB.normTex)
 		bars[i]:SetFrameLevel(self:GetFrameLevel() + 5)
-		B.SetBD(bars[i], 0)
 		if i == 1 then
 			bars[i]:SetPoint("BOTTOMLEFT")
 		else
 			bars[i]:SetPoint("LEFT", bars[i-1], "RIGHT", C.margin, 0)
 		end
 
-		bars[i].bg = (isDK and bars[i] or bar):CreateTexture(nil, "BACKGROUND")
+		bars[i].bg = CreateFrame("Frame", nil, (isDK and bars[i] or bar))
 		bars[i].bg:SetAllPoints(bars[i])
-		bars[i].bg:SetTexture(DB.normTex)
-		bars[i].bg:SetVertexColor(0, 0, 0, .7)
+		B.SetBD(bars[i].bg, .7)
 		bars[i].bg:Hide()
+
+		if not isDK then
+			bars[i].cover = bars[i]:CreateTexture(nil, "ARTWORK", nil, 5)
+			bars[i].cover:SetAllPoints(bars[i])
+			bars[i].cover:SetAtlas("ui-castingbar-interrupted")
+			bars[i].cover:Hide()
+		end
 
 		if isDK then
 			bars[i].timer = B.CreateFS(bars[i], 13, "")

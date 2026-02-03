@@ -150,6 +150,7 @@ G.DefaultSettings = {
 		DebuffsPerRow = 16,
 		PrivateSize = 30,
 		ReversePrivate = false,
+		CDAnimation = false,
 	},
 	AuraWatch = {
 		Enable = true,
@@ -385,6 +386,7 @@ G.DefaultSettings = {
 		ShowPlayerPlate = false,
 		PPWidth = 175,
 		PPBarHeight = 5,
+		PPHealthBar = true,
 		PPHealthHeight = 5,
 		PPPowerHeight = 5,
 		PPPowerText = false,
@@ -395,7 +397,6 @@ G.DefaultSettings = {
 		InsecureColor = {r=1, g=0, b=0},
 		OffTankColor = {r=.2, g=.7, b=.5},
 		DPSRevertThreat = false,
-		AKSProgress = false,
 		PPFadeout = true,
 		PPFadeoutAlpha = 0,
 		TargetPower = false,
@@ -546,7 +547,6 @@ G.DefaultSettings = {
 		MarkerSize = 28,
 		BlockInvite = false,
 		BlockRequest = false,
-		NzothVision = true,
 		SendActionCD = true,
 		MDGuildBest = true,
 		FasterSkip = false,
@@ -930,6 +930,10 @@ local function togglePlatePower()
 	B:GetModule("UnitFrames"):TogglePlatePower()
 end
 
+local function togglePlateHealth()
+	B:GetModule("UnitFrames"):TogglePlateHealth()
+end
+
 local function togglePlateVisibility()
 	B:GetModule("UnitFrames"):TogglePlateVisibility()
 end
@@ -1276,21 +1280,21 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Nameplate", "HostileCC", L["Hostile CC"].."*", true},
 		{1, "Nameplate", "FriendlyThru", "|cffff0000"..L["Friendly ClickThru"].."*", nil, nil, updateClickThru, L["PlateClickThruTip"]},
 		{1, "Nameplate", "EnemyThru", "|cffff0000"..L["Enemy ClickThru"].."*", true, nil, updateClickThru, L["PlateClickThruTip"]},
-		{1, "Nameplate", "UnitTargeted", L["Show TargetedBy"].."*", nil, nil, refreshPlateByEvents, L["TargetedByTip"]},
-		{1, "Nameplate", "CastTarget", L["PlateCastTarget"].."*", true, nil, nil, L["PlateCastTargetTip"]},
-		{1, "Nameplate", "InsideView", L["Nameplate InsideView"].."*", nil, nil, UpdatePlateCVars},
-		{1, "Nameplate", "Interruptor", L["ShowInterruptor"].."*", true},
 		{1, "Nameplate", "QuestIndicator", L["QuestIndicator"]},
-		{1, "Nameplate", "AKSProgress", L["MythicProgress"], true},
+		{1, "Nameplate", "CastTarget", L["PlateCastTarget"].."*", true, nil, nil, L["PlateCastTargetTip"]},
+		--{1, "Nameplate", "UnitTargeted", L["Show TargetedBy"].."*", nil, nil, refreshPlateByEvents, L["TargetedByTip"]},
+		--{1, "Nameplate", "InsideView", L["Nameplate InsideView"].."*", nil, nil, UpdatePlateCVars},
+		{1, "Nameplate", "Interruptor", L["ShowInterruptor"].."*"},
 		{},--blank
 		{1, "Nameplate", "ColoredTarget", HeaderTag..L["ColoredTarget"].."*", nil, nil, nil, L["ColoredTargetTip"]},
 		{1, "Nameplate", "ColoredFocus", HeaderTag..L["ColoredFocus"].."*", true, nil, nil, L["ColoredFocusTip"]},
 		{5, "Nameplate", "TargetColor", L["TargetNP Color"].."*"},
 		{5, "Nameplate", "FocusColor", L["FocusNP Color"].."*", 2},
-		{1, "Nameplate", "ColorByDot", HeaderTag..L["ColorByDot"].."*", nil, setupNameplateColorDots, nil, L["ColorByDotTip"]},
-		{1, "Nameplate", "CastbarGlow", HeaderTag..L["PlateCastbarGlow"].."*", true, setupPlateCastbarGlow, nil, L["PlateCastbarGlowTip"]},
-		{1, "Nameplate", "ShowCustomUnits", HeaderTag..L["ShowCustomUnits"].."*", nil, setupNameplateUnitFilter, updateCustomUnitList, L["CustomUnitsTip"]},
-		{1, "Nameplate", "ShowPowerUnits", HeaderTag..L["ShowPowerUnits"].."*", true, setupNameplatePowerUnits, updatePowerUnitList, L["PowerUnitsTip"]},
+		--{1, "Nameplate", "ColorByDot", HeaderTag..L["ColorByDot"].."*", nil, setupNameplateColorDots, nil, L["ColorByDotTip"]},
+		--{1, "Nameplate", "CastbarGlow", HeaderTag..L["PlateCastbarGlow"].."*", true, setupPlateCastbarGlow, nil, L["PlateCastbarGlowTip"]},
+		{1, "Nameplate", "CastbarGlow", HeaderTag..L["PlateCastbarGlow"].."*", nil, nil, nil, L["PlateCastbarGlowTip"]},
+		{1, "Nameplate", "ShowCustomUnits", HeaderTag..L["ShowCustomUnits"].."*", true, setupNameplateUnitFilter, updateCustomUnitList, L["CustomUnitsTip"]},
+		--{1, "Nameplate", "ShowPowerUnits", HeaderTag..L["ShowPowerUnits"].."*", true, setupNameplatePowerUnits, updatePowerUnitList, L["PowerUnitsTip"]},
 		{},--blank
 		{1, "Nameplate", "TankMode", HeaderTag..L["Tank Mode"].."*", nil, nil, nil, L["TankModeTip"]},
 		{1, "Nameplate", "DPSRevertThreat", L["DPS Revert Threat"].."*", true, nil, nil, L["RevertThreatTip"]},
@@ -1310,7 +1314,8 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Nameplate", "ShowPlayerPlate", HeaderTag..L["Enable PlayerPlate"].."*", nil, nil, togglePlayerPlate},
 		{1, "Nameplate", "TargetPower", HeaderTag..L["TargetClassPower"].."*", true, nil, toggleTargetClassPower},
 		{},--blank
-		{1, "Avada", "Enable", IsNew..HeaderTag..L["Enable ClassAuras"].."*", nil, toggleAvadaGUI, toggleAvada},
+		--{1, "Avada", "Enable", IsNew..HeaderTag..L["Enable ClassAuras"].."*", nil, toggleAvadaGUI, toggleAvada},
+		{1, "Nameplate", "PPHealthBar", L["PlayerPlate HealthBar"].."*", nil, nil, togglePlateHealth},
 		{1, "Nameplate", "PPFadeout", L["PlayerPlate Fadeout"].."*", true, nil, togglePlateVisibility},
 		{1, "Nameplate", "PPPowerText", L["PlayerPlate PowerText"].."*", nil, nil, togglePlatePower},
 		{1, "Nameplate", "PPGCDTicker", L["PlayerPlate GCDTicker"].."*", nil, nil, toggleGCDTicker},
@@ -1324,6 +1329,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 	[7] = {
 		{1, "Auras", "BuffFrame", HeaderTag..L["BuffFrame"], nil, setupBuffFrame, nil, L["BuffFrameTip"]},
 		{1, "Auras", "HideBlizBuff", L["HideBlizUI"], true, nil, nil, L["HideBlizBuffTip"]},
+		{1, "Auras", "CDAnimation", L["CDAnimation"]},
 		{},--blank
 		{1, "AuraWatch", "Enable", HeaderTag..L["Enable AuraWatch"], nil, setupAuraWatch},
 		{1, "AuraWatch", "DeprecatedAuras", L["DeprecatedAuras"], true},
@@ -1334,8 +1340,8 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Auras", "Totems", HeaderTag..L["Enable Totembar"]},
 		{1, "Auras", "VerticalTotems", L["VerticalTotems"].."*", nil, nil, refreshTotemBar},
 		{3, "Auras", "TotemSize", L["TotemSize"].."*", true, {24, 60, 1}, refreshTotemBar},
-		{},--blank
-		{1, "Auras", "Reminder", L["Enable Reminder"].."*", nil, nil, updateReminder, L["ReminderTip"]},
+		--{},--blank
+		--{1, "Auras", "Reminder", L["Enable Reminder"].."*", nil, nil, updateReminder, L["ReminderTip"]},
 	},
 	[8] = {
 		{1, "Misc", "RaidTool", HeaderTag..L["Raid Manger"]},
@@ -1358,8 +1364,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Misc", "SpellItemAlert", L["SpellItemAlert"].."*", nil, nil, updateSpellItemAlert, L["SpellItemAlertTip"]},
 		{1, "Misc", "LeaderOnly", IsNew..L["LeaderOnly"].."*", true, nil, nil, L["LeaderOnlyTip"]},
 		{},--blank
-		{1, "Misc", "NzothVision", L["NzothVision"]},
-		{1, "Misc", "SoloInfo", L["SoloInfo"].."*", true, nil, updateSoloInfo},
+		{1, "Misc", "SoloInfo", L["SoloInfo"].."*", nil, nil, updateSoloInfo},
 		{},--blank
 		{1, "Misc", "RareAlerter", HeaderTag..L["Rare Alert"].."*", nil, nil, updateRareAlert},
 		{1, "Misc", "RarePrint", L["Alert In Chat"].."*"},
