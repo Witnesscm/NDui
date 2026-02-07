@@ -14,22 +14,10 @@ local C_NamePlate_GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 local GetTime = GetTime
 local UnitNameplateShowsWidgetsOnly = UnitNameplateShowsWidgetsOnly
 local INTERRUPTED, THREAT_TOOLTIP = INTERRUPTED, THREAT_TOOLTIP
-local C_NamePlate_SetNamePlateEnemySize = C_NamePlate.SetNamePlateEnemySize
-local C_NamePlate_SetNamePlateFriendlySize = C_NamePlate.SetNamePlateFriendlySize
-local C_NamePlate_SetNamePlateEnemyClickThrough = C_NamePlate.SetNamePlateEnemyClickThrough
-local C_NamePlate_SetNamePlateFriendlyClickThrough = C_NamePlate.SetNamePlateFriendlyClickThrough
 local GetSpellName = C_Spell.GetSpellName
 
 -- Init
 function UF:UpdatePlateCVars()
-	if C.db["Nameplate"]["InsideView"] then
-		SetCVar("nameplateOtherTopInset", .05)
-		SetCVar("nameplateOtherBottomInset", .08)
-	elseif GetCVar("nameplateOtherTopInset") == "0.05" and GetCVar("nameplateOtherBottomInset") == "0.08" then
-		SetCVar("nameplateOtherTopInset", -1)
-		SetCVar("nameplateOtherBottomInset", -1)
-	end
-
 	SetCVar("namePlateMinScale", C.db["Nameplate"]["MinScale"])
 	SetCVar("namePlateMaxScale", C.db["Nameplate"]["MinScale"])
 	SetCVar("nameplateMinAlpha", C.db["Nameplate"]["MinAlpha"])
@@ -40,21 +28,9 @@ function UF:UpdatePlateCVars()
 	SetCVar("nameplateMaxDistance", C.db["Nameplate"]["PlateRange"])
 end
 
-function UF:UpdateClickableSize()
-	if DB.isNewPatch then return end -- removed? needs review
-	if InCombatLockdown() then return end
-
-	local uiScale = NDuiADB["UIScale"]
-	local harmWidth, harmHeight = C.db["Nameplate"]["HarmWidth"], C.db["Nameplate"]["HarmHeight"]
-	local helpWidth, helpHeight = C.db["Nameplate"]["HelpWidth"], C.db["Nameplate"]["HelpHeight"]
-
-	C_NamePlate_SetNamePlateEnemySize(harmWidth*uiScale, harmHeight*uiScale)
-	C_NamePlate_SetNamePlateFriendlySize(helpWidth*uiScale, helpHeight*uiScale)
-end
-
 function UF:UpdatePlateSize()
 	if InCombatLockdown() then return end
-	UF.NameplateDriver:SetSize(C.db["Nameplate"]["PlateWidth"], C.db["Nameplate"]["PlateHeight"])
+	UF.NameplateDriver:SetSize(C.db["Nameplate"]["HarmWidth"], C.db["Nameplate"]["HarmHeight"])
 	UF.NameplateDriver.enemyNonInteractible = C.db["Nameplate"]["EnemyThru"]
 	UF.NameplateDriver.friendlyNonInteractible = C.db["Nameplate"]["FriendlyThru"]
 end
@@ -597,25 +573,12 @@ function UF:MouseoverIndicator(self)
 	self.HighlightUpdater = updater
 end
 
-function UF:ShowUnitTargeted(self)
-	local tex = self:CreateTexture()
-	tex:SetSize(20, 20)
-	tex:SetPoint("LEFT", self, "RIGHT", 5, 0)
-	tex:SetAtlas("target")
-	tex:Hide()
-	local count = B.CreateFS(self, 22)
-	count:SetPoint("LEFT", tex, "RIGHT", 1, 0)
-	count:SetTextColor(1, .8, 0)
-
-	self.tarByTex = tex
-	self.tarBy = count
-end
-
 -- Create Nameplates
 local platesList = {}
 function UF:CreatePlates()
 	self.mystyle = "nameplate"
 	self:SetSize(C.db["Nameplate"]["PlateWidth"], C.db["Nameplate"]["PlateHeight"])
+	self:ClearAllPoints()
 	self:SetPoint("CENTER")
 	--self:SetScale(NDuiADB["UIScale"])
 
@@ -661,7 +624,6 @@ function UF:CreatePlates()
 	UF:AddTargetIndicator(self)
 	UF:AddCreatureIcon(self)
 	UF:AddQuestIcon(self)
-	UF:ShowUnitTargeted(self)
 
 	self:RegisterEvent("PLAYER_FOCUS_CHANGED", UF.UpdateFocusColor, true)
 
@@ -741,7 +703,7 @@ function UF:UpdateNameplateSize()
 		self:Tag(self.nameText, UF.PlateNameTags[nameType])
 		self.__tagIndex = nameType
 
-		UF:UpdatePlateSize()
+		self:SetSize(plateWidth, plateHeight)
 		B.SetFontSize(self.tarName, nameTextSize+4)
 		self.Castbar.Icon:SetSize(iconSize, iconSize)
 		self.Castbar:SetHeight(plateCBHeight)
@@ -769,7 +731,7 @@ function UF:RefreshNameplats()
 		UF.UpdateTargetIndicator(nameplate)
 		UF.UpdateTargetChange(nameplate)
 	end
-	UF:UpdateClickableSize()
+	UF:UpdatePlateSize()
 end
 
 function UF:RefreshAllPlates()
@@ -900,60 +862,9 @@ function UF:OnUnitSoftTargetChanged(previousTarget, currentTarget)
 	end
 end
 
-local targetedList = {}
-
-local function GetGroupUnit(index, maxGroups, isInRaid)
-	if isInRaid then
-		return "raid"..index
-	elseif index == maxGroups then
-		return "player"
-	else
-		return "party"..index
-	end
-end
-
-function UF:OnUnitTargetChanged()
-	if not isInInstance then return end
-
-	wipe(targetedList)
-
-	local maxGroups = GetNumGroupMembers()
-	if maxGroups > 1 then
-		local isInRaid = IsInRaid()
-		for i = 1, maxGroups do
-			local member = GetGroupUnit(i, maxGroups, isInRaid)
-			local memberTarget = member.."target"
-			if not UnitIsDeadOrGhost(member) and UnitExists(memberTarget) then
-				local unitGUID = UnitGUID(memberTarget)
-				if B:NotSecretValue(unitGUID) then
-					targetedList[unitGUID] = (targetedList[unitGUID] or 0) + 1
-				end
-			end
-		end
-	end
-
-	for nameplate in pairs(platesList) do
-		nameplate.tarBy:SetText(targetedList[nameplate.unitGUID] or "")
-		nameplate.tarByTex:SetShown(targetedList[nameplate.unitGUID])
-	end
-end
-
 function UF:RefreshPlateByEvents()
 	B:RegisterEvent("UNIT_FACTION", UF.OnUnitFactionChanged)
 	B:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED", UF.OnUnitSoftTargetChanged)
-
-	if C.db["Nameplate"]["UnitTargeted"] then
-		UF:OnUnitTargetChanged()
-		B:RegisterEvent("UNIT_TARGET", UF.OnUnitTargetChanged)
-		B:RegisterEvent("PLAYER_TARGET_CHANGED", UF.OnUnitTargetChanged)
-	else
-		for nameplate in pairs(platesList) do
-			nameplate.tarBy:SetText("")
-			nameplate.tarByTex:Hide()
-		end
-		B:UnregisterEvent("UNIT_TARGET", UF.OnUnitTargetChanged)
-		B:UnregisterEvent("PLAYER_TARGET_CHANGED", UF.OnUnitTargetChanged)
-	end
 end
 
 local function onTargetChanged(self, event, unit)
@@ -1001,8 +912,6 @@ end
 function UF:OnNameplateRemoved(event, unit)
 	if not self then return end
 	self.npcID = nil
-	self.tarBy:SetText("")
-	self.tarByTex:Hide()
 end
 
 function UF:OnTargetChanged(event, unit)
