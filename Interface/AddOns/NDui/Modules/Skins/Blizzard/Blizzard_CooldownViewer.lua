@@ -69,8 +69,8 @@ local dispelIndex = {
 	[2] = DEBUFF_TYPE_CURSE_COLOR,
 	[3] = DEBUFF_TYPE_DISEASE_COLOR,
 	[4] = DEBUFF_TYPE_POISON_COLOR,
-	[5] = DEBUFF_TYPE_BLEED_COLOR,
-	[6] = CreateColor(243, 95, 245),
+	[9] = CreateColor(243, 95, 245),
+	[11] = DEBUFF_TYPE_BLEED_COLOR,
 };
 local borderCurve = C_CurveUtil.CreateColorCurve()
 borderCurve:SetType(Enum.LuaCurveType.Step)
@@ -84,6 +84,14 @@ local function updateBorderColor(self, data)
 		self.__owner.Icon.bg:SetBackdropBorderColor(color:GetRGB())
 	else
 		self.__owner.Icon.bg:SetBackdropBorderColor(0, 0, 0)
+	end
+end
+
+local function handleDebuffBorder(frame)
+	if frame.DebuffBorder then
+		frame.DebuffBorder:SetAlpha(0) -- hide the original border, and update ours
+		frame.DebuffBorder.__owner = frame
+		hooksecurefunc(frame.DebuffBorder, "UpdateFromAuraData", updateBorderColor)
 	end
 end
 
@@ -130,7 +138,7 @@ C.themes["Blizzard_CooldownViewer"] = function()
 						local icon, mask, overlay = iconFrame:GetRegions()
 						mask:Hide()
 						overlay:Hide()
-						B.ReskinIcon(icon, true)
+						iconFrame.bg = B.ReskinIcon(icon, true)
 						icon:SetInside(iconFrame, 5, 5)
 					end
 
@@ -140,7 +148,11 @@ C.themes["Blizzard_CooldownViewer"] = function()
 						barFrame.BarBG:SetAlpha(0)
 						barFrame:SetStatusBarTexture(DB.normTex)
 						B.SetBD(barFrame)
+						barFrame:GetStatusBarTexture():ClearTextureSlice()
 					end
+
+					handleDebuffBorder(itemFrame)
+
 					itemFrame.styled = true
 				end
 			elseif itemFrame.Icon then
@@ -159,12 +171,7 @@ C.themes["Blizzard_CooldownViewer"] = function()
 						cooldown:SetSwipeTexture(DB.flatTex)
 					end
 
-					local debuffBorder = itemFrame.DebuffBorder
-					if debuffBorder then
-						debuffBorder:SetAlpha(0) -- hide the original border, and update ours
-						debuffBorder.__owner = itemFrame
-						hooksecurefunc(debuffBorder, "UpdateFromAuraData", updateBorderColor)
-					end
+					handleDebuffBorder(itemFrame)
 
 					itemFrame.styled = true
 				end
