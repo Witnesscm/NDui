@@ -22,6 +22,10 @@ local function highlightURL(_, url)
 end
 
 function module:SearchForURL(text, ...)
+	if B:IsSecretValue(text) then
+		return self.am(self, text, ...)
+	end
+
 	foundurl = false
 
 	if strfind(text, "%pTInterface%p+") or strfind(text, "%pTINTERFACE%p+") then

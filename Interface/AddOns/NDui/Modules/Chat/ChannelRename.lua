@@ -28,6 +28,10 @@ local function GetCurrentTime()
 end
 
 function module:UpdateChannelNames(text, ...)
+	if B:IsSecretValue(text) then
+		return self.oldAddMsg(self, text, ...)
+	end
+
 	if strfind(text, INTERFACE_ACTION_BLOCKED) and not DB.isDeveloper then return end
 
 	local r, g, b = ...
