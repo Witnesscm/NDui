@@ -340,12 +340,12 @@ function TT:UpdateStatusBarColor()
 	end
 end
 
-function TT:RefreshStatusBar(value)
+function TT:RefreshStatusBar()
 	if not self.text then
 		self.text = B.CreateFS(self, 12, "")
 	end
 	local unit = TT.GetUnit(self:GetParent())
-	if unit and UnitIsPlayer(unit) then
+	if unit then
 		self.text:SetFormattedText("%d", UnitHealthPercent(unit, true, CurveConstants.ScaleTo100))
 	else
 		self.text:SetText("")
@@ -503,7 +503,7 @@ function TT:FixRecipeItemNameWidth()
 	if not self.bg then return end
 
 	if C.db["Tooltip"]["ItemQuality"] then
-		local name, link = GetDisplayedItem(self)
+		local _, link = GetDisplayedItem(self)
 		if link then
 			local quality = C_Item.GetItemQualityByID(link)
 			local color = DB.QualityColors[quality or 1]
@@ -517,7 +517,8 @@ function TT:FixRecipeItemNameWidth()
 end
 
 function TT:ResetUnit(btn)
-	if btn == "LSHIFT" and TT:UnitExists("mouseover") then
+	if GameTooltip:IsForbidden() then return end
+	if GameTooltip:IsShown() and btn == "LSHIFT" and TT:UnitExists("mouseover") then
 		GameTooltip:RefreshData()
 	end
 end
@@ -538,7 +539,7 @@ function TT:OnLogin()
 	GameTooltip:HookScript("OnTooltipCleared", TT.OnTooltipCleared)
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, TT.OnTooltipSetUnit)
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, TT.UpdateStatusBarColor)
-	hooksecurefunc(GameTooltip.StatusBar, "SetValue", TT.RefreshStatusBar)
+	hooksecurefunc(GameTooltip.StatusBar, "UpdateUnitHealth", TT.RefreshStatusBar)
 	TooltipDataProcessor.AddLinePreCall(Enum.TooltipDataLineType.None, TT.UpdateFactionLine)
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, TT.FixRecipeItemNameWidth)
 

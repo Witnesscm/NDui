@@ -10,13 +10,12 @@ local TT = B:GetModule("Tooltip")
 	3.自动邀请申请
 	4.显示队长分数，并简写集市钥石
 ]]
-local select, gsub, tremove = select, gsub, tremove
+local select, gsub = select, gsub
 local StaticPopup_Hide, HideUIPanel, GetTime = StaticPopup_Hide, HideUIPanel, GetTime
 local UnitIsGroupLeader = UnitIsGroupLeader
 local C_Timer_After, IsAltKeyDown = C_Timer.After, IsAltKeyDown
 local C_LFGList_GetSearchResultInfo = C_LFGList.GetSearchResultInfo
 local C_LFGList_GetActivityInfoTable = C_LFGList.GetActivityInfoTable
-local C_ChallengeMode_GetMapUIInfo = C_ChallengeMode.GetMapUIInfo
 local IsAddOnLoaded = C_AddOns.IsAddOnLoaded
 
 local HEADER_COLON = _G.HEADER_COLON
@@ -110,7 +109,7 @@ local factionStr = {
 function M:ShowLeaderOverallScore()
 	local resultID = self.resultID
 	local searchResultInfo = resultID and C_LFGList_GetSearchResultInfo(resultID)
-	if searchResultInfo then
+	if searchResultInfo and B:NotSecretValue(searchResultInfo.activityIDs) then
 		local activityInfo = C_LFGList_GetActivityInfoTable(searchResultInfo.activityIDs[1], nil, searchResultInfo.isWarMode)
 		if activityInfo then
 			local showScore = activityInfo.isMythicPlusActivity and searchResultInfo.leaderOverallDungeonScore

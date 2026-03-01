@@ -5,8 +5,6 @@ local TT = B:GetModule("Tooltip")
 local strmatch, format, tonumber, select = string.match, string.format, tonumber, select
 local GetUnitName = GetUnitName
 local IsPlayerSpell = IsPlayerSpell
-local C_TradeSkillUI_GetRecipeReagentItemLink = C_TradeSkillUI.GetRecipeFixedReagentItemLink
-local C_CurrencyInfo_GetCurrencyListLink = C_CurrencyInfo.GetCurrencyListLink
 local C_MountJournal_GetMountFromSpell = C_MountJournal.GetMountFromSpell
 local BAGSLOT, BANK = BAGSLOT, BANK
 local LEARNT_STRING = "|cffff0000"..ALREADY_LEARNED.."|r"
@@ -95,10 +93,15 @@ function TT:SetupTooltipID()
 		if id then
 			TT.AddLineForID(self, id, types.spell)
 		end
-		if caster and B:NotSecretValue(caster) then
-			local name = GetUnitName(caster, true)
-			local hexColor = B.HexRGB(B.UnitColor(caster))
-			self:AddDoubleLine(L["From"]..":", hexColor..name)
+		if caster then
+			if B:IsSecretValue(caster) then
+				local name = UnitName(caster)
+				self:AddDoubleLine(L["From"]..":", name)
+			else
+				local name = GetUnitName(caster, true)
+				local hexColor = B.HexRGB(B.UnitColor(caster))
+				self:AddDoubleLine(L["From"]..":", hexColor..name)
+			end
 			self:Show()
 		end
 	end)
