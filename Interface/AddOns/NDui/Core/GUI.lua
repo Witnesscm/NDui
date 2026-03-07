@@ -320,8 +320,8 @@ G.DefaultSettings = {
 		RaidCDSize = 12,
 		RaidNumBuff = 6,
 		RaidNumDebuff = 6,
-		RaidBuffType = 2,
-		RaidDebuffType = 2,
+		RaidBuffType = 1,
+		RaidDebuffType = 4,
 		RaidBuffPerRow = 7,
 		RaidDebuffPerRow = 7,
 
@@ -516,6 +516,7 @@ G.DefaultSettings = {
 		OnlyArmorIcons = false,
 		HideAllID = false,
 		MythicScore = true,
+		FontSize = 12,
 	},
 	Misc = {
 		Mail = true,
@@ -722,6 +723,8 @@ loader:SetScript("OnEvent", function(self, _, addon)
 		C.db["UFs"]["Portrait"] = false
 		C.db["UFs"]["MBPerRow"] = 13
 		C.db["UFs"]["GatherEmpty"] = true
+		C.db["UFs"]["RaidBuffType"] = 1
+		C.db["UFs"]["RaidDebuffType"] = 4
 		C.db["Reset4"] = true
 	end
 
@@ -1150,6 +1153,13 @@ local function updateTimeMode()
 	SetCVar("timeMgrUseMilitaryTime", NDuiADB["MilitaryTime"] and "1" or "0")
 end
 
+local function updateTooltipFont()
+	local TT = B:GetModule("Tooltip")
+	if TT then
+		TT:SetupTooltipFonts()
+	end
+end
+
 StaticPopupDialogs["RESET_DETAILS"] = {
 	text = L["Reset Details check"],
 	button1 = YES,
@@ -1485,7 +1495,7 @@ G.OptionList = { -- type, key, value, name, horizon, doubleline
 		{1, "Skins", "Rematch", L["Rematch Skin"], true},
 	},
 	[12] = {
-		{3, "Tooltip", "Scale", L["Tooltip Scale"].."*", nil, {.5, 1.5, .1}},
+		{3, "Tooltip", "FontSize", L["Tooltip FontSize"].."*", nil, {8, 42, 1}, updateTooltipFont},
 		{4, "Tooltip", "TipAnchor", L["TipAnchor"].."*", true, {L["TOPLEFT"], L["TOPRIGHT"], L["BOTTOMLEFT"], L["BOTTOMRIGHT"]}, nil, L["TipAnchorTip"]},
 		{4, "Tooltip", "HideInCombat", L["HideInCombat"].."*", nil, {DISABLE, "ALT", "SHIFT", "CTRL", ALWAYS}, nil, L["HideInCombatTip"]},
 		{4, "Tooltip", "CursorMode", L["Follow Cursor"].."*", true, {DISABLE, L["LEFT"], L["TOP"], L["RIGHT"]}},
