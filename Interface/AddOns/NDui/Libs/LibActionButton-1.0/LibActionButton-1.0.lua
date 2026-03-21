@@ -1745,39 +1745,8 @@ function Generic:UpdateAction(force)
 		Update(self)
 	end
 end
--- NDui: add quality border
-local GetProfessionQuality = C_ActionBar and C_ActionBar.GetProfessionQuality
-
-local function ClearProfessionQuality(self)
-	if self.ProfessionQuality then
-		self.ProfessionQuality:Hide()
-	end
-end
-
-local function UpdateProfessionQuality(self)
-	if self._state_type == "custom" then return end
-
-	local action = self._state_action
-	if action and IsItemAction(action) then
-		local quality = GetProfessionQuality(action)
-		if quality then
-			if not self.ProfessionQuality then
-				self.ProfessionQuality = CreateFrame("Frame", nil, self)
-				self.ProfessionQuality:SetInside()
-				local tex = self.ProfessionQuality:CreateTexture(nil, "ARTWORK")
-				tex:SetPoint("TOPLEFT")
-				self.ProfessionQuality.Texture = tex
-			end
-			self.ProfessionQuality:Show()
-			self.ProfessionQuality.Texture:SetAtlas(format("Professions-Icon-Quality-Tier%d-Inv", quality), true)
-			return
-		end
-	end
-	ClearProfessionQuality(self)
-end
 
 -- Assisted Combat
-
 local AssistedCombat = CreateFrame("Frame")
 AssistedCombat.AssistantButtons = {}
 AssistedCombat.HighlightButtons = {}
@@ -1929,9 +1898,6 @@ function Update(self)
 		UpdateUsable(self)
 		UpdateCooldown(self)
 		UpdateFlash(self)
-		if GetProfessionQuality then -- NDui
-			UpdateProfessionQuality(self)
-		end
 	else
 		ActiveButtons[self] = nil
 		ActionButtons[self] = nil
@@ -1941,9 +1907,6 @@ function Update(self)
 		end
 		self.cooldown:Hide()
 		self:SetChecked(false)
-		if GetProfessionQuality then -- NDui
-			ClearProfessionQuality(self)
-		end
 
 		if ClearActionButtonCooldowns then
 			ClearActionButtonCooldowns(self.cooldown, self.chargeCooldown, self.lossOfControlCooldown)
