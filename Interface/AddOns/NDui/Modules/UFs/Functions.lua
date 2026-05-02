@@ -1298,6 +1298,18 @@ function UF.PostUpdateClassPower(element, cur, max, diff, _, chargedPowerPoints)
 	end
 end
 
+function UF.PostVisibilityClassPower(element, shouldEnable)
+	if not shouldEnable then
+		for i = 1, 10 do
+			element[i].bg:Hide()
+		end
+	end
+
+	if element.fragmentsText then
+		element.fragmentsText:SetShown(shouldEnable)
+	end
+end
+
 function UF:OnUpdateRunes(elapsed)
 	local duration = self.duration + elapsed
 	self.duration = duration
@@ -1341,6 +1353,7 @@ function UF:CreateClassPower(self)
 	end
 
 	local isDK = DB.MyClass == "DEATHKNIGHT"
+	local isDH = DB.MyClass == "DEMONHUNTER"
 	local maxBar = isDK and 6 or 10
 	local bar = CreateFrame("Frame", "$parentClassPowerBar", self)
 	bar:SetSize(barWidth, barHeight)
@@ -1398,6 +1411,13 @@ function UF:CreateClassPower(self)
 		end
 	end
 
+	if isDH then
+		local text = B.CreateFS(bars[1], 13)
+		text:SetPoint("CENTER", bars[1], "TOP")
+		self:Tag(text, "[SoulFragments]")
+		bars.fragmentsText = text
+	end
+
 	if isDK then
 		bars.colorSpec = true
 		bars.sortOrder = "asc"
@@ -1406,6 +1426,7 @@ function UF:CreateClassPower(self)
 		self.Runes = bars
 	else
 		bars.PostUpdate = UF.PostUpdateClassPower
+		bars.PostVisibility = UF.PostVisibilityClassPower
 		self.ClassPower = bars
 	end
 
