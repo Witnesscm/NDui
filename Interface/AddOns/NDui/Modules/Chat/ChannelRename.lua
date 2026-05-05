@@ -231,12 +231,12 @@ local function ChatMsgFilter(self, event,
 
 	-- 7. Apply modifications on the formatted text
 	-- Timestamp (prefix)
-	if NDuiADB["TimestampFormat"] > 1 then
+	local chatTimestampFmt = NDuiADB["TimestampFormat"] > 1 and DB.GreyColor..timestampFormat[NDuiADB["TimestampFormat"]].."|r" or ChatFrameUtil.GetTimestampFormat()
+	if chatTimestampFmt then
 		local locTime, realmTime = GetCurrentTime()
-		local timeStamp = BetterDate(DB.GreyColor..timestampFormat[NDuiADB["TimestampFormat"]].."|r", realmTime or locTime)
+		local timeStamp = BetterDate(chatTimestampFmt, realmTime or locTime)
 		outMsg = timeStamp..outMsg
 	end
-
 	-- Author Logo
 	outMsg = gsub(outMsg, "(|Hplayer:([^|:]+))", AddAuthorLogo)
 	-- Kill colon
