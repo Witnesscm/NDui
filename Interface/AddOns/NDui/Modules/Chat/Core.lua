@@ -442,7 +442,7 @@ function module:OnLogin()
 	module:ChannelRename()
 	module:Chatbar()
 	module:ChatCopy()
-	module:UrlCopy()
+	module:Hyperlink()
 	module:WhisperInvite()
 
 	-- Lock chatframe
