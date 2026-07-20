@@ -151,19 +151,18 @@ function BackdropTemplateMixin:SetupTextureCoordinates()
 	old_SetupTextureCoordinates(self)
 end
 
--- Fix quest offer tooltip layout taint
-do
-	local staticGridMixin = _G.StaticGridLayoutFrameMixin
-	local staticGridLayout = staticGridMixin and staticGridMixin.Layout
-	local secureCall = _G.securecallfunction or _G.securecall
-	if staticGridLayout and secureCall then
-		function staticGridMixin:Layout(...)
-			return secureCall(staticGridLayout, self, ...)
-		end
-	end
-end
-
 -- fix money tooltip
 function SetTooltipMoney(frame, money, _, prefixText, suffixText)
 	frame:AddLine((prefixText or "").." "..GetCoinTextureString(money).." "..(suffixText or ""), 1,1,1)
+end
+
+-- Encounter Journal pins inherit MapCanvasPinMixin, whose passthrough setup
+-- can be blocked when Blizzard refreshes the map from a tainted OnShow path.
+do
+	if EncounterJournalPinMixin then
+		EncounterJournalPinMixin.SetPassThroughButtons = B.Dummy
+	end
+	if EncounterMapTrackingPinMixin then
+		EncounterMapTrackingPinMixin.SetPassThroughButtons = B.Dummy
+	end
 end
