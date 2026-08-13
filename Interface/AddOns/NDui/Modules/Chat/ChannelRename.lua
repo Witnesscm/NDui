@@ -283,12 +283,10 @@ local function ChatMsgFilter(self, event, msg, sender, language, channelString, 
 		end
 	end
 
-	-- 7. Apply modifications on the formatted text
-	-- Timestamp (prefix)
+	-- Apply NDui modifications
 	local chatTimestampFmt = NDuiADB["TimestampFormat"] > 1 and DB.GreyColor..timestampFormat[NDuiADB["TimestampFormat"]].."|r" or ChatFrameUtil.GetTimestampFormat()
 	if chatTimestampFmt then
-		local locTime, realmTime = GetCurrentTime()
-		local timeStamp = BetterDate(chatTimestampFmt, realmTime or locTime)
+		local timeStamp = TimeUtil.BetterDate(chatTimestampFmt, time())
 		outMsg = timeStamp..outMsg
 	end
 	outMsg = gsub(outMsg, "(|Hplayer:([^|:]+))", AddAuthorLogo)

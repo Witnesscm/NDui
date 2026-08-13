@@ -12,7 +12,6 @@ local IsInRaid, IsInGroup, UnitName = IsInRaid, IsInGroup, UnitName
 local GetNumGroupMembers, GetNumSubgroupMembers, UnitGroupRolesAssigned = GetNumGroupMembers, GetNumSubgroupMembers, UnitGroupRolesAssigned
 local C_NamePlate_GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 local GetTime = GetTime
-local UnitNameplateShowsWidgetsOnly = UnitNameplateShowsWidgetsOnly
 local GetSpellName = C_Spell.GetSpellName
 local UnitEffectiveLevel, UnitClassBase, GetInstanceInfo = UnitEffectiveLevel, UnitClassBase, GetInstanceInfo
 local UnitIsBossMob, UnitIsLieutenant = UnitIsBossMob, UnitIsLieutenant
@@ -116,7 +115,7 @@ function UF:UpdateExcutedCurve()
 end
 
 function UF:UpdateColor(_, unit)
-	if not unit or self.unit ~= unit then return end
+	if not unit or self.__unit ~= unit then return end
 
 	local element = self.Health
 	local name = self.unitName
@@ -239,7 +238,7 @@ function UF:UpdateColor(_, unit)
 end
 
 function UF:UpdateThreatColor(_, unit)
-	if unit ~= self.unit then return end
+	if unit ~= self.__unit then return end
 
 	UF.UpdateColor(self, _, unit)
 end
@@ -256,7 +255,7 @@ end
 
 function UF:UpdateFocusColor()
 	if C.db["Nameplate"]["ColoredFocus"] then
-		UF.UpdateThreatColor(self, _, self.unit)
+		UF.UpdateThreatColor(self, _, self.__unit)
 	end
 end
 
@@ -265,7 +264,7 @@ function UF:UpdateTargetChange()
 	local element = self.TargetIndicator
 	if not element then return end
 
-	local unit = self.unit
+	local unit = self.__unit
 	if C.db["Nameplate"]["TargetIndicator"] ~= 1 then
 		if UnitIsUnit(unit, "target") and not UnitIsUnit(unit, "player") then
 			element:Show()
@@ -417,7 +416,7 @@ function UF:UpdateQuestUnit(_, unit)
 		return
 	end
 
-	unit = unit or self.unit
+	unit = unit or self.__unit
 	local questProgress
 	local prevDiff = 0
 
@@ -493,7 +492,7 @@ end
 
 function UF:UpdateUnitClassify(unit)
 	if not self.ClassifyIndicator then return end
-	if not unit then unit = self.unit end
+	if not unit then unit = self.__unit end
 
 	self.ClassifyIndicator:Hide()
 
@@ -511,18 +510,18 @@ end
 
 -- Mouseover indicator
 function UF:IsMouseoverUnit()
-	if not self or not self.unit then return end
+	if not self or not self.__unit then return end
 
 	if self:IsVisible() and UnitExists("mouseover") then
-		return UnitIsUnit("mouseover", self.unit)
+		return UnitIsUnit("mouseover", self.__unit)
 	end
 	return false
 end
 
 function UF:UpdateMouseoverShown()
-	if not self or not self.unit then return end
+	if not self or not self.__unit then return end
 
-	if self:IsShown() and UnitIsUnit("mouseover", self.unit) then
+	if self:IsShown() and UnitIsUnit("mouseover", self.__unit) then
 		self.HighlightIndicator:Show()
 		self.HighlightUpdater:Show()
 	else
@@ -705,6 +704,7 @@ function UF:UpdateNameplateSize()
 	local nameTextOffset = C.db["Nameplate"]["NameTextOffset"]
 	local healthTextSize = C.db["Nameplate"]["HealthTextSize"]
 	local healthTextOffset = C.db["Nameplate"]["HealthTextOffset"]
+	local RaidTargetX, RaidTargetY = C.db["Nameplate"]["RaidTargetX"], C.db["Nameplate"]["RaidTargetY"]
 	if C.db["Nameplate"]["FriendPlate"] and self.isFriendly and not C.db["Nameplate"]["NameOnlyMode"] then -- cannot use plateType here
 		plateWidth, plateHeight = C.db["Nameplate"]["FriendPlateWidth"], C.db["Nameplate"]["FriendPlateHeight"]
 		plateCBHeight, plateCBOffset = C.db["Nameplate"]["FriendPlateCBHeight"], C.db["Nameplate"]["FriendPlateCBOffset"]
@@ -712,6 +712,7 @@ function UF:UpdateNameplateSize()
 		nameTextOffset = C.db["Nameplate"]["FriendNameOffset"]
 		healthTextSize = C.db["Nameplate"]["FriendHealthSize"]
 		healthTextOffset = C.db["Nameplate"]["FriendHealthOffset"]
+		RaidTargetX, RaidTargetY = C.db["Nameplate"]["FriendRaidTargetX"], C.db["Nameplate"]["FriendRaidTargetY"]
 	end
 	local iconSize = plateHeight + plateCBHeight + 5
 	local nameType = C.db["Nameplate"]["NameType"]
@@ -719,8 +720,7 @@ function UF:UpdateNameplateSize()
 
 	if self.plateType == "NameOnly" then
 		B.SetFontSize(self.nameText, nameOnlyTextSize)
-		local prefix = (not self.isSoftTarget and "[nprare][nplevel]" or "")
-		self:Tag(self.nameText, prefix.."[color][name]")
+		self:Tag(self.nameText, "[nprare][nplevel][color][name]")
 		self.__tagIndex = 6
 		B.SetFontSize(self.npcTitle, nameOnlyTitleSize)
 		self.npcTitle:UpdateTag()
@@ -746,7 +746,7 @@ function UF:UpdateNameplateSize()
 		self.healthValue:SetPoint("RIGHT", self, 0, healthTextOffset)
 		self:Tag(self.healthValue, "[VariousHP("..UF.VariousTagIndex[C.db["Nameplate"]["HealthType"]]..")]")
 		self.healthValue:UpdateTag()
-		self.RaidTargetIndicator:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", C.db["Nameplate"]["RaidTargetX"], C.db["Nameplate"]["RaidTargetY"])
+		self.RaidTargetIndicator:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", RaidTargetX, RaidTargetY)
 	end
 	self.nameText:UpdateTag()
 end
@@ -770,11 +770,7 @@ function UF:RefreshAllPlates()
 end
 
 local DisabledElements = {
-	"Health", "Castbar", "HealthPrediction", "PvPClassificationIndicator", "ThreatIndicator"
-}
-
-local SoftTargetBlockElements = {
-	"RaidTargetIndicator",
+	"Health", "Castbar", "PvPClassificationIndicator", "ThreatIndicator"
 }
 
 function UF:UpdatePlateByType()
@@ -784,31 +780,10 @@ function UF:UpdatePlateByType()
 	local raidtarget = self.RaidTargetIndicator
 	local questIcon = self.questIcon
 
-	if self.widgetsOnly then
-		name:Hide()
-	else
-		name:Show()
-		name:ClearAllPoints()
-	end
+	name:ClearAllPoints()
 	raidtarget:ClearAllPoints()
 
 	local shouldEnableAura
-	if self.isSoftTarget then
-		for _, element in pairs(SoftTargetBlockElements) do
-			if self:IsElementEnabled(element) then
-				self:DisableElement(element)
-			end
-		end
-		shouldEnableAura = false
-	else
-		for _, element in pairs(SoftTargetBlockElements) do
-			if not self:IsElementEnabled(element) then
-				self:EnableElement(element)
-			end
-		end
-		shouldEnableAura = true
-	end
-
 	if self.plateType == "NameOnly" then
 		for _, element in pairs(DisabledElements) do
 			if self:IsElementEnabled(element) then
@@ -835,6 +810,7 @@ function UF:UpdatePlateByType()
 				self:EnableElement(element)
 			end
 		end
+		self.Health:ForceUpdate()
 		shouldEnableAura = true
 
 		name:SetJustifyH("LEFT")
@@ -858,8 +834,7 @@ end
 function UF:RefreshPlateType(unit)
 	self.reaction = UnitReaction(unit, "player")
 	self.isFriendly = self.reaction and self.reaction >= 4 and not UnitCanAttack("player", unit)
-	self.isSoftTarget = UnitIsUnit(unit, "softinteract")
-	if C.db["Nameplate"]["NameOnlyMode"] and self.isFriendly or self.widgetsOnly or self.isSoftTarget then
+	if C.db["Nameplate"]["NameOnlyMode"] and self.isFriendly then
 		self.plateType = "NameOnly"
 	elseif C.db["Nameplate"]["FriendPlate"] and self.isFriendly then
 		self.plateType = "FriendPlate"
@@ -883,22 +858,10 @@ function UF:OnUnitFactionChanged(unit)
 	end
 end
 
-function UF:OnUnitSoftTargetChanged() -- needs review
-	if not GetCVarBool("SoftTargetIconGameObject") then return end
-
-	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-		local unitFrame = nameplate and nameplate.unitFrame
-		if unitFrame then
-			unitFrame.nameText:UpdateTag()
-		end
-	end
-end
-
 function UF:RefreshPlateByEvents()
 	updateZoneType()
 	B:RegisterEvent("PLAYER_ENTERING_WORLD", updateZoneType)
 	B:RegisterEvent("UNIT_FACTION", UF.OnUnitFactionChanged)
-	B:RegisterEvent("PLAYER_SOFT_INTERACT_CHANGED", UF.OnUnitSoftTargetChanged)
 end
 
 local function onTargetChanged(self, event, unit)
@@ -923,11 +886,10 @@ function UF:OnNameplateAdded(event, unit)
 	self.unitGUID = B:NotSecretValue(guid) and guid or nil
 	self.isPlayer = UnitIsPlayer(unit)
 	self.npcID = B.GetNPCID(self.unitGUID)
-	self.widgetsOnly = UnitNameplateShowsWidgetsOnly(unit)
 
 	local blizzPlate = self:GetParent().UnitFrame
 	if blizzPlate then
-		self.widgetContainer = blizzPlate.WidgetContainer
+	--[=[	self.widgetContainer = blizzPlate.WidgetContainer
 		if self.widgetContainer then
 			--self.widgetContainer:SetParent(self)
 			self.widgetContainer:SetScale(1/NDuiADB["UIScale"])
@@ -937,7 +899,7 @@ function UF:OnNameplateAdded(event, unit)
 		if self.softTargetFrame then
 			--self.softTargetFrame:SetParent(self)
 			self.softTargetFrame:SetScale(1/NDuiADB["UIScale"])
-		end
+		end]=]
 	end
 
 	UF.RefreshPlateType(self, unit)
@@ -959,7 +921,7 @@ end
 -- Player Nameplate
 function UF:PlateVisibility(event)
 	local alpha = C.db["Nameplate"]["PPFadeoutAlpha"]
-	if (event == "PLAYER_REGEN_DISABLED" or InCombatLockdown()) and UnitIsUnit("player", self.unit) then
+	if (event == "PLAYER_REGEN_DISABLED" or InCombatLockdown()) and UnitIsUnit("player", self.__unit) then
 		if self:IsElementEnabled("Health") then
 			UIFrameFadeIn(self.Health, .3, self.Health:GetAlpha(), 1)
 			UIFrameFadeIn(self.Health.bg, .3, self.Health.bg:GetAlpha(), .7)
