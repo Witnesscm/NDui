@@ -55,7 +55,12 @@ end
 
 local function UF_OnEnter(self)
 	if not self.disableTooltip then
-		UnitFrame_OnEnter(self)
+		local unit = self.__unit
+		if unit then
+			-- Blizzard's unit tooltip helpers still read the public unit field.
+			self.unit = unit
+			UnitFrame_OnEnter(self)
+		end
 	end
 	self.Highlight:Show()
 end
@@ -783,8 +788,6 @@ function UF:CreateCastBar(self)
 	cb.PostCastInterrupted = UF.Castbar_UpdateInterrupted
 	cb.CreatePip = UF.CreatePip
 	cb.PostUpdatePips = UF.PostUpdatePips
-	cb.CustomTimeText = UF.CustomTimeText
-	cb.CustomDelayText = UF.CustomTimeText
 
 	self.Castbar = cb
 end
@@ -856,8 +859,17 @@ function UF:ReskinTimerTrakcer(self)
 end
 
 -- Auras Relevant
+function UF:UpdateIconTexCoord(width, height)
+	local ratio = height / width
+	local mult = (1 - ratio) / 2
+	self.Icon:SetTexCoord(x1, x2, y1 + mult, y2 - mult)
+end
+
 function UF.PostCreateButton(element, button)
 	local fontSize = element.fontSize or element.size*.4
+	if button.Count then
+		button.Count:SetFont(DB.Font[1], fontSize, DB.Font[3])
+	end
 	if button.Cooldown then
 		button.Cooldown:SetReverse(true)
 		button.CooldownText = button.Cooldown:GetRegions()
@@ -870,7 +882,7 @@ function UF.PostCreateButton(element, button)
 	if button.Cooldown then
 		button.Cooldown:SetHideCountdownNumbers(isRaid and not C.db["UFs"]["RaidCDText"])
 	end
-	button.iconbg = B.ReskinIcon(button.Icon, not isRaid)
+	button.iconbg = B.ReskinIcon(button.Icon)
 
 	button.HL = button:CreateTexture(nil, "HIGHLIGHT")
 	button.HL:SetColorTexture(1, 1, 1, .25)
@@ -885,10 +897,7 @@ function UF.PostCreateButton(element, button)
 	end
 
 	if element.__owner.mystyle == "nameplate" then
-		if button.Time then
-			button.Time:ClearAllPoints()
-			button.Time:SetPoint("LEFT", button, "TOPLEFT", -2, 0)
-		end
+		UF.UpdateIconTexCoord(button, element.size, element.size * element.sizeRatio)
 		if button.Count then
 			button.Count:ClearAllPoints()
 			button.Count:SetPoint("RIGHT", button, "BOTTOMRIGHT", 5, 0)
@@ -910,19 +919,13 @@ function UF.PostUpdateButton(element, button, unit, data)
 	if data.duration then button.iconbg:Show() end
 
 	local style = element.__owner.mystyle
-	if style == "nameplate" then
-		button:SetSize(element.size, element.size * element.sizeRatio)
-	else
-		button:SetSize(element.size, element.size)
-	end
-
 	if element.desaturateDebuff and data.isHarmfulAura and filteredStyle[style] and not data.isPlayerAura then
 		button.Icon:SetDesaturated(true)
 	else
 		button.Icon:SetDesaturated(false)
 	end
 
-	if data.isHarmfulAura and element.showDebuffType then
+	if data.isHarmfulAura and element.showDebuffBorder then
 		local color = C_UnitAuras.GetAuraDispelTypeColor(unit, data.auraInstanceID, element.dispelColorCurve) or FALLBACK_COLOR
 		button.iconbg:SetBackdropBorderColor(color.r, color.g, color.b)
 	else
@@ -1019,24 +1022,14 @@ function UF.RaidFrame_FilterAura(element, _, data)
 	end
 end
 
-local function auraIconSize(w, n, s)
-	return (w-(n-1)*s)/n
-end
-
 function UF:UpdateAuraContainer(parent, element, maxAuras)
-	local width = parent:GetWidth()
-	local iconsPerRow = element.maxCols
-	if not iconsPerRow then return end
-	element.size = auraIconSize(width, iconsPerRow, element.spacing or 0)
-	if element.SetFlowLayoutMaximumLineSize then
-		element:SetFlowLayoutMaximumLineSize(width)
-	end
+	if parent.mystyle == "nameplate" then return end
 
 	local fontSize = element.fontSize or element.size*.4
 	local cooldownNumber = parent.mystyle == "raid" and not C.db["UFs"]["RaidCDText"] or false
 	for button in pairs(element.__buttons or {}) do
 		if button.Count then B.SetFontSize(button.Count, fontSize) end
-		if button.Time then B.SetFontSize(button.Time, fontSize) end
+		if button.CooldownText then B.SetFontSize(button.CooldownText, fontSize) end
 		if button.Cooldown then
 			button.Cooldown:SetHideCountdownNumbers(cooldownNumber)
 		end
@@ -1047,8 +1040,9 @@ function UF:ConfigureAuras(element)
 	local value = element.__value
 	element.numBuffs = C.db["UFs"][value.."BuffType"] ~= 1 and C.db["UFs"][value.."NumBuff"] or 0
 	element.numDebuffs = C.db["UFs"][value.."DebuffType"] ~= 1 and C.db["UFs"][value.."NumDebuff"] or 0
-	element.maxCols = C.db["UFs"][value.."AurasPerRow"]
-	element.showDebuffType = C.db["UFs"]["DebuffColor"]
+	element.size = C.db["UFs"][value.."AuraSize"]
+	element.showBuffBorder = true
+	element.showDebuffBorder = C.db["UFs"]["DebuffColor"]
 	element.desaturateDebuff = C.db["UFs"]["Desaturate"]
 	element.fontSize = C.db["UFs"]["CDFontSize"]
 end
@@ -1069,8 +1063,8 @@ function UF:ConfigureBuffAndDebuff(element, isDebuff)
 	local vType = isDebuff and "Debuff" or "Buff"
 	local isRaid = value == "Raid"
 	element.num = C.db["UFs"][value..vType.."Type"] ~= 1 and C.db["UFs"][value.."Num"..vType] or 0
-	element.maxCols = C.db["UFs"][value..vType.."PerRow"]
-	element.showDebuffType = isRaid or C.db["UFs"]["DebuffColor"]
+	element.size = C.db["UFs"][value..vType.."Size"]
+	element.showDebuffBorder = isRaid or C.db["UFs"]["DebuffColor"]
 	element.desaturateDebuff = not isRaid and C.db["UFs"]["Desaturate"]
 	element.fontSize = C.db["UFs"]["RaidCDSize"]
 end
@@ -1171,6 +1165,8 @@ end
 local function AddAuraGroup(element, name, filter, count, index)
 	element.__groups[name] = element:AddGroup(filter, {
 		maxFrameCount = count,
+		size = element.size,
+		height = element.__owner.mystyle == "nameplate" and element.size * element.sizeRatio or nil,
 		layout = AuraGroupLayout(element, index),
 	})
 end
@@ -1199,9 +1195,9 @@ local function CreateAuraElement(self, options)
 	element.fontSize = options.fontSize
 	element.sizeRatio = options.sizeRatio or 1
 	element.disableMouse = options.disableMouse
-	element.showDebuffType = options.showDebuffType
+	element.showDebuffBorder = options.showDebuffBorder
 	element.showCount = true
-	element.showDuration = true
+	element.showDuration = false
 	element.showStealableBorder = true
 	element.PostCreateButton = UF.PostCreateButton
 	return element
@@ -1237,15 +1233,13 @@ function UF:CreateAuras(self)
 			bu:SetPoint("BOTTOMLEFT", self.nameText, "TOPLEFT", 0, 5)
 		end
 		bu.numTotal = C.db["Nameplate"]["maxAuras"]
-		bu.numBuffs = bu.numTotal
-		bu.numDebuffs = 0
-		bu.maxCols = C.db["Nameplate"]["AurasPerRow"]
+		bu.size = C.db["Nameplate"]["AuraSize"]
 		bu.fontSize = C.db["Nameplate"]["FontSize"]
-		bu.showDebuffType = C.db["Nameplate"]["DebuffColor"]
+		bu.showDebuffBorder = C.db["Nameplate"]["DebuffColor"]
 		bu.desaturateDebuff = C.db["Nameplate"]["Desaturate"]
 		bu.sizeRatio = C.db["Nameplate"]["SizeRatio"]
 		bu.disableMouse = true
-		AddAuraGroup(bu, "Buffs", "HELPFUL|IMPORTANT", bu.numBuffs, 1)
+		AddAuraGroup(bu, "Debuffs", "HARMFUL", bu.numTotal, 1)
 	end
 
 	UF:UpdateAuraContainer(self, bu, bu.numTotal or bu.numBuffs + bu.numDebuffs)
@@ -1288,7 +1282,7 @@ function UF:CreateDebuffs(self)
 		spacing = mystyle == "raid" and 2 or 3,
 		value = mystyle == "raid" and "Raid" or "Boss",
 		disableMouse = mystyle == "raid",
-		showDebuffType = true,
+		showDebuffBorder = true,
 	})
 	bu.__auraType = "debuffs"
 	if mystyle == "raid" then
