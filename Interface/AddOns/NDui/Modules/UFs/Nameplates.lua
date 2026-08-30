@@ -45,17 +45,6 @@ function UF:UpdatePlateSize()
 	end
 end
 
-local function PurgeKey(t, k) -- code from platynator
-	t[k] = nil
-	local c = 42
-	repeat
-		if t[c] == nil then
-			t[c] = nil
-		end
-		c = c + 1
-	until issecurevariable(t, k)
-end
-
 function UF:SetupCVars()
 	UF:UpdatePlateCVars()
 	SetCVar("nameplateOverlapH", .8)
@@ -75,10 +64,6 @@ function UF:SetupCVars()
 	hooksecurefunc(NamePlateDriverFrame, "UpdateNamePlateSize", UF.UpdatePlateSize)
 	-- fix blizz friendly plate visibility
 	SetCVar("nameplatePlayerMaxDistance", 60)
-	-- hide realm name in blizz nameonly
-	if NamePlateFriendlyFrameOptions then
-		PurgeKey(NamePlateFriendlyFrameOptions, "updateNameUsesGetUnitName")
-	end
 end
 
 -- Elements
@@ -646,13 +631,11 @@ function UF:UpdateNameplateAuras()
 
 	local element = self.Auras
 	element:SetPoint("BOTTOMLEFT", self.nameText, "TOPLEFT", 0, yOffset)
-	UF:ConfigureNameplateAuras(element)
 	UF:UpdateAuraContainer(self, element)
 	element:ForceUpdate()
 
 	element = self.Buffs
 	element:SetPoint("BOTTOMRIGHT", self.nameText, "TOPRIGHT", 0, yOffset)
-	UF:ConfigureNameplateAuras(element)
 	UF:UpdateAuraContainer(self, element)
 	element:ForceUpdate()
 end
@@ -1199,52 +1182,4 @@ function UF:ToggleGCDTicker()
 	if not ticker then return end
 
 	ticker:SetShown(C.db["Nameplate"]["PPGCDTicker"])
-end
-
-UF.MajorSpells = {}
-function UF:RefreshMajorSpells()
-	wipe(UF.MajorSpells)
-
-	for spellID in pairs(C.MajorSpells) do
-		local name = GetSpellName(spellID)
-		if name then
-			local modValue = NDuiADB["MajorSpells"][spellID]
-			if modValue == nil then
-				UF.MajorSpells[spellID] = true
-			end
-		end
-	end
-
-	for spellID, value in pairs(NDuiADB["MajorSpells"]) do
-		if value then
-			UF.MajorSpells[spellID] = true
-		end
-	end
-end
-
-UF.NameplateWhite = {}
-UF.NameplateBlack = {}
-
-local function RefreshNameplateFilter(list, key)
-	wipe(UF[key])
-
-	for spellID in pairs(list) do
-		local name = GetSpellName(spellID)
-		if name then
-			if NDuiADB[key][spellID] == nil then
-				UF[key][spellID] = true
-			end
-		end
-	end
-
-	for spellID, value in pairs(NDuiADB[key]) do
-		if value then
-			UF[key][spellID] = true
-		end
-	end
-end
-
-function UF:RefreshNameplateFilters()
-	RefreshNameplateFilter(C.WhiteList, "NameplateWhite")
-	RefreshNameplateFilter(C.BlackList, "NameplateBlack")
 end

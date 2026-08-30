@@ -781,6 +781,7 @@ function UF:CreateCastBar(self)
 	cb.PostCastStop = UF.Castbar_FailedColor
 	cb.PostCastFail = UF.Castbar_FailedColor
 	cb.PostCastInterrupted = UF.Castbar_UpdateInterrupted
+	cb.PostCastGlobal = UF.ResumeCastbarTime -- GCD right after an interrupted cast must show its countdown again
 	cb.CreatePip = UF.CreatePip
 	cb.PostUpdatePips = UF.PostUpdatePips
 
@@ -1397,7 +1398,6 @@ function UF:ConfigureAuras(element)
 	element.size = C.db["UFs"][value.."AuraSize"]
 	-- Keep oUF's native Border uncreated; Blizzard can show it again after a layout-side Hide.
 	element.showDebuffTypeBorder = C.db["UFs"]["DebuffColor"]
-	element.desaturateDebuff = C.db["UFs"]["Desaturate"]
 	element.fontSize = C.db["UFs"][value.."CDSize"]
 end
 
@@ -1423,7 +1423,6 @@ function UF:ConfigureBuffAndDebuff(element, isDebuff)
 	element.filter = filterOptions[vType][filterType]
 	element.size = C.db["UFs"][value..vType.."Size"]
 	element.showDebuffTypeBorder = isDebuff and (isRaid or C.db["UFs"]["DebuffColor"])
-	element.desaturateDebuff = not isRaid and C.db["UFs"]["Desaturate"]
 	if isRaid then
 		local setting = isDebuff and "RaidDebuff" or "RaidBuff"
 		element.fontSize = C.db["UFs"][setting.."CDSize"]
@@ -1614,10 +1613,6 @@ local auraUFs = {
 	["focus"] = "Focus",
 }
 
-function UF:ConfigureNameplateAuras(element)
-	element.desaturateDebuff = C.db["Nameplate"]["Desaturate"]
-end
-
 function UF:CreateAuras(self)
 	local mystyle = self.mystyle
 	if mystyle == "nameplate" then
@@ -1635,7 +1630,6 @@ function UF:CreateAuras(self)
 			bu.__auraType = "nameplate"
 			bu.__nameplateAuraType = container.auraType
 			bu:SetPoint(container.anchor, self.nameText, container.relativeAnchor, 0, yOffset)
-			UF:ConfigureNameplateAuras(bu)
 
 			local layoutIndex = 0
 			for index, group in ipairs(NAMEPLATE_AURA_GROUPS) do
@@ -1672,7 +1666,7 @@ function UF:CreateAuras(self)
 			for index, group in ipairs(UNITFRAME_DESATURATED_DEBUFF_GROUPS) do
 				AddAuraGroup(bu, UNITFRAME_DESATURATED_DEBUFF_GROUP_NAME..index, group.filter, GetUnitFrameDesaturatedDebuffCount(bu.numDebuffs, index), index + 1, group.candidateFilters, nil, {
 					desaturated = index == 2,
-					groupSpacing = index == 2 and 0 or nil,
+					groupSpacing = index == 2 and 0 or (bu.size + 3),
 					showDebuffTypeBorder = bu.showDebuffTypeBorder,
 				})
 			end
@@ -1691,7 +1685,6 @@ local function ConfigureNameplateDebuffs(element)
 	element.size = C.db["Nameplate"]["CCSize"]
 	element.fontSize = C.db["Nameplate"]["CCFontSize"]
 	element.showDebuffTypeBorder = false
-	element.desaturateDebuff = false
 	element.sizeRatio = C.db["Nameplate"]["CCSizeRatio"]
 	element.filter = NAMEPLATE_CC_RULE.filter
 end
