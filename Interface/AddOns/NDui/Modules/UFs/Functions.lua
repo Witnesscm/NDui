@@ -1692,6 +1692,12 @@ function UF:UpdateNameplateDebuffs(forceUpdate)
 	if forceUpdate ~= false then element:ForceUpdate() end
 end
 
+local PlateDebuffsExclude = {
+	excludeSpellIDs = {
+		[1280457] = true,
+	},
+}
+
 function UF:CreatePlateDebuffs(self)
 	local bu = CreateAuraElement(self, {
 		initialAnchor = "LEFT",
@@ -1704,7 +1710,7 @@ function UF:CreatePlateDebuffs(self)
 	bu:SetPoint("LEFT", self.Health, "RIGHT", 5, 0)
 
 	ConfigureNameplateDebuffs(bu)
-	AddAuraGroup(bu, "Debuffs", bu.filter, bu.num, 1)
+	AddAuraGroup(bu, "Debuffs", bu.filter, bu.num, 1, PlateDebuffsExclude)
 
 	self.Debuffs = bu
 end
